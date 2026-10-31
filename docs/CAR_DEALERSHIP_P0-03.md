@@ -6,7 +6,8 @@ Implementation in the **Car-Dealership** repository only. The original repositor
 - Renamed npm project to `car-dealership` and aligned its lockfile name.
 - Removed `prisma migrate deploy` from `vercel-build` to prevent automatic DB mutations by the build pipeline.
 - Added `lib/config/isolation.ts` to validate runtime, script and Prisma migration DB targets; requires explicit APP_ENV for production, rejects original-looking database targets and blocks commercial connection mode.
-- Added `scripts/verify-isolation.ts` and an `isolation:check` npm script.
+- Added `scripts/verify-isolation.ts` and an `isolation:check` npm script; `build` and `vercel-build` now invoke the preflight before running Next.js.
+- Hosted build preflight requires a unique HTTPS site origin, matching auth origin, exact approved DB target and environment-specific S3 settings. These requirements intentionally block premature deployment until P0-04 resources exist.
 - Renamed local Docker Compose project, container, volume and DB defaults uniquely; preserved temporary historical CI fixture name strictly in isolated GitHub Actions tests.
 - Restricted the development seed to local/test environments and reset to the new local `car_dealership_dev` database.
 - Replaced active branding, default contact details, social links, original showroom address, logo and sample home copy with a neutral Car Dealership Demo identity. Historical static assets/files remain present as references, not designated approved for external use.

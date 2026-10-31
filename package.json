@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build --webpack",
-    "vercel-build": "next build --webpack",
+    "build": "npm run isolation:check && next build --webpack",
+    "vercel-build": "npm run isolation:check && next build --webpack",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "oxlint",
