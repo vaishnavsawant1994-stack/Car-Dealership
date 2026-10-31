@@ -19,6 +19,7 @@
     "db:seed": "prisma db seed",
     "db:seed:hosted-demo": "tsx scripts/seed-hosted-demo.ts",
     "demo:account:provision": "tsx scripts/provision-demo-account.ts",
+    "email:capture:purge": "tsx scripts/purge-captured-email.ts",
     "db:studio": "prisma studio",
     "db:health": "tsx scripts/db-health.ts",
     "db:identity:check": "tsx scripts/verify-database-identity.ts",

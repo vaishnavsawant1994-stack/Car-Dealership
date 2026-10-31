@@ -5,6 +5,8 @@
 - Source-code reference: `vaishnavsawant1994-stack/Optimus-Automobiles` (never modify for this project)
 - This repository: `vaishnavsawant1994-stack/Car-Dealership`
 - P0-03 safeguards: `docs/CAR_DEALERSHIP_P0-03.md`
+- P0-04 data infrastructure: `docs/CAR_DEALERSHIP_P0-04.md`
+- P0-05 authentication and communication sandbox: `docs/CAR_DEALERSHIP_P0-05.md`
 - Default communication mode: email captured, WhatsApp actions route to the internal demo contact page
 - Deployment: Not authorised until separate staging/demo services are provisioned and verified
 
