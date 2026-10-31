@@ -1,4 +1,14 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '@/components/interior/CompletePage'
-export const metadata: Metadata = { title: 'Terms and Conditions | Optimum Automobiles', robots: { index: true, follow: true } }
-export default function Page() { return <LegalPage title="Terms and Conditions" updated="18 August 2026"><h2>Using this website</h2><p>By using this website, you agree to use it lawfully and not attempt to disrupt, copy, scrape at scale, bypass security, or submit false information.</p><h2>Vehicle information</h2><p>Inventory, price, mileage, features and availability can change. Online information is an invitation to enquire and is not a binding offer. Verify the vehicle, records, final price, taxes, fees and written sale terms before paying.</p><h2>Reservations and payments</h2><p>A vehicle is reserved only when Optimum Automobiles confirms it in writing and receives any agreed amount. The written receipt or sale agreement controls payment, cancellation and delivery terms.</p><h2>Third-party services</h2><p>Finance, insurance, warranty and government services are provided or decided by third parties. Approval, coverage and timelines are subject to their terms.</p><h2>Liability and governing law</h2><p>Nothing here excludes rights that cannot lawfully be excluded. To the extent permitted by law, we are not responsible for indirect loss caused by reliance on incomplete online information or third-party services. These terms are governed by Indian law, subject to courts with applicable jurisdiction in Pune, Maharashtra.</p><h2>Contact</h2><p>Questions about these terms may be sent through the contact page or to the published showroom email.</p></LegalPage> }
+
+export const metadata: Metadata = { title: 'Demonstration Terms | Car Dealership Demo', robots: { index: false, follow: false } }
+export default function Page() {
+  return <LegalPage title="Demonstration Terms" updated="31 October 2026">
+    <h2>Not a real dealership offer</h2>
+    <p>Car Dealership Demo is a software demonstration. Vehicle listings, showroom details, prices and customer stories are illustrative, not actual commercial offers.</p>
+    <h2>No purchases or payments</h2>
+    <p>Do not send deposits, payments, legal documents or sensitive personal information through this demonstration. No real vehicle reservation, financing, insurance or delivery is provided.</p>
+    <h2>Demonstration access</h2>
+    <p>Use access only as authorised for software evaluation. A separate commercial agreement and jurisdiction-specific terms will be required for a production dealership.</p>
+  </LegalPage>
+}

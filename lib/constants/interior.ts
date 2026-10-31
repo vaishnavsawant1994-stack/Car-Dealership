@@ -20,8 +20,8 @@ import {
 import { businessIdentity } from '@/lib/constants/business'
 
 export const interiorImages = {
-  hero: '/images/hero/deccan-wheels-hero-v3.png',
-  showroom: '/images/showroom/deccan-wheels-showroom-final.png',
+  hero: '/images/hero/hero-audi-rs7-nardo-grey.webp',
+  showroom: '/images/hero/hero-bmw-5-series-white.webp',
   sedan: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1600&q=88',
   service: 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=1600&q=88',
   paperwork: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1400&q=86',
@@ -108,7 +108,7 @@ export const faqs = {
     ['How long does the valuation process take?', 'Most preliminary valuations are completed within one business day.'],
     ['Do I need to visit the showroom?', 'We can begin remotely and arrange an inspection at a convenient location.'],
     ['What documents are required?', 'RC, insurance, identity proof, service history and loan closure documents where applicable.'],
-    ['Is there any fee for valuation?', 'No. Optimum Automobiles vehicle valuation is completely free and carries no obligation.'],
+    ['Is there any fee for valuation?', 'No. Car Dealership Demo vehicle valuation is completely free and carries no obligation.'],
   ],
   services: [
     ['What documents are required for RC transfer?', 'RC, insurance, valid ID, address proof and signed transfer forms are normally required.'],
@@ -127,8 +127,8 @@ export const faqs = {
 }
 
 export const trustStats = [
-  { value: '2019', label: 'Established', icon: Clock3 },
-  { value: 'Pune', label: 'Local Showroom', icon: Handshake },
+  { value: 'Demo', label: 'Environment', icon: Clock3 },
+  { value: 'Sample', label: 'Showroom', icon: Handshake },
   { value: 'Curated', label: 'Premium Cars', icon: Car },
   { value: 'Clear', label: 'Documented Pricing', icon: ShieldCheck },
   { value: 'Multi-step', label: 'Vehicle Checks', icon: SearchCheck },
@@ -147,7 +147,7 @@ export const journeySteps = [
 export const contactDetails = [
   { title: 'Phone', lines: [businessIdentity.phone], icon: Car },
   { title: 'Email', lines: [businessIdentity.primaryEmail, businessIdentity.secondaryEmail], icon: Upload },
-  { title: 'Showroom Address', lines: ['Geras imperium rise, opp wipro circle, hinjewadi phase 2, Pune 411057'], icon: MapPin },
+  { title: 'Showroom Address', lines: ['Demonstration environment — no physical address'], icon: MapPin },
   { title: 'Opening Hours', lines: ['Mon - Sun: 10:00 AM - 8:00 PM'], icon: Clock3 },
   { title: 'WhatsApp', lines: [businessIdentity.phone], icon: Headphones },
 ]

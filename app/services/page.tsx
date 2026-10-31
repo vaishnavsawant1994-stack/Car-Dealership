@@ -3,7 +3,7 @@ import { ServicesPage } from '@/components/interior/MarketingPages'
 import { getPublishedContent } from '@/lib/content/public-content'
 
 export const metadata: Metadata = {
-  title: 'Luxury Car Services | Optimum Automobiles Pune',
+  title: 'Automotive Services | Car Dealership Demo',
   description: 'Car finance, insurance, RC transfer, warranty, detailing, buyback, evaluation and roadside assistance for luxury car owners.',
 }
 

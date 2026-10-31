@@ -1,4 +1,18 @@
-# Optimum Automobiles
+# Car-Dealership — Independent Demonstration & Development Project
+
+**This is the independent Car-Dealership software project.** It is not the Optimum Automobiles production website or an operating dealership. Every environment must use new credentials and synthetic customer data.
+
+- Source-code reference: `vaishnavsawant1994-stack/Optimus-Automobiles` (never modify for this project)
+- This repository: `vaishnavsawant1994-stack/Car-Dealership`
+- P0-03 safeguards: `docs/CAR_DEALERSHIP_P0-03.md`
+- Default communication mode: email captured, WhatsApp actions route to the internal demo contact page
+- Deployment: Not authorised until separate staging/demo services are provisioned and verified
+
+**Important:** The historical documentation and test fixture account names below describe the original code foundation. Do not reuse original-business credentials, domains, or branding in any client-facing environment.
+
+---
+
+# Source foundation documentation (historical)
 
 <!-- repository-profile:start -->
 ## Repository profile

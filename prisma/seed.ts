@@ -170,7 +170,7 @@ async function main() {
         name,
         logoUrl: `/images/brands/${slug}.svg`,
         logoAlt: `${name} logo`,
-        description: `${name} pre-owned luxury cars selected and inspected by Optimum Automobiles.`,
+        description: `${name} pre-owned luxury cars selected and inspected by Car Dealership Demo.`,
         country,
         featured,
         active: true,
@@ -181,7 +181,7 @@ async function main() {
         slug,
         logoUrl: `/images/brands/${slug}.svg`,
         logoAlt: `${name} logo`,
-        description: `${name} pre-owned luxury cars selected and inspected by Optimum Automobiles.`,
+        description: `${name} pre-owned luxury cars selected and inspected by Car Dealership Demo.`,
         country,
         featured,
         active: true,
@@ -249,7 +249,7 @@ async function main() {
         serviceHistory: 'Authorised service centre records available',
         keysAvailable: 2,
         shortDescription: `A carefully inspected ${source.year} ${shortTitle} in ${source.exterior ?? 'premium finish'}.`,
-        description: `${shortTitle} ${source.variant} combines premium comfort, confident performance and transparent ownership history. This Optimum Automobiles vehicle has been inspected, road tested and prepared for delivery in Pune.`,
+        description: `${shortTitle} ${source.variant} combines premium comfort, confident performance and transparent ownership history. This Car Dealership Demo vehicle has been inspected, road tested and prepared for delivery in Pune.`,
         status: source.status ?? VehicleStatus.AVAILABLE,
         featured: Boolean(source.featured),
         newArrival: Boolean(source.newArrival),
@@ -290,7 +290,7 @@ async function main() {
         serviceHistory: 'Authorised service centre records available',
         keysAvailable: 2,
         shortDescription: `A carefully inspected ${source.year} ${shortTitle} in ${source.exterior ?? 'premium finish'}.`,
-        description: `${shortTitle} ${source.variant} combines premium comfort, confident performance and transparent ownership history. This Optimum Automobiles vehicle has been inspected, road tested and prepared for delivery in Pune.`,
+        description: `${shortTitle} ${source.variant} combines premium comfort, confident performance and transparent ownership history. This Car Dealership Demo vehicle has been inspected, road tested and prepared for delivery in Pune.`,
         status: source.status ?? VehicleStatus.AVAILABLE,
         featured: Boolean(source.featured),
         newArrival: Boolean(source.newArrival),
@@ -625,8 +625,8 @@ async function main() {
 
   await prisma.sellInspection.upsert({
     where: { sellRequestId: seededSellRequest.id },
-    update: { scheduledAt: new Date('2026-08-06T06:30:00.000Z'), location: 'Geras Imperium Rise showroom', inspectorId: operations.id },
-    create: { sellRequestId: seededSellRequest.id, scheduledAt: new Date('2026-08-06T06:30:00.000Z'), location: 'Geras Imperium Rise showroom', inspectorId: operations.id },
+    update: { scheduledAt: new Date('2026-08-06T06:30:00.000Z'), location: 'Demo showroom showroom', inspectorId: operations.id },
+    create: { sellRequestId: seededSellRequest.id, scheduledAt: new Date('2026-08-06T06:30:00.000Z'), location: 'Demo showroom showroom', inspectorId: operations.id },
   })
   await prisma.sellValuation.deleteMany({ where: { sellRequestId: seededSellRequest.id } })
   await prisma.sellValuation.create({
@@ -662,7 +662,7 @@ async function main() {
     {
       id: 'testimonial-demo-published',
       name: 'Rohan Mehta',
-      quote: 'The experience was seamless from start to finish. Optimum Automobiles truly delivers trust and transparency.',
+      quote: 'The experience was seamless from start to finish. This is a sample testimonial for software testing, not an actual customer statement.',
       purchase: 'Mercedes-Benz E-Class',
       location: 'Hinjawadi, Pune',
       avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=85',
@@ -722,11 +722,11 @@ async function main() {
   })
 
   const seededGallery = [
-    { id: 'gallery-demo-published', title: 'Showroom exterior', imageUrl: '/images/hero/deccan-wheels-hero-v3.png', alt: 'Optimum Automobiles showroom exterior', category: GalleryCategory.SHOWROOM },
+    { id: 'gallery-demo-published', title: 'Showroom exterior', imageUrl: '/images/hero/hero-audi-rs7-nardo-grey.webp', alt: 'Car Dealership Demo showroom exterior', category: GalleryCategory.SHOWROOM },
     { id: 'gallery-demo-interior', title: 'Mercedes interior', imageUrl: 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&w=700&q=85', alt: 'Premium Mercedes-Benz interior', category: GalleryCategory.VEHICLE },
     { id: 'gallery-demo-delivery', title: 'Customer delivery', imageUrl: 'https://images.unsplash.com/photo-1570294646112-27ce4f174e38?auto=format&fit=crop&w=700&q=85', alt: 'Luxury vehicle customer delivery', category: GalleryCategory.DELIVERY },
     { id: 'gallery-demo-suv', title: 'Luxury SUV', imageUrl: 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=700&q=85', alt: 'Luxury SUV on the road', category: GalleryCategory.VEHICLE },
-    { id: 'gallery-demo-building', title: 'Dealership building', imageUrl: '/images/showroom/deccan-wheels-showroom-final.png', alt: 'Optimum Automobiles dealership building', category: GalleryCategory.SHOWROOM },
+    { id: 'gallery-demo-building', title: 'Dealership building', imageUrl: '/images/hero/hero-bmw-5-series-white.webp', alt: 'Car Dealership Demo dealership building', category: GalleryCategory.SHOWROOM },
     { id: 'gallery-demo-sedan', title: 'Premium sedan', imageUrl: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=700&q=85', alt: 'Premium luxury sedan', category: GalleryCategory.VEHICLE },
   ]
   for (const [index, galleryItem] of seededGallery.entries()) {
@@ -738,14 +738,14 @@ async function main() {
   }
   await prisma.galleryItem.upsert({
     where: { id: 'gallery-demo-draft' },
-    update: { title: 'Delivery story draft', imageUrl: '/images/showroom/deccan-wheels-showroom.png', alt: 'Draft showroom delivery story', category: GalleryCategory.DELIVERY, published: false },
-    create: { id: 'gallery-demo-draft', title: 'Delivery story draft', imageUrl: '/images/showroom/deccan-wheels-showroom.png', alt: 'Draft showroom delivery story', category: GalleryCategory.DELIVERY, published: false, sortOrder: 7 },
+    update: { title: 'Delivery story draft', imageUrl: '/images/hero/hero-bmw-5-series-white.webp', alt: 'Draft showroom delivery story', category: GalleryCategory.DELIVERY, published: false },
+    create: { id: 'gallery-demo-draft', title: 'Delivery story draft', imageUrl: '/images/hero/hero-bmw-5-series-white.webp', alt: 'Draft showroom delivery story', category: GalleryCategory.DELIVERY, published: false, sortOrder: 7 },
   })
 
   const homepageContent = await prisma.contentBlock.upsert({
     where: { key: 'homepage' },
-    update: { value: { heroEyebrow: 'Optimum Automobiles', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'Premium pre-owned luxury cars in Pune.' }, status: ContentStatus.PUBLISHED, publishedAt: new Date('2026-07-01T10:00:00.000Z') },
-    create: { key: 'homepage', value: { heroEyebrow: 'Optimum Automobiles', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'Premium pre-owned luxury cars in Pune.' }, status: ContentStatus.PUBLISHED, publishedAt: new Date('2026-07-01T10:00:00.000Z') },
+    update: { value: { heroEyebrow: 'Car Dealership Demo', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'Premium pre-owned luxury cars in Pune.' }, status: ContentStatus.PUBLISHED, publishedAt: new Date('2026-07-01T10:00:00.000Z') },
+    create: { key: 'homepage', value: { heroEyebrow: 'Car Dealership Demo', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'Premium pre-owned luxury cars in Pune.' }, status: ContentStatus.PUBLISHED, publishedAt: new Date('2026-07-01T10:00:00.000Z') },
   })
   await prisma.contentRevision.upsert({
     where: { contentBlockId_version: { contentBlockId: homepageContent.id, version: 1 } },
@@ -779,8 +779,8 @@ async function main() {
   await prisma.showroom.upsert({
     where: { id: 'main-showroom' },
     update: {
-      name: 'Optimum Automobiles',
-      address: 'Geras Imperium Rise',
+      name: 'Car Dealership Demo',
+      address: 'Demo showroom',
       city: 'Pune',
       state: 'Maharashtra',
       postalCode: '411057',
@@ -800,8 +800,8 @@ async function main() {
     },
     create: {
       id: 'main-showroom',
-      name: 'Optimum Automobiles',
-      address: 'Geras Imperium Rise',
+      name: 'Car Dealership Demo',
+      address: 'Demo showroom',
       city: 'Pune',
       state: 'Maharashtra',
       postalCode: '411057',
@@ -822,11 +822,11 @@ async function main() {
   })
 
   const settings = {
-    site_name: 'Optimum Automobiles',
-    legal_company_name: 'Optimum Automobiles',
+    site_name: 'Car Dealership Demo',
+    legal_company_name: 'Car Dealership Demo',
     site_tagline: 'Premium pre-owned luxury cars',
     site_url: 'http://localhost:3001',
-    inventory_location: 'Geras Imperium Rise, Pune, Maharashtra 411057',
+    inventory_location: 'Demo showroom, Pune, Maharashtra 411057',
     primary_phone: businessIdentity.phone,
     support_phone: '',
     sales_email: businessIdentity.primaryEmail,
@@ -837,10 +837,10 @@ async function main() {
     timezone: 'Asia/Kolkata',
     locale: 'en-IN',
     facebook_url: '',
-    instagram_url: 'https://www.instagram.com/optimum_automobiles',
-    youtube_url: 'https://www.youtube.com/@OptimumAutomobiles',
+    instagram_url: '',
+    youtube_url: '',
     linkedin_url: '',
-    seo_default_title: 'Optimum Automobiles | Premium Pre-Owned Luxury Cars',
+    seo_default_title: 'Car Dealership Demo | Premium Pre-Owned Luxury Cars',
     seo_default_description: 'Premium pre-owned luxury cars in Pune.',
     email_preview_status: 'development-preview',
   }

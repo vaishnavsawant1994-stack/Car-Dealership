@@ -138,7 +138,7 @@ function SectionTitle({ title, actionHref, actionLabel }: { title: string; actio
 }
 
 function HeroSection() {
-  const [copy, setCopy] = useState({ heroEyebrow: 'Optimum Automobiles', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'A focused Pune showroom for premium pre-owned luxury cars.' })
+  const [copy, setCopy] = useState({ heroEyebrow: 'Car Dealership Demo', headline: 'Drive Luxury, Own Excellence.', supportingCopy: 'An illustrative automotive retail experience with fictional inventory.' })
   useEffect(() => {
     let active = true
     fetch('/api/content/homepage').then((response) => response.ok ? response.json() : null).then((payload) => {
@@ -182,10 +182,10 @@ function HeroSection() {
             ))}
           </div>
         </div>
-        <div className="hero-assurance" aria-label="Optimum Automobiles quality standard">
+        <div className="hero-assurance" aria-label="Car Dealership Demo quality standard">
           <span className="hero-assurance__icon"><BadgeCheck aria-hidden="true" /></span>
           <span>
-            <small>The Optimum Standard</small>
+            <small>Demo Inspection Standard</small>
             <strong>Verified. Transparent. Ready.</strong>
           </span>
         </div>
@@ -196,7 +196,7 @@ function HeroSection() {
 
 function StatsPanel() {
   return (
-    <section className="stats-panel container-wide" aria-label="Optimum Automobiles statistics">
+    <section className="stats-panel container-wide" aria-label="Car Dealership Demo statistics">
       {stats.map((item, index) => {
         const Icon = item.icon
         return (
@@ -467,7 +467,7 @@ function NewArrivals({ vehicles }: { vehicles: VehicleCardData[] }) {
 function Benefits() {
   return (
     <section className="benefits container-wide">
-      <SectionTitle title="Why Choose Optimum Automobiles?" />
+      <SectionTitle title="Why Choose Car Dealership Demo?" />
       <div className="benefit-grid">
         {benefits.map((item, index) => {
           const Icon = item.icon
@@ -542,7 +542,7 @@ function InstagramGallery() {
         <div className="instagram-card__icon"><SocialIcon network="instagram" /></div>
         <div className="instagram-card__copy">
           <h2 id="instagram-title">Follow Us On Instagram</h2>
-          <p>@optimum_automobiles</p>
+          <p>Sample gallery — no social account</p>
         </div>
         <a className="dark-button" href={siteConfig.instagram} target="_blank" rel="noreferrer">
           <SocialIcon network="instagram" />
@@ -618,7 +618,7 @@ function ShowroomContact() {
       <SectionTitle title="Visit & Connect" />
       <div className="showroom-contact">
         <div className="showroom-card">
-        <span className="showroom-card__eyebrow"><MapPin aria-hidden="true" />Pune</span>
+        <span className="showroom-card__eyebrow"><MapPin aria-hidden="true" />Demo</span>
         <h2 id="showroom-section-title">Visit Our Showroom</h2>
         <address>
           <a href={siteConfig.mapsUrl} target="_blank" rel="noreferrer">
@@ -699,12 +699,12 @@ function ShowroomContact() {
           </p>
         ) : null}
         </form>
-        <a className="map-panel" href={siteConfig.mapsUrl} target="_blank" rel="noreferrer" aria-label="Open Optimum Automobiles showroom in Google Maps">
+        <a className="map-panel" href={siteConfig.mapsUrl} target="_blank" rel="noreferrer" aria-label="Open Car Dealership Demo showroom in Google Maps">
         <Image src={mapImage} alt="" fill sizes="(min-width: 1180px) 33vw, 100vw" />
         <span>
           <MapPin size={20} />
-          <strong>Optimum Automobiles</strong>
-          <small>Open in Google Maps</small>
+          <strong>Car Dealership Demo</strong>
+          <small>Demo contact</small>
         </span>
         </a>
       </div>

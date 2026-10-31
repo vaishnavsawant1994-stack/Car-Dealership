@@ -300,16 +300,16 @@ export const servicePromos = [
 
 export const testimonials = [
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
-      'The experience was seamless from start to finish. Optimum Automobiles truly delivers trust and transparency.',
+      'Illustrative testimonial content for this demonstration — not an actual customer review.',
     purchase: 'Mercedes-Benz E-Class',
     location: 'Hinjawadi, Pune',
     avatar:
       'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=85',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
       'Got my dream car at the best price. Highly professional team and great service!',
     purchase: 'BMW X5',
@@ -318,7 +318,7 @@ export const testimonials = [
       'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=240&q=85',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
       'Smooth process, genuine cars and excellent after-sales support. Highly recommended!',
     purchase: 'Audi Q7',
@@ -327,7 +327,7 @@ export const testimonials = [
       'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=85',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
       'The team understood exactly what I wanted. Every detail was explained clearly, and delivery was right on schedule.',
     purchase: 'Land Rover Discovery',
@@ -336,7 +336,7 @@ export const testimonials = [
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=240&q=85',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
       'From the first test drive to the final paperwork, everything felt premium, honest, and remarkably well organised.',
     purchase: 'Lexus ES 300h',
@@ -345,7 +345,7 @@ export const testimonials = [
       'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=240&q=85',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     quote:
       'A genuinely dependable dealership. The car was exactly as presented and the after-sales follow-up has been excellent.',
     purchase: 'Volvo XC90',
@@ -356,60 +356,60 @@ export const testimonials = [
 ]
 
 export const gallery = [
-  ['Showroom exterior', '/images/hero/deccan-wheels-hero-v3.png'],
+  ['Showroom exterior', '/images/hero/hero-audi-rs7-nardo-grey.webp'],
   ['Mercedes interior', 'https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&w=700&q=85'],
   ['Customer delivery', 'https://images.unsplash.com/photo-1570294646112-27ce4f174e38?auto=format&fit=crop&w=700&q=85'],
   ['Luxury SUV', 'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=700&q=85'],
-  ['Dealership building', '/images/showroom/deccan-wheels-showroom-final.png'],
+  ['Dealership building', '/images/hero/hero-bmw-5-series-white.webp'],
   ['Premium sedan', 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=700&q=85'],
 ].map(([alt, image]) => ({ alt, image }))
 
-export const heroImage = '/images/hero/deccan-wheels-hero-v3.png'
+export const heroImage = '/images/hero/hero-audi-rs7-nardo-grey.webp'
 
 export const heroCarSlides = [
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-bmw-5-series.webp',
     alt: 'Black BMW 5 Series outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-bmw-5-series-white.webp',
     alt: 'Pearl white BMW 5 Series outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-audi-rs7.webp',
     alt: 'Black Audi RS7 outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-audi-rs7-nardo-grey.webp',
     alt: 'Nardo grey Audi RS7 outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-mercedes-s-class.webp',
     alt: 'Black Mercedes-Benz S-Class outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-mercedes-s-class-white.webp',
     alt: 'Pearl white Mercedes-Benz S-Class outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-defender-110.webp',
     alt: 'Black Land Rover Defender 110 outside a premium showroom at night',
   },
   {
-    name: 'OPTIMUM AUTOMOBILES',
+    name: 'CAR DEALERSHIP DEMO',
     image: '/images/hero/hero-defender-110-green.webp',
     alt: 'British racing green Land Rover Defender 110 outside a premium showroom at night',
   },
 ]
 
-export const showroomImage = '/images/showroom/deccan-wheels-showroom-final.png'
+export const showroomImage = '/images/hero/hero-bmw-5-series-white.webp'
 
 export const mapImage =
   'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=900&q=80'

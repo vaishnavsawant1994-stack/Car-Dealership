@@ -1,4 +1,12 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '@/components/interior/CompletePage'
-export const metadata: Metadata = { title: 'Cookie Policy | Optimum Automobiles' }
-export default function Page() { return <LegalPage title="Cookie Policy" updated="18 August 2026"><h2>Essential storage</h2><p>The site may use cookies or local storage required for sign-in security, session continuity, saved favourites and basic preferences. Disabling these may prevent features from working.</p><h2>Analytics and marketing</h2><p>Non-essential analytics or marketing technologies should be activated only when configured and permitted. Their providers may process device and usage information under their own notices.</p><h2>Your controls</h2><p>You can clear or block browser storage using browser settings. Where a consent control is presented, you can change non-essential choices there.</p><h2>Updates</h2><p>This page will be updated if the technologies or purposes used by the site materially change.</p></LegalPage> }
+
+export const metadata: Metadata = { title: 'Demo Cookie Notice | Car Dealership Demo', robots: { index: false, follow: false } }
+export default function Page() {
+  return <LegalPage title="Demo Cookies & Local Storage" updated="31 October 2026">
+    <h2>Essential browser storage</h2>
+    <p>The demonstration may use cookies and local storage for login, session integrity, saved vehicles and display preferences.</p>
+    <h2>External analytics</h2>
+    <p>Client-demo analytics and advertising integrations are not authorised until they have been separately configured and reviewed. Use fictional data when exploring the site.</p>
+  </LegalPage>
+}

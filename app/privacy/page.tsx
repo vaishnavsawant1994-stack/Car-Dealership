@@ -1,4 +1,14 @@
 import type { Metadata } from 'next'
 import { LegalPage } from '@/components/interior/CompletePage'
-export const metadata: Metadata = { title: 'Privacy Policy | Optimum Automobiles' }
-export default function Page() { return <LegalPage title="Privacy Policy" updated="18 August 2026"><h2>Information we collect</h2><p>We collect information you submit, such as name, phone, email, vehicle details, messages, account data and optional valuation attachments. We also receive basic security and request metadata needed to operate the service.</p><h2>How we use it</h2><p>We use information to respond to enquiries, arrange test drives and valuations, operate accounts, prevent abuse, keep transaction records, improve the website and meet legal obligations. Marketing email is sent only according to your subscription choice.</p><h2>Sharing and storage</h2><p>Information may be shared with authorised staff and service providers that support hosting, communication, finance, insurance or transaction processing. Sensitive valuation documents are stored privately and access is role-restricted. We do not sell personal information.</p><h2>Retention and security</h2><p>Records are retained only as long as needed for the stated purpose, disputes, security and legal obligations. We use access controls and technical safeguards, but no internet service can guarantee absolute security.</p><h2>Your choices</h2><p>You may ask to access, correct or delete eligible information, withdraw marketing consent, or raise a privacy concern by contacting the showroom. Some records may need to be retained where law or a completed transaction requires it.</p><h2>Updates</h2><p>We may update this notice and will publish the new date on this page.</p></LegalPage> }
+
+export const metadata: Metadata = { title: 'Demonstration Privacy Notice | Car Dealership Demo', robots: { index: false, follow: false } }
+export default function Page() {
+  return <LegalPage title="Demonstration Privacy Notice" updated="31 October 2026">
+    <h2>Use fictional information</h2>
+    <p>This application is a product demonstration. Do not enter real identity documents, banking details, customer records or sensitive personal data.</p>
+    <h2>What the demo records</h2>
+    <p>When test features are enabled, entered demonstration information may be saved to an isolated demo database to illustrate accounts, enquiries and operational workflows.</p>
+    <h2>Separate production policy required</h2>
+    <p>Before any dealership handles real customers, it must adopt an approved privacy notice, data retention policy, security review and consent procedures appropriate to its location.</p>
+  </LegalPage>
+}

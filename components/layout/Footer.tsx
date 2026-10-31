@@ -110,7 +110,7 @@ export function Footer() {
             </a>
             <div><Clock3 aria-hidden="true" /><span><small>Open daily</small><strong>{publicConfig.hours}</strong></span></div>
           </div>
-          {socialLinks.length ? <><small className="footer-social-label">Follow Optimum Automobiles</small><div className="social-row">{socialLinks.map(([network, href]) => <a href={href} aria-label={network} target="_blank" rel="noreferrer" key={network}><SocialIcon network={network as 'facebook' | 'instagram' | 'youtube' | 'linkedin'} /></a>)}</div></> : null}
+          {socialLinks.length ? <><small className="footer-social-label">Follow Car Dealership Demo</small><div className="social-row">{socialLinks.map(([network, href]) => <a href={href} aria-label={network} target="_blank" rel="noreferrer" key={network}><SocialIcon network={network as 'facebook' | 'instagram' | 'youtube' | 'linkedin'} /></a>)}</div></> : null}
         </div>
 
         <nav className="footer-nav" aria-label="Footer navigation">
@@ -173,7 +173,7 @@ export function Footer() {
       </div>
       <div className="footer-bottom">
         <div className="container-wide">
-          <p>Copyright 2019 Optimum Automobiles. All Rights Reserved.</p>
+          <p>Car Dealership Demo — illustrative content only. No real sales or customer communication.</p>
           <span>Premium pre-owned automobiles in Pune</span>
           <button type="button" aria-label="Back to top" title="Back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <ArrowUp aria-hidden="true" />
