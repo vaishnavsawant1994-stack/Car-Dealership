@@ -6,7 +6,7 @@ const original = Object.fromEntries(keys.map((key) => [key, process.env[key]])) 
 
 beforeEach(() => {
   process.env.APP_ENV = 'local'
-  (process.env as Record<string, string | undefined>).NODE_ENV = 'test'
+  ;(process.env as Record<string, string | undefined>).NODE_ENV = 'test'
   delete process.env.CI
   delete process.env.APP_PROJECT_ID
   delete process.env.EXPECTED_DATABASE_HOST
