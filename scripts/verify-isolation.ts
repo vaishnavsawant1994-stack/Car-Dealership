@@ -33,6 +33,14 @@ if (env !== 'local' && env !== 'test') {
   if (!bucket.startsWith(`car-dealership-`) || !bucket.includes(env)) {
     throw new Error('Hosted Car-Dealership storage bucket must be unique and environment-specific.')
   }
+  const privateBucket = process.env.S3_PRIVATE_BUCKET || ''
+  if (privateBucket !== `car-dealership-${env}-private` || privateBucket === bucket) {
+    throw new Error('A separate private document bucket must be selected for this environment.')
+  }
+  if (bucket !== `car-dealership-${env}-public`) {
+    throw new Error('The public media bucket must match the exact Car-Dealership environment.')
+  }
+  if (!process.env.EXPECTED_DATABASE_ID) throw new Error('Expected database instance fingerprint is required.')
   for (const name of ['S3_ENDPOINT', 'S3_REGION', 'S3_ACCESS_KEY_ID', 'S3_SECRET_ACCESS_KEY', 'S3_PUBLIC_BASE_URL']) {
     if (!process.env[name]) throw new Error(`Missing isolated storage configuration: ${name}`)
   }

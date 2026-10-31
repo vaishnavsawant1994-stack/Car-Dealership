@@ -19,6 +19,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:health": "tsx scripts/db-health.ts",
+    "db:identity:check": "tsx scripts/verify-database-identity.ts",
     "isolation:check": "tsx scripts/verify-isolation.ts",
     "db:reset:dev": "tsx scripts/reset-development-database.ts"
   },

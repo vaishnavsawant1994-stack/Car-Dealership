@@ -29,7 +29,7 @@ function s3Client() {
   const region = process.env.S3_REGION
   const accessKeyId = process.env.S3_ACCESS_KEY_ID
   const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY
-  if (!process.env.S3_BUCKET || !endpoint || !region || !accessKeyId || !secretAccessKey) throw new Error('PRIVATE_STORAGE_NOT_CONFIGURED')
+  if (!process.env.S3_PRIVATE_BUCKET || !endpoint || !region || !accessKeyId || !secretAccessKey) throw new Error('PRIVATE_STORAGE_NOT_CONFIGURED')
   return new S3Client({ endpoint, region, forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true', credentials: { accessKeyId, secretAccessKey } })
 }
 
@@ -60,7 +60,7 @@ export async function storeSellAttachment(requestId: string, file: File): Promis
   const { buffer, extension, checksum } = await validatedFile(file)
   const storageKey = `sell-requests/${requestId}/${randomUUID()}.${extension}`
   if (usesS3()) {
-    await s3Client().send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: storageKey, Body: buffer, ContentType: file.type }))
+    await s3Client().send(new PutObjectCommand({ Bucket: process.env.S3_PRIVATE_BUCKET!, Key: storageKey, Body: buffer, ContentType: file.type }))
   } else {
     if (process.env.NODE_ENV === 'production') throw new Error('PRIVATE_STORAGE_NOT_CONFIGURED')
     const directory = path.join(privateStorageRoot(), requestId)
@@ -73,7 +73,7 @@ export async function storeSellAttachment(requestId: string, file: File): Promis
 export async function readSellAttachment(storageKey: string) {
   assertSafeKey(storageKey)
   if (usesS3()) {
-    const result = await s3Client().send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: storageKey }))
+    const result = await s3Client().send(new GetObjectCommand({ Bucket: process.env.S3_PRIVATE_BUCKET!, Key: storageKey }))
     if (!result.Body) throw new Error('ATTACHMENT_NOT_FOUND')
     return Buffer.from(await result.Body.transformToByteArray())
   }
@@ -82,6 +82,6 @@ export async function readSellAttachment(storageKey: string) {
 
 export async function deleteSellAttachment(storageKey: string) {
   assertSafeKey(storageKey)
-  if (usesS3()) await s3Client().send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: storageKey }))
+  if (usesS3()) await s3Client().send(new DeleteObjectCommand({ Bucket: process.env.S3_PRIVATE_BUCKET!, Key: storageKey }))
   else await unlink(path.join(privateStorageRoot(), storageKey.replace('sell-requests/', ''))).catch(() => undefined)
 }

@@ -969,3 +969,13 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+
+/// Unique database fingerprint for each Car-Dealership environment.
+/// Never seeded from the original dealership production database.
+model CarDealershipEnvironment {
+  id          String   @id
+  application String
+  environment String
+  instanceId  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt   DateTime @default(now())
+}
