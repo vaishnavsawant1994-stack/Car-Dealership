@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { VerifyEmailClient } from '@/components/auth/AuthForms'
 
-export const metadata: Metadata = { title: 'Verify Email | Optimum Automobiles' }
+export const metadata: Metadata = { title: 'Verify Email | Car Dealership Demo' }
 
 export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const query = await searchParams

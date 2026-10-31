@@ -45,7 +45,7 @@ export function AdminShell({ children, navGroups, name, role, unread }: { childr
   }
 
   const sidebar = <>
-    <div className="admin-brand"><span className="admin-brand__mark">OA</span><span><strong>Optimum Automobiles</strong><small>Staff operations</small></span><button type="button" className="admin-mobile-close" aria-label="Close menu" onClick={() => setMobileOpen(false)}><X /></button></div>
+    <div className="admin-brand"><span className="admin-brand__mark">OA</span><span><strong>Car Dealership Demo</strong><small>Staff operations</small></span><button type="button" className="admin-mobile-close" aria-label="Close menu" onClick={() => setMobileOpen(false)}><X /></button></div>
     <nav className="admin-nav" aria-label="Admin navigation">
       {navGroups.map((group) => <section key={group.label}><p>{group.label}</p>{group.items.map((item) => { const Icon = icons[item.icon] ?? CircleGauge; const active = pathname === item.href || (item.href !== '/admin' && pathname.startsWith(`${item.href}/`)); return <Link key={item.href} href={item.href} className={active ? 'is-active' : ''} aria-current={active ? 'page' : undefined} title={collapsed ? item.label : undefined}><Icon /><span>{item.label}</span></Link> })}</section>)}
     </nav>

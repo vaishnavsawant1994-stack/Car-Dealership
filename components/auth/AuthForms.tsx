@@ -54,7 +54,7 @@ export function LoginForm({ callbackUrl, googleEnabled }: { callbackUrl: string;
       {message ? <p className="form-status form-status--error" role="alert">{message}</p> : null}
       <button className="gold-button auth-submit" disabled={busy || !hydrated}>{busy ? <LoaderCircle className="spin" /> : <>Sign in <ArrowRight /></>}</button>
     </form>
-    <p className="auth-switch">New to Optimum Automobiles? <Link href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Create an account</Link></p>
+    <p className="auth-switch">New to Car Dealership Demo? <Link href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}>Create an account</Link></p>
     <ResendVerification compact />
   </>
 }

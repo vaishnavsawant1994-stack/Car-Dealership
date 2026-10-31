@@ -6,8 +6,8 @@ import type { ReactNode } from 'react'
 export function AuthShell({ eyebrow, title, intro, children }: { eyebrow: string; title: string; intro: string; children: ReactNode }) {
   return (
     <main className="auth-page" id="main-content">
-      <section className="auth-visual" aria-label="Optimum Automobiles customer account">
-        <Image src="/images/hero/hero-bmw-5-series.webp" alt="Black luxury sedan at the Optimum Automobiles showroom" fill sizes="(max-width: 840px) 100vw, 50vw" priority />
+      <section className="auth-visual" aria-label="Car Dealership Demo customer account">
+        <Image src="/images/hero/hero-bmw-5-series.webp" alt="Black luxury sedan at the Car Dealership Demo showroom" fill sizes="(max-width: 840px) 100vw, 50vw" priority />
         <div className="auth-visual__shade" />
         <div className="auth-visual__copy">
           <span><ShieldCheck /> Verified ownership experience</span>

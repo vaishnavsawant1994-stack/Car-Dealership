@@ -45,7 +45,7 @@ export function PageHero({
           <div className="hero-kicker">
             <OptimumMark className="hero-kicker__mark" />
             <span>
-              <strong>Optimum Automobiles</strong>
+              <strong>Car Dealership Demo</strong>
               <small>{eyebrow ?? 'Premium pre-owned luxury cars'}</small>
             </span>
           </div>
@@ -62,7 +62,7 @@ export function PageHero({
             {trustPoints.map((point) => <span key={point}><BadgeCheck size={14} />{point}</span>)}
           </div>
         </div>
-        <div className="hero-assurance" aria-label="Optimum Automobiles quality standard">
+        <div className="hero-assurance" aria-label="Car Dealership Demo quality standard">
           <span className="hero-assurance__icon"><BadgeCheck aria-hidden="true" /></span>
           <span><small>The Optimum Standard</small><strong>Verified. Transparent. Ready.</strong></span>
         </div>

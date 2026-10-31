@@ -49,7 +49,7 @@ export async function createSellValuation(id: string, actor: AdminActor, input: 
     const status = input.finalOffer ? RequestStatus.OFFER_MADE : RequestStatus.VALUATION_READY
     await tx.sellRequest.update({ where: { id }, data: { status, version: { increment: 1 } } })
     await tx.operationalActivity.create({ data: { resourceType: 'SellRequest', resourceId: id, actorId: actor.id, action: input.finalOffer ? 'OFFER_CREATED' : 'VALUATION_CREATED', summary: input.finalOffer ? 'A customer offer was created.' : 'Internal valuation completed.', metadata: { valuationId: valuation.id } } })
-    if (input.finalOffer) await tx.operationalMessage.create({ data: { resourceType: 'SellRequest', resourceId: id, authorId: actor.id, type: 'CUSTOMER_MESSAGE', customerVisible: true, body: `Optimum Automobiles has prepared an offer of INR ${input.finalOffer.toLocaleString('en-IN')}, valid until ${input.validUntil.toLocaleDateString('en-IN')}.` } })
+    if (input.finalOffer) await tx.operationalMessage.create({ data: { resourceType: 'SellRequest', resourceId: id, authorId: actor.id, type: 'CUSTOMER_MESSAGE', customerVisible: true, body: `Car Dealership Demo has prepared an offer of INR ${input.finalOffer.toLocaleString('en-IN')}, valid until ${input.validUntil.toLocaleDateString('en-IN')}.` } })
     return valuation
   })
 }
