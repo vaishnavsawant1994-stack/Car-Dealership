@@ -6,6 +6,7 @@ import GoogleProvider from 'next-auth/providers/google'
 import { credentialsSchema } from '@/lib/auth/validation'
 import { verifyPassword } from '@/lib/auth/password'
 import { prisma } from '@/lib/db/prisma'
+import { checkRateLimit } from '@/lib/security/rate-limit'
 import { isDemoEmail, isHostedDemoEnvironment } from '@/lib/security/demo-access'
 
 const configuredAuthSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
@@ -30,6 +31,10 @@ const providers: NextAuthOptions['providers'] = [
       const parsed = credentialsSchema.safeParse(credentials)
       if (!parsed.success) return null
       if (isHostedDemoEnvironment() && !isDemoEmail(parsed.data.email)) return null
+      if (isHostedDemoEnvironment()) {
+        const limit = await checkRateLimit(`demo-credentials:${parsed.data.email}`, 8, 15 * 60_000)
+        if (!limit.allowed) return null
+      }
 
       const user = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase().trim() } })
       if (!user?.passwordHash || !(await verifyPassword(user.passwordHash, parsed.data.password))) return null
@@ -57,7 +62,7 @@ if (!isHostedDemoEnvironment() && process.env.AUTH_GOOGLE_ID && process.env.AUTH
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   secret: configuredAuthSecret ?? 'development-only-secret-not-used-in-production',
-  session: { strategy: 'jwt', maxAge: 30 * 24 * 60 * 60 },
+  session: { strategy: 'jwt', maxAge: isHostedDemoEnvironment() ? 8 * 60 * 60 : 30 * 24 * 60 * 60 },
   pages: { signIn: '/login', error: '/login' },
   providers,
   callbacks: {
