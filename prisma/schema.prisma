@@ -979,3 +979,22 @@ model CarDealershipEnvironment {
   instanceId  String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   createdAt   DateTime @default(now())
 }
+
+
+/// AES-GCM encrypted, expiring outbound email capture for safe noncommercial demos.
+/// Stored action URLs are bearer credentials and never returned by public APIs.
+model CapturedEmail {
+  id               String   @id
+  environment      String
+  purpose          String
+  recipientHash    String
+  encryptedPayload String
+  nonce            String
+  authTag          String
+  createdAt        DateTime @default(now())
+  expiresAt        DateTime
+  viewedAt         DateTime?
+
+  @@index([environment, createdAt])
+  @@index([expiresAt])
+}
