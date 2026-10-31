@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1774" height="887" viewBox="0 0 1774 887" role="img" aria-label="Car Dealership Demo">
+  <rect width="1774" height="887" rx="38" fill="#0c1419"/>
+  <path d="M240 475l124-131h385l126 131 80 14 56 72v65H171v-65l69-86zm166 42a57 57 0 1 0 0 114 57 57 0 0 0 0-114zm437 0a57 57 0 1 0 0 114 57 57 0 0 0 0-114z" fill="none" stroke="#d8ae68" stroke-width="18" stroke-linejoin="round"/>
+  <text x="1200" y="380" text-anchor="middle" font-family="Arial,sans-serif" font-size="119" font-weight="700" fill="#f3eee6">CAR</text>
+  <text x="1200" y="485" text-anchor="middle" font-family="Arial,sans-serif" font-size="79" font-weight="600" fill="#d8ae68">DEALERSHIP</text>
+  <text x="1200" y="555" text-anchor="middle" font-family="Arial,sans-serif" font-size="46" letter-spacing="14" fill="#f3eee6">DEMO</text>
+</svg>

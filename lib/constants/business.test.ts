@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { buildVehicleWhatsAppUrl, buildWhatsAppUrl, businessIdentity } from './business'
 
-describe('business contact links', () => {
-  it('uses the verified Optimum Automobiles WhatsApp number and default message', () => {
-    const url = new URL(buildWhatsAppUrl())
-    expect(`${url.host}${url.pathname}`).toBe(`wa.me/${businessIdentity.whatsappNumber}`)
-    expect(url.searchParams.get('text')).toBe(businessIdentity.whatsappMessage)
+describe('car-dealership demonstration contact isolation', () => {
+  it('uses a neutral identity with no real contact number', () => {
+    expect(businessIdentity.name).toBe('Car Dealership Demo')
+    expect(businessIdentity.whatsappNumber).toBe('')
+    expect(businessIdentity.primaryEmail.endsWith('.test')).toBe(true)
   })
 
-  it('normalizes a formatted WhatsApp number', () => {
-    expect(buildWhatsAppUrl('Hello', '+91 93737 78780')).toBe('https://wa.me/919373778780?text=Hello')
+  it('routes WhatsApp attempts to the internal contact form during Phase 0', () => {
+    expect(buildWhatsAppUrl()).toBe('/contact')
+    expect(buildWhatsAppUrl('A test enquiry', '+91 90000 00000')).toBe('/contact')
   })
 
-  it('builds a vehicle-specific enquiry message', () => {
-    const url = new URL(buildVehicleWhatsAppUrl({ year: 2023, make: 'Hyundai', model: 'Creta', variant: 'SX', stockNumber: 'OA-123' }))
-    expect(url.searchParams.get('text')).toBe('Hello, I saw the 2023 Hyundai Creta SX (Stock OA-123) on your website and I would like more information.')
+  it('routes vehicle-specific actions to the demo contact form', () => {
+    expect(buildVehicleWhatsAppUrl({ year: 2023, make: 'Hyundai', model: 'Creta', variant: 'SX', stockNumber: 'CD-123' })).toBe('/contact')
   })
 })

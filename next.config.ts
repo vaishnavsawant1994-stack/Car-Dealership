@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'X-Frame-Options', value: 'DENY' },
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+        ...(process.env.APP_ENV === 'commercial' ? [] : [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }]),
         { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
       ],
     }]

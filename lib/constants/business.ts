@@ -11,26 +11,26 @@ type BusinessIdentity = {
   logoUrl: string
 }
 
+/** Neutral, non-operational identity until independent client branding is approved. */
 export const businessIdentity: BusinessIdentity = {
-  name: 'Optimum Automobiles',
-  displayName: 'OPTIMUM AUTOMOBILES',
-  tagline: 'Premium pre-loved cars',
-  phone: '+91 93737 78780',
-  phoneNumber: '+919373778780',
-  primaryEmail: 'admin@optimumautomobiles.com',
-  secondaryEmail: 'adminoptimumautomobiles@gmail.com',
-  whatsappNumber: '919373778780',
-  whatsappMessage: 'Hello, I saw a car on your website and I would like more information.',
-  logoUrl: '/images/brand/optimum-automobiles-logo.png',
+  name: 'Car Dealership Demo',
+  displayName: 'CAR DEALERSHIP DEMO',
+  tagline: 'Automotive retail platform — demonstration',
+  phone: 'Demo enquiries only',
+  phoneNumber: '',
+  primaryEmail: 'demo@car-dealership.test',
+  secondaryEmail: 'support@car-dealership.test',
+  whatsappNumber: '',
+  whatsappMessage: 'I would like more information about a vehicle.',
+  logoUrl: '/images/brand/car-dealership-demo.svg',
 }
 
-export function buildWhatsAppUrl(message: string = businessIdentity.whatsappMessage, number: string = businessIdentity.whatsappNumber) {
-  const normalizedNumber = number.replace(/\D/g, '') || businessIdentity.whatsappNumber
-  return `https://wa.me/${normalizedNumber}?text=${encodeURIComponent(message)}`
+// Do not create external WhatsApp deep links during Phase 0. Previous source
+// dealership contacts must never receive messages from client demonstrations.
+export function buildWhatsAppUrl(_message: string = businessIdentity.whatsappMessage, _number: string = businessIdentity.whatsappNumber): string {
+  return '/contact'
 }
 
-export function buildVehicleWhatsAppUrl(vehicle: { year: number; make: string; model: string; variant?: string; stockNumber?: string }) {
-  const description = [vehicle.year, vehicle.make, vehicle.model, vehicle.variant].filter(Boolean).join(' ')
-  const stock = vehicle.stockNumber ? ` (Stock ${vehicle.stockNumber})` : ''
-  return buildWhatsAppUrl(`Hello, I saw the ${description}${stock} on your website and I would like more information.`)
+export function buildVehicleWhatsAppUrl(_vehicle: { year: number; make: string; model: string; variant?: string; stockNumber?: string }): string {
+  return '/contact'
 }

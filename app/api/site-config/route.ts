@@ -10,6 +10,10 @@ function withDbTimeout<T>(promise: Promise<T>, ms = 600): Promise<T> {
 }
 
 export async function GET() {
+  // Never expose legacy seeded dealership contacts during client demos.
+  if (process.env.APP_ENV !== 'commercial') {
+    return NextResponse.json({ data: { settings: {}, showroom: null } })
+  }
   try {
     const [settings, showroom] = await withDbTimeout(
       Promise.all([

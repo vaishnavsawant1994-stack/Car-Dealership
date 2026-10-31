@@ -10,13 +10,11 @@ export function WhatsAppFloatingButton() {
     <a
       className="whatsapp-float"
       href={config.whatsAppUrl}
-      target="_blank"
-      rel="noreferrer"
-      aria-label="Chat with Optimum Automobiles on WhatsApp"
-      title="Chat with us on WhatsApp"
+      aria-label="Contact the demonstration team"
+      title="Demo contact form"
     >
       <span className="whatsapp-float__icon"><MessageCircle aria-hidden="true" /></span>
-      <span className="whatsapp-float__copy"><small>Need help?</small><strong>Chat on WhatsApp</strong></span>
+      <span className="whatsapp-float__copy"><small>Need help?</small><strong>Contact demo team</strong></span>
     </a>
   )
 }
