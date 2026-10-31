@@ -12,8 +12,8 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<s
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const { slug } = await params
   const bodyType = await getBodyTypeBySlug(slug)
-  if (!bodyType) return { title: 'Body Type Not Found | Optimum Automobiles', robots: { index: false } }
-  return { title: `Pre-Owned Luxury ${bodyType.name} Cars | Optimum Automobiles`, description: `${bodyType.description} Browse ${bodyType._count.vehicles} available cars in Pune.`, alternates: { canonical: `/body-types/${bodyType.slug}` } }
+  if (!bodyType) return { title: 'Body Type Not Found | Car Dealership Demo', robots: { index: false } }
+  return { title: `Pre-Owned Luxury ${bodyType.name} Cars | Car Dealership Demo`, description: `${bodyType.description} Browse ${bodyType._count.vehicles} available cars in Pune.`, alternates: { canonical: `/body-types/${bodyType.slug}` } }
 }
 
 export default async function BodyTypePage({ params, searchParams }: Props) {

@@ -22,7 +22,7 @@ export async function GET() {
         id: item.id,
         name: item.name,
         quote: item.quote,
-        purchase: item.purchase || 'Optimum Automobiles customer',
+        purchase: item.purchase || 'Car Dealership Demo customer',
         location: item.location || 'Pune',
         avatar: item.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=240&q=85',
         rating: item.rating,

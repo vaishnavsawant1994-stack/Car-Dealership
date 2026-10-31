@@ -12,8 +12,8 @@ type Props = { params: Promise<{ slug: string }>; searchParams: Promise<Record<s
 export async function generateMetadata({ params }: Pick<Props, 'params'>): Promise<Metadata> {
   const { slug } = await params
   const brand = await getBrandBySlug(slug)
-  if (!brand) return { title: 'Brand Not Found | Optimum Automobiles', robots: { index: false } }
-  return { title: `Pre-Owned ${brand.name} Cars | Optimum Automobiles`, description: `${brand.description} Browse ${brand._count.vehicles} available vehicles in Pune.`, alternates: { canonical: `/brands/${brand.slug}` } }
+  if (!brand) return { title: 'Brand Not Found | Car Dealership Demo', robots: { index: false } }
+  return { title: `Pre-Owned ${brand.name} Cars | Car Dealership Demo`, description: `${brand.description} Browse ${brand._count.vehicles} available vehicles in Pune.`, alternates: { canonical: `/brands/${brand.slug}` } }
 }
 
 export default async function BrandPage({ params, searchParams }: Props) {
