@@ -1,26 +1,25 @@
-name: deccan-wheels
+name: car-dealership-dev
 
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: deccan-wheels-postgres
+    container_name: car-dealership-dev-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-deccan_wheels}
-      POSTGRES_USER: ${POSTGRES_USER:-deccan_wheels}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-deccan_wheels_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-car_dealership_dev}
+      POSTGRES_USER: ${POSTGRES_USER:-car_dealership_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a unique POSTGRES_PASSWORD in the local .env file}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5436}:5432"
     volumes:
-      - deccan_wheels_postgres_data:/var/lib/postgresql/data
+      - car_dealership_dev_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-deccan_wheels} -d ${POSTGRES_DB:-deccan_wheels}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-car_dealership_dev} -d ${POSTGRES_DB:-car_dealership_dev}"]
       interval: 5s
       timeout: 5s
       retries: 12
       start_period: 10s
 
 volumes:
-  deccan_wheels_postgres_data:
-    name: deccan_wheels_postgres_data
-
+  car_dealership_dev_pgdata:
+    name: car_dealership_dev_pgdata

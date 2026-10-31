@@ -1,12 +1,12 @@
 {
-  "name": "optimum-automobiles",
+  "name": "car-dealership",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
-    "vercel-build": "prisma migrate deploy && next build --webpack",
+    "vercel-build": "next build --webpack",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "oxlint",
@@ -19,6 +19,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "db:health": "tsx scripts/db-health.ts",
+    "isolation:check": "tsx scripts/verify-isolation.ts",
     "db:reset:dev": "tsx scripts/reset-development-database.ts"
   },
   "dependencies": {

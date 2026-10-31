@@ -19,6 +19,7 @@ import {
 import { Algorithm, hash } from '@node-rs/argon2'
 
 import { businessIdentity } from '../lib/constants/business'
+import { assertAllowedDatabaseUrl } from '../lib/config/isolation'
 import { createScriptPrismaClient } from '../scripts/script-prisma'
 
 const prisma = createScriptPrismaClient()
@@ -31,23 +32,16 @@ const slugify = (value: string) =>
     .replace(/^-+|-+$/g, '')
 
 function assertDevelopmentDatabase() {
-  const databaseUrl = process.env.DATABASE_URL ?? ''
-  const parsed = new URL(databaseUrl)
-  const databaseName = parsed.pathname.replace(/^\//, '')
-  const localHosts = new Set(['localhost', '127.0.0.1', '::1'])
-  const isExpectedLocalDatabase = localHosts.has(parsed.hostname) && databaseName === 'deccan_wheels'
-  const remoteSeedAllowed = process.env.ALLOW_REMOTE_SEED === 'true'
-  const remoteSeedPassword = process.env.SEED_ADMIN_PASSWORD ?? ''
-
-  if (isExpectedLocalDatabase && process.env.NODE_ENV !== 'production') return
-  if (remoteSeedAllowed && remoteSeedPassword.length >= 16) return
-
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('The deterministic development seed cannot run in production.')
+    throw new Error('Synthetic development seed cannot run in production.')
   }
-  throw new Error(
-    `Seed refused for ${parsed.hostname}/${databaseName}. Remote bootstrap requires ALLOW_REMOTE_SEED=true and a 16+ character SEED_ADMIN_PASSWORD.`,
-  )
+  if (process.env.APP_ENV && !['local', 'test'].includes(process.env.APP_ENV)) {
+    throw new Error('Synthetic seed is restricted to APP_ENV=local or APP_ENV=test.')
+  }
+  const runtimeUrl = process.env.DATABASE_URL
+  if (!runtimeUrl) throw new Error('DATABASE_URL is required for the synthetic seed.')
+  assertAllowedDatabaseUrl(runtimeUrl, 'development seed')
+  if (process.env.DIRECT_URL) assertAllowedDatabaseUrl(process.env.DIRECT_URL, 'development seed migration')
 }
 
 const brands = [
