@@ -7,7 +7,7 @@ import { getActiveBodyTypes } from '@/lib/repositories/body-type-repository'
 import { mapBodyTypeSummary } from '@/lib/services/inventory-service'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Luxury Cars by Body Type | Optimum Automobiles', description: 'Browse premium pre-owned sedans, SUVs, coupes, sports cars and more.', alternates: { canonical: '/body-types' } }
+export const metadata: Metadata = { title: 'Luxury Cars by Body Type | Car Dealership Demo', description: 'Browse premium pre-owned sedans, SUVs, coupes, sports cars and more.', alternates: { canonical: '/body-types' } }
 
 export default async function BodyTypesPage() {
   const bodyTypes = (await getActiveBodyTypes()).map(mapBodyTypeSummary)

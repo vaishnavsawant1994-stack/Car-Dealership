@@ -8,7 +8,7 @@ import { getActiveBrands } from '@/lib/repositories/brand-repository'
 import { mapBrandSummary } from '@/lib/services/inventory-service'
 
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Luxury Car Brands | Optimum Automobiles', description: 'Explore premium pre-owned luxury cars by brand in Pune.', alternates: { canonical: '/brands' } }
+export const metadata: Metadata = { title: 'Luxury Car Brands | Car Dealership Demo', description: 'Explore premium pre-owned luxury cars by brand in Pune.', alternates: { canonical: '/brands' } }
 
 export default async function BrandsPage() {
   const brands = (await getActiveBrands()).map(mapBrandSummary)

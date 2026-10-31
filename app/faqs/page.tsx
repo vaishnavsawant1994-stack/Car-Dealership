@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
 import { FaqList, InteriorCta, InteriorHeading, PageHero } from '@/components/interior/PagePrimitives'
 import { faqs, interiorImages } from '@/lib/constants/interior'
-export const metadata: Metadata = { title: 'Frequently Asked Questions | Optimum Automobiles', description: 'Answers about buying, selling and services at Optimum Automobiles.' }
+export const metadata: Metadata = { title: 'Frequently Asked Questions | Car Dealership Demo', description: 'Answers about buying, selling and services at Car Dealership Demo.' }
 export default function Page() { const items = [...faqs.sell, ...faqs.services, ...faqs.contact]; return <main className="interior-page" id="main-content"><PageHero eyebrow="Information / FAQs" title="Frequently Asked" accent="Questions." text="Clear answers about buying, selling and ownership support." image={interiorImages.hero} /><section className="interior-section container-narrow"><InteriorHeading title="How can we help?" /><FaqList items={items} /></section><InteriorCta title="Still Have a Question?" text="Our showroom team will be happy to help." image={interiorImages.sedan} primary={{ label: 'Contact Us', href: '/contact' }} /></main> }

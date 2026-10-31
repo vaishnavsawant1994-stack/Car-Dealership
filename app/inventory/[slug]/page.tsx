@@ -15,9 +15,9 @@ type PageProps = { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params
   const result = await getVehicleDetail(slug)
-  if (!result) return { title: 'Vehicle Not Found | Optimum Automobiles', robots: { index: false, follow: false } }
+  if (!result) return { title: 'Vehicle Not Found | Car Dealership Demo', robots: { index: false, follow: false } }
   const { vehicle } = result
-  const title = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.variant} | Optimum Automobiles`
+  const title = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.variant} | Car Dealership Demo`
   const description = `${vehicle.year} ${vehicle.make} ${vehicle.model} ${vehicle.variant}, ${vehicle.mileage}, ${vehicle.fuel}, available in Pune for ${vehicle.price}.`
   return { title, description, alternates: { canonical: `/inventory/${vehicle.slug}` }, openGraph: { title, description, images: [vehicle.image], type: 'website' }, robots: vehicle.status === 'SOLD' ? { index: false, follow: true } : undefined }
 }
