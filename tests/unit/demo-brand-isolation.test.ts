@@ -5,16 +5,16 @@ import path from 'node:path'
 const roots = ['app', 'components', 'lib']
 const forbidden = [
   /Optimum Automobiles/i,
-  /optimumautomobiles\\.com/i,
+  /optimumautomobiles\.com/i,
   /adminoptimumautomobiles/i,
-  /omkarpatil525@gmail\\.com/i,
-  /919373778780|93737\\s?78780/,
+  /omkarpatil525@gmail\.com/i,
+  /919373778780|93737\s?78780/,
 ]
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const p = path.join(dir, entry.name)
     if (entry.isDirectory()) return sourceFiles(p)
-    return entry.isFile() && /\\.(?:ts|tsx)$/.test(entry.name) && !/\\.test\\.(?:ts|tsx)$/.test(entry.name) ? [p] : []
+    return entry.isFile() && /\.(?:ts|tsx)$/.test(entry.name) && !/\.test\.(?:ts|tsx)$/.test(entry.name) ? [p] : []
   })
 }
 
