@@ -4,7 +4,7 @@ import { LoginForm } from '@/components/auth/AuthForms'
 import { googleAuthEnabled } from '@/auth'
 import { safeCallbackUrl } from '@/lib/auth/validation'
 
-export const metadata: Metadata = { title: 'Sign In | Optimum Automobiles', description: 'Sign in to your Optimum Automobiles customer account.' }
+export const metadata: Metadata = { title: 'Sign In | Car Dealership Demo', description: 'Sign in to your Car Dealership Demo customer account.' }
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ callbackUrl?: string }> }) {
   const query = await searchParams
