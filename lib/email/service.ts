@@ -93,7 +93,7 @@ export function sendVerificationEmail(to: string, name: string, token: string) {
     purpose: 'verification',
     subject: 'Verify your Car Dealership Demo account',
     previewUrl: url,
-    html: shell('Verify your email', `<p>Hello ${name},</p><p>Confirm your email address to activate your customer account. This link expires in 24 hours.</p>`, { label: 'Verify email', url }),
+    html: shell('Verify your email', `<p>Hello ${escapeHtml(name)},</p><p>Confirm your email address to activate your customer account. This link expires in 24 hours.</p>`, { label: 'Verify email', url }),
   })
 }
 
@@ -104,7 +104,7 @@ export function sendPasswordResetEmail(to: string, name: string, token: string) 
     purpose: 'password-reset',
     subject: 'Reset your Car Dealership Demo password',
     previewUrl: url,
-    html: shell('Reset your password', `<p>Hello ${name},</p><p>Use the secure link below to choose a new password. It expires in 30 minutes. Ignore this email if you did not request a reset.</p>`, { label: 'Reset password', url }),
+    html: shell('Reset your password', `<p>Hello ${escapeHtml(name)},</p><p>Use the secure link below to choose a new password. It expires in 30 minutes. Ignore this email if you did not request a reset.</p>`, { label: 'Reset password', url }),
   })
 }
 
@@ -115,7 +115,7 @@ export function sendEngagementConfirmation(to: string, name: string, reference: 
     purpose: 'engagement',
     subject: `Your Car Dealership Demo ${kind} request ${reference}`,
     previewUrl: url,
-    html: shell('Request received', `<p>Hello ${name},</p><p>We received your ${kind} request. Keep this reference for your records: <strong>${reference}</strong>.</p>`, { label: 'Track request', url }),
+    html: shell('Request received', `<p>Hello ${escapeHtml(name)},</p><p>We received your ${escapeHtml(kind)} request. Keep this reference for your records: <strong>${escapeHtml(reference)}</strong>.</p>`, { label: 'Track request', url }),
   })
 }
 
@@ -159,6 +159,6 @@ export function sendStaffInvitationEmail(to: string, token: string, role: string
     purpose: 'staff-invitation',
     subject: 'Your Car Dealership Demo staff invitation',
     previewUrl: url,
-    html: shell('Join the staff workspace', `<p>You have been invited to the Car Dealership Demo staff workspace as <strong>${role.replaceAll('_', ' ')}</strong>.</p><p>This single-use invitation expires in 48 hours.</p>`, { label: 'Accept invitation', url }),
+    html: shell('Join the staff workspace', `<p>You have been invited to the Car Dealership Demo staff workspace as <strong>${escapeHtml(role.replaceAll('_', ' '))}</strong>.</p><p>This single-use invitation expires in 48 hours.</p>`, { label: 'Accept invitation', url }),
   })
 }
