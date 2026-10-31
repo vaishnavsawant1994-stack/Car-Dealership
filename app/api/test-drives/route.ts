@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isHostedDemoEnvironment } from '@/lib/security/demo-access'
 import { prisma } from '@/lib/db/prisma'
 import { testDriveSchema } from '@/lib/validation/leads'
 import { getAuthenticatedUser } from '@/lib/auth/session'
@@ -7,6 +8,7 @@ import { sendEngagementConfirmation, sendLeadNotification } from '@/lib/email/se
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 
 export async function POST(request: Request) {
+  if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
   const limit = await checkRateLimit(requestFingerprint(request, 'test-drive'), 5, 10 * 60_000)
   if (!limit.allowed) return NextResponse.json({ error: { code: 'RATE_LIMITED', message: 'Too many test-drive requests were submitted. Please try again shortly.' } }, { status: 429 })
   const parsed = testDriveSchema.safeParse(await request.json().catch(() => null))

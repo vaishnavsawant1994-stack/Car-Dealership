@@ -8,6 +8,8 @@ describe('hosted demonstration identity controls', () => {
     expect(isHostedDemoEnvironment('preview')).toBe(true)
     expect(canUseSelfRegistration('staging')).toBe(false)
     expect(canUseSelfRegistration('demo')).toBe(false)
+    expect(isHostedDemoEnvironment('local')).toBe(false)
+    expect(isHostedDemoEnvironment('test')).toBe(false)
     expect(canUseSelfRegistration('commercial')).toBe(false)
     expect(canUseSelfRegistration('test')).toBe(true)
   })

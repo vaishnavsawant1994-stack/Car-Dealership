@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isHostedDemoEnvironment } from '@/lib/security/demo-access'
 import { sellRequestSchema } from '@/lib/validation/forms'
 import { getAuthenticatedUser } from '@/lib/auth/session'
 import { prisma } from '@/lib/db/prisma'
@@ -7,6 +8,7 @@ import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { deleteSellAttachment, storeSellAttachment, type StoredSellAttachment } from '@/lib/storage/sell-request-storage'
 
 export async function POST(request: Request) {
+  if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
   const limit = await checkRateLimit(requestFingerprint(request, 'sell-request'), 4, 15 * 60_000)
   if (!limit.allowed) return NextResponse.json({ message: limit.unavailable ? 'Valuation requests are temporarily unavailable.' : 'Too many valuation requests were submitted. Please try again later.' }, { status: limit.unavailable ? 503 : 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } })
   const contentType = request.headers.get('content-type') ?? ''

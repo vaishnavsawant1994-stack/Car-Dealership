@@ -18,6 +18,9 @@ if (env !== 'local' && env !== 'test') {
   readCaptureKey(process.env.EMAIL_CAPTURE_KEY)
   if (!process.env.AUTH_SECRET || Buffer.byteLength(process.env.AUTH_SECRET) < 32) throw new Error('A unique strong auth secret must be supplied.')
   if (process.env.AUTH_GOOGLE_ID || process.env.AUTH_GOOGLE_SECRET) throw new Error('Hosted demo OAuth providers must remain disabled.')
+  if (process.env.DEMO_BOOTSTRAP_APPROVED === 'true' || process.env.DEMO_BOOTSTRAP_PASSWORD) {
+    throw new Error('One-time account bootstrap credentials must never be present in the deployment runtime.')
+  }
   if (!process.env.APP_PROJECT_ID || process.env.APP_PROJECT_ID !== 'car-dealership') throw new Error('Invalid Car-Dealership project marker.')
 
   const site = process.env.NEXT_PUBLIC_SITE_URL
