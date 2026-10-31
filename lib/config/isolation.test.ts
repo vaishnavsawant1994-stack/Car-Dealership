@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from './isolation'
 
+const mutableEnv = process.env as Record<string, string | undefined>
+
 const keys = ['APP_ENV', 'APP_PROJECT_ID', 'EXPECTED_DATABASE_HOST', 'EXPECTED_DATABASE_NAME', 'CI', 'NODE_ENV'] as const
 const original = Object.fromEntries(keys.map((key) => [key, process.env[key]])) as Record<typeof keys[number], string | undefined>
 
 beforeEach(() => {
   process.env.APP_ENV = 'local'
-  ;(process.env as Record<string, string | undefined>).NODE_ENV = 'test'
+  mutableEnv.NODE_ENV = 'test'
   delete process.env.CI
   delete process.env.APP_PROJECT_ID
   delete process.env.EXPECTED_DATABASE_HOST
@@ -16,7 +18,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const key of keys) {
     if (original[key] === undefined) delete process.env[key]
-    else (process.env as Record<string, string | undefined>)[key] = original[key]
+    else mutableEnv[key] = original[key]
   }
 })
 
@@ -51,7 +53,7 @@ describe('Car-Dealership database isolation preflight', () => {
   })
   it('requires an explicit APP_ENV in production', () => {
     delete process.env.APP_ENV
-    (process.env as Record<string, string | undefined>).NODE_ENV = 'production'
+    mutableEnv.NODE_ENV = 'production'
     expect(() => getCarDealershipEnvironment()).toThrow()
   })
   it('keeps the historical CI fixture allowance only inside isolated CI tests', () => {
