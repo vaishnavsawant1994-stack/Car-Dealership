@@ -6,7 +6,7 @@ const original = Object.fromEntries(keys.map((key) => [key, process.env[key]])) 
 
 beforeEach(() => {
   process.env.APP_ENV = 'local'
-  process.env.NODE_ENV = 'test'
+  (process.env as Record<string, string | undefined>).NODE_ENV = 'test'
   delete process.env.CI
   delete process.env.APP_PROJECT_ID
   delete process.env.EXPECTED_DATABASE_HOST
@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const key of keys) {
     if (original[key] === undefined) delete process.env[key]
-    else process.env[key] = original[key]
+    else (process.env as Record<string, string | undefined>)[key] = original[key]
   }
 })
 
@@ -51,7 +51,7 @@ describe('Car-Dealership database isolation preflight', () => {
   })
   it('requires an explicit APP_ENV in production', () => {
     delete process.env.APP_ENV
-    process.env.NODE_ENV = 'production'
+    (process.env as Record<string, string | undefined>).NODE_ENV = 'production'
     expect(() => getCarDealershipEnvironment()).toThrow()
   })
   it('keeps the historical CI fixture allowance only inside isolated CI tests', () => {
