@@ -44,3 +44,13 @@ ON CONFLICT ("id") DO NOTHING;
 INSERT INTO "SellRequest" ("id","referenceNumber","status","name","email","phone","make","model","year","mileage","city","message","updatedAt") VALUES
 ('cd-sell-one','CD-SELL-DEMO-0001','SUBMITTED','Example Seller','example.seller@car-dealership.test','0000000000','BMW','320d',2021,33000,'Demo','Fictional seller request',now())
 ON CONFLICT ("id") DO NOTHING;
+
+-- Safe, deliberately DISABLED staff identities. No passwords or verified emails.
+-- Activation requires a one-time reviewed administrator command with a unique secret.
+INSERT INTO "User" ("id","name","email","role","status","updatedAt") VALUES
+('cd-demo-superadmin','Demo Super Administrator','demo.admin@car-dealership.test','SUPER_ADMIN','DISABLED',now()),
+('cd-demo-manager','Demo General Manager','demo.manager@car-dealership.test','ADMIN','DISABLED',now()),
+('cd-demo-sales','Demo Sales Representative','demo.sales@car-dealership.test','SALES','DISABLED',now()),
+('cd-demo-operations','Demo Operations Specialist','demo.operations@car-dealership.test','OPERATIONS','DISABLED',now()),
+('cd-demo-content','Demo Content Editor','demo.content@car-dealership.test','CONTENT_MANAGER','DISABLED',now())
+ON CONFLICT ("id") DO NOTHING;
