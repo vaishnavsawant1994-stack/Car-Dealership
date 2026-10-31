@@ -56,11 +56,10 @@ describe('Car-Dealership database isolation preflight', () => {
     mutableEnv.NODE_ENV = 'production'
     expect(() => getCarDealershipEnvironment()).toThrow()
   })
-  it('keeps the historical CI fixture allowance only inside isolated CI tests', () => {
+  it('uses only Car-Dealership test databases in CI', () => {
     process.env.APP_ENV = 'test'
     process.env.CI = 'true'
-    expect(() => assertAllowedDatabaseUrl('postgresql://postgres:postgres@localhost:5432/deccan_wheels', 'ci')).not.toThrow()
-    process.env.CI = 'false'
-    expect(() => assertAllowedDatabaseUrl('postgresql://postgres:postgres@localhost:5432/deccan_wheels', 'unit')).toThrow()
+    expect(() => assertAllowedDatabaseUrl('postgresql://postgres:postgres@localhost:5432/car_dealership_test', 'ci')).not.toThrow()
+    expect(() => assertAllowedDatabaseUrl('postgresql://postgres:postgres@localhost:5432/deccan_wheels', 'ci')).toThrow()
   })
 })

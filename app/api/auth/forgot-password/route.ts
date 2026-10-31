@@ -5,6 +5,7 @@ import { normalizedEmailSchema } from '@/lib/auth/validation'
 import { prisma } from '@/lib/db/prisma'
 import { sendPasswordResetEmail } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { assertDemoEmail, isHostedDemoEnvironment } from '@/lib/security/demo-access'
 
 const responseMessage = 'If an active account matches that email, password-reset instructions have been sent.'
 
@@ -14,6 +15,9 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { email?: string } | null
   const email = normalizedEmailSchema.safeParse(body?.email)
   if (!email.success) return NextResponse.json({ message: responseMessage })
+  if (isHostedDemoEnvironment()) {
+    try { assertDemoEmail(email.data) } catch { return NextResponse.json({ message: responseMessage }) }
+  }
   const user = await prisma.user.findUnique({ where: { email: email.data } })
   if (!user || user.status !== UserStatus.ACTIVE || !user.emailVerified || user.deletedAt) return NextResponse.json({ message: responseMessage })
 

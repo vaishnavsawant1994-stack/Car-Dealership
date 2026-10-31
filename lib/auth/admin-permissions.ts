@@ -10,7 +10,7 @@ export const adminPermissions = [
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
-  'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create',
+  'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
 ] as const
 
 export type AdminPermission = (typeof adminPermissions)[number]
@@ -36,7 +36,7 @@ const content: AdminPermission[] = [
   'newsletter.view', 'newsletter.export', 'settings.view', 'notification.view',
 ]
 
-const admin: AdminPermission[] = adminPermissions.filter((permission) => !['vehicle.delete', 'user.role.manage'].includes(permission))
+const admin: AdminPermission[] = adminPermissions.filter((permission) => !['vehicle.delete', 'user.role.manage', 'emailCapture.view'].includes(permission))
 
 const matrix: Record<UserRole, ReadonlySet<AdminPermission>> = {
   [UserRole.CUSTOMER]: new Set(),

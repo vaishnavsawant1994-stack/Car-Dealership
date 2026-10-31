@@ -33,17 +33,14 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
   const database = decodeURIComponent(address.pathname.slice(1))
   const local = localHosts.has(host)
 
-  // The historical development name is permitted only for the existing
-  // isolated GitHub Actions temporary PostgreSQL CI job.
-  const legacyCiFixture = env === 'test' && process.env.CI === 'true' && local && database === 'deccan_wheels'
-  if (/optimum|optimus|deccan/i.test(host + '/' + database) && !legacyCiFixture) {
+  if (/optimum|optimus|deccan/i.test(host + '/' + database)) {
     throw new Error(`Car-Dealership refused a legacy source-looking database target for ${purpose}.`)
   }
   if (env === 'commercial') {
     throw new Error('Commercial database connections are disabled until an independently reviewed production launch.')
   }
   if (env === 'local' || env === 'test') {
-    if (!local || !['car_dealership_dev', 'car_dealership_test'].includes(database) && !legacyCiFixture) {
+    if (!local || !['car_dealership_dev', 'car_dealership_test'].includes(database)) {
       throw new Error(`Only isolated local/test databases are allowed for ${purpose}.`)
     }
   } else {

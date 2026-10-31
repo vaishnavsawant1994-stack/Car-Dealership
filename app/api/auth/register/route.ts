@@ -6,8 +6,10 @@ import { signUpSchema } from '@/lib/auth/validation'
 import { prisma } from '@/lib/db/prisma'
 import { sendVerificationEmail } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { canUseSelfRegistration } from '@/lib/security/demo-access'
 
 export async function POST(request: Request) {
+  if (!canUseSelfRegistration()) return NextResponse.json({ error: { code: 'DEMO_REGISTRATION_DISABLED', message: 'Public account registration is unavailable in the protected demonstration.' } }, { status: 403 })
   const limit = await checkRateLimit(requestFingerprint(request, 'register'), 5, 15 * 60_000)
   if (!limit.allowed) return NextResponse.json({ error: { code: 'RATE_LIMITED', message: 'Too many attempts. Please try again later.' } }, { status: 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } })
 

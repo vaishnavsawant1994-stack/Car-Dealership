@@ -6,11 +6,17 @@ import GoogleProvider from 'next-auth/providers/google'
 import { credentialsSchema } from '@/lib/auth/validation'
 import { verifyPassword } from '@/lib/auth/password'
 import { prisma } from '@/lib/db/prisma'
+import { isDemoEmail, isHostedDemoEnvironment } from '@/lib/security/demo-access'
 
 const configuredAuthSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
 
-if (process.env.NODE_ENV === 'production' && !configuredAuthSecret) {
-  throw new Error('AUTH_SECRET or NEXTAUTH_SECRET is required in production.')
+if (process.env.NODE_ENV === 'production' || isHostedDemoEnvironment()) {
+  if (!configuredAuthSecret || Buffer.byteLength(configuredAuthSecret, 'utf8') < 32) {
+    throw new Error('A unique AUTH_SECRET of at least 32 bytes is required for hosted authentication.')
+  }
+  if (isHostedDemoEnvironment() && (process.env.AUTH_GOOGLE_ID || process.env.AUTH_GOOGLE_SECRET)) {
+    throw new Error('External social authentication is disabled in hosted Car-Dealership demonstrations.')
+  }
 }
 
 const providers: NextAuthOptions['providers'] = [
@@ -23,6 +29,7 @@ const providers: NextAuthOptions['providers'] = [
     async authorize(credentials) {
       const parsed = credentialsSchema.safeParse(credentials)
       if (!parsed.success) return null
+      if (isHostedDemoEnvironment() && !isDemoEmail(parsed.data.email)) return null
 
       const user = await prisma.user.findUnique({ where: { email: parsed.data.email.toLowerCase().trim() } })
       if (!user?.passwordHash || !(await verifyPassword(user.passwordHash, parsed.data.password))) return null
@@ -43,7 +50,7 @@ const providers: NextAuthOptions['providers'] = [
   }),
 ]
 
-if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+if (!isHostedDemoEnvironment() && process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
   providers.push(GoogleProvider({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET }))
 }
 
@@ -127,4 +134,4 @@ export const authOptions: NextAuthOptions = {
   },
 }
 
-export const googleAuthEnabled = Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)
+export const googleAuthEnabled = !isHostedDemoEnvironment() && Boolean(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET)
