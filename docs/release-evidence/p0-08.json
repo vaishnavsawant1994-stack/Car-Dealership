@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "lastReviewed": "2026-11-01",
+  "gates": {
+    "repo_private": {
+      "status": "passed",
+      "note": "Independent repository access and visibility were verified.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership"
+    },
+    "release_controls": {
+      "status": "pending",
+      "note": "Main branch currently lacks enforced protection; controlled exact-SHA releases are in use."
+    },
+    "staging_isolation": {
+      "status": "passed",
+      "note": "Original staging database identity and restricted role verified.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "demo_isolation": {
+      "status": "passed",
+      "note": "Independent demo branch and unique database fingerprint verified; role disabled.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "staging_deployment": {
+      "status": "passed",
+      "note": "CI-approved baseline deployed READY with SSO required.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/3"
+    },
+    "admin_signin": {
+      "status": "blocked",
+      "note": "One-time fictional Super Admin provisioning and authenticated login are not verified."
+    },
+    "image_workflow": {
+      "status": "blocked",
+      "note": "Authenticated image upload, variants, audit and deletion are not verified."
+    },
+    "demo_deployment": {
+      "status": "blocked",
+      "note": "Separate protected client demo has not been deployed or authenticated."
+    },
+    "messaging_disabled": {
+      "status": "passed",
+      "note": "External messaging and payments kept disabled in protected hosted demo.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/3"
+    },
+    "security_change_review": {
+      "status": "pending",
+      "note": "P0-07 PR #4 passes CI but remains draft, unreviewed and unmerged."
+    },
+    "audit_append_only": {
+      "status": "blocked",
+      "note": "Both runtime roles still have AuditLog UPDATE and DELETE permissions."
+    },
+    "backup_policy": {
+      "status": "blocked",
+      "note": "No staging/demo automatic snapshots; recovery objectives, retention and costs not approved."
+    },
+    "restore_drill": {
+      "status": "pending",
+      "note": "Recovery copy verified; initial Neon restore promoted branch unexpectedly, so safe nonpromoting drill remains."
+    },
+    "credential_isolation": {
+      "status": "pending",
+      "note": "Provider branch role selection denied but full cross-account credential and private-object tests remain."
+    },
+    "final_approval": {
+      "status": "pending",
+      "note": "Phase 0 security/release sign-off is not authorized while acceptance gates remain."
+    }
+  }
+}
