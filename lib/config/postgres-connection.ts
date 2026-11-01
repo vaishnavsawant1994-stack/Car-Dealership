@@ -13,6 +13,14 @@ export function withVerifyFullSslMode(connectionString: string): string {
     throw new Error('A PostgreSQL connection URL is required.')
   }
 
+  // Local development and the isolated CI service use a loopback Postgres
+  // instance that intentionally has no TLS listener. Hosted remote databases
+  // are subject to the strict mode below; this exception cannot match the
+  // configured Neon staging/production hosts.
+  if (['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname.toLowerCase())) {
+    return connectionString
+  }
+
   url.searchParams.set('sslmode', 'verify-full')
   return url.toString()
 }

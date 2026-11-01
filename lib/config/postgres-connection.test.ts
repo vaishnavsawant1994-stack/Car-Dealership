@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { withVerifyFullSslMode } from './postgres-connection'
 
 describe('withVerifyFullSslMode', () => {
+  it('leaves the isolated loopback test database unchanged', () => {
+    const connectionString = 'postgresql://postgres:postgres@localhost:5432/car_dealership_test'
+
+    expect(withVerifyFullSslMode(connectionString)).toBe(connectionString)
+  })
+
   it('pins strict TLS verification when sslmode is absent', () => {
     const result = new URL(withVerifyFullSslMode('postgresql://user:pass@db.example.test:5432/app'))
 
