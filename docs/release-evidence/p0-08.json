@@ -56,8 +56,9 @@
       "note": "No staging/demo automatic snapshots; recovery objectives, retention and costs not approved."
     },
     "restore_drill": {
-      "status": "pending",
-      "note": "Recovery copy verified; initial Neon restore promoted branch unexpectedly, so safe nonpromoting drill remains."
+      "status": "passed",
+      "note": "A staging snapshot was restored to a separate non-primary/non-default branch with finalize=false; restricted-role SQL verified the staging fingerprint and four vehicle/image rows while original staging remained primary/default. This verifies database restore only; object-storage recovery and timed RTO remain open under backup_policy.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
     },
     "credential_isolation": {
       "status": "pending",

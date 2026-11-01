@@ -26,7 +26,7 @@ Evidence links are references only; verify current provider status and actual te
 ## Mandatory release blockers
 
 - P0-06: fictional staff login, role boundaries, logout and authenticated vehicle image lifecycle, plus independent protected demo deployment.
-- P0-07: append-only audit privileges, scheduled backups and RPO/RTO/retention, safe non-promoting recovery drill, verified private-object isolation and true credential-denial tests.
+- P0-07: append-only audit privileges, scheduled backups and RPO/RTO/retention, object-storage recovery, verified private-object isolation and true credential-denial tests. The non-promoting database snapshot restore is now verified and recorded under Issue #5; its restored branch contained no object-storage buckets, and no timed RTO was established.
 - P0-08: approved release controls on the private repo, exact-head review of security changes and explicit recorded final acceptance.
 
 ## Monitoring follow-up (2026-11-01)
