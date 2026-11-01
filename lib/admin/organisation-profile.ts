@@ -67,6 +67,10 @@ export const organisationDefaults: Record<OrganisationKey, string> = {
   business_tax_identifier: '',
 }
 
+export function categoryForOrganisationSetting(key: OrganisationKey): 'contact' | 'general' {
+  return ['primary_phone', 'support_phone', 'sales_email', 'support_email'].includes(key) ? 'contact' : 'general'
+}
+
 export type OrganisationSetting = { value: string; version: number }
 export type OrganisationSettings = Record<OrganisationKey, OrganisationSetting>
 export type OrganisationChange = { key: OrganisationKey; value: string; version: number }

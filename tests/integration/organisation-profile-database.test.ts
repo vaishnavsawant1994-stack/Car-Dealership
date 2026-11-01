@@ -50,6 +50,11 @@ describe('P1-02 organisation business profile persistence', () => {
     expect(JSON.stringify(audit.metadata)).not.toContain('TEST-REG-0001')
   })
 
+  it('stores new administrative settings under the existing General category', async () => {
+    const row = await prisma.siteSetting.findUniqueOrThrow({ where: { key: 'business_registration_number' } })
+    expect(row.category).toBe('general')
+  })
+
   it('rolls back the first update when a second value is stale', async () => {
     await expect(updateOrganisationProfile(actorId, [
       { key: 'business_registration_number', value: 'MUST-ROLLBACK', version: 1 },

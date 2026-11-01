@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { getCarDealershipEnvironment } from '@/lib/config/isolation'
 import {
-  mapOrganisationSettings, organisationKeys, validateOrganisationChanges,
+  mapOrganisationSettings, organisationKeys, organisationUpdateSchema, categoryForOrganisationSetting, validateOrganisationChanges,
   type OrganisationChange,
 } from './organisation-profile'
 
@@ -38,6 +38,9 @@ export async function updateOrganisationProfile(actorId: string, changes: readon
   if (!actorId || changes.length === 0) throw new OrganisationProfileConflict()
   const errors = validateOrganisationChanges(changes, getCarDealershipEnvironment())
   if (Object.keys(errors).length) throw new OrganisationProfileValidationError(errors)
+  if (!organisationUpdateSchema.safeParse({ changes }).success) {
+    throw new OrganisationProfileValidationError({ profile: 'Unsupported or duplicate profile changes.' })
+  }
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -45,7 +48,7 @@ export async function updateOrganisationProfile(actorId: string, changes: readon
         if (version === 0) {
           // If another user inserted this key, the unique constraint aborts
           // the entire transaction instead of overwriting their value.
-          await tx.siteSetting.create({ data: { key, value, category: 'general' } })
+          await tx.siteSetting.create({ data: { key, value, category: categoryForOrganisationSetting(key) } })
         } else {
           const result = await tx.siteSetting.updateMany({
             where: { key, version },

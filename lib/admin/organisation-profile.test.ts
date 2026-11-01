@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { UserRole } from '@prisma/client'
 import { hasPermission } from '@/lib/auth/admin-permissions'
 import {
-  mapOrganisationSettings, organisationDefaults, organisationKeys,
+  categoryForOrganisationSetting, mapOrganisationSettings, organisationDefaults, organisationKeys,
   organisationUpdateSchema, validateOrganisationChanges, validateOrganisationValue,
 } from './organisation-profile'
 
 describe('P1-02 organisation profile contracts and hosted sandbox protection', () => {
+  it('preserves the existing General and Contact settings categories', () => {
+    expect(categoryForOrganisationSetting('site_name')).toBe('general')
+    expect(categoryForOrganisationSetting('business_registration_number')).toBe('general')
+    expect(categoryForOrganisationSetting('sales_email')).toBe('contact')
+    expect(categoryForOrganisationSetting('primary_phone')).toBe('contact')
+  })
+
   it('maps existing SiteSetting versions without creating duplicate models', () => {
     const result = mapOrganisationSettings([{ key: 'site_name', value: 'Fictional Demo Motors', version: 7 }])
     expect(result.site_name).toEqual({ value: 'Fictional Demo Motors', version: 7 })
