@@ -49,6 +49,8 @@ describe('P1-04 staff lifecycle safety policy', () => {
   it('restricts privileged ADMIN invitations and validates reason format', () => {
     expect(mayManageInvitationRole(UserRole.ADMIN, UserRole.ADMIN)).toBe(false)
     expect(mayManageInvitationRole(UserRole.SUPER_ADMIN, UserRole.ADMIN)).toBe(true)
+    expect(mayManageInvitationRole(UserRole.ADMIN, UserRole.SUPER_ADMIN)).toBe(false)
+    expect(mayManageInvitationRole(UserRole.SUPER_ADMIN, UserRole.SUPER_ADMIN)).toBe(true)
     expect(mayManageInvitationRole(UserRole.ADMIN, UserRole.SALES)).toBe(true)
     expect(staffInvitationRevokeSchema.safeParse({}).success).toBe(true)
     expect(staffInvitationRevokeSchema.safeParse({ reason: 'Cancelled by owner' }).success).toBe(true)
