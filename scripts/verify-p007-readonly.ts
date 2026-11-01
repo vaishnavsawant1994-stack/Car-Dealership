@@ -69,7 +69,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('P0-07 read-only verification FAILED: ' +
-    (error instanceof Error ? error.message.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted]') : 'Unknown error'))
+  const candidate = error instanceof Error ? error.name : ''
+  const errorType = /^[A-Za-z][A-Za-z0-9]{0,63}$/.test(candidate) ? candidate : 'UnknownError'
+  console.error('P0-07 read-only verification FAILED', { errorType })
   process.exitCode = 1
 })
