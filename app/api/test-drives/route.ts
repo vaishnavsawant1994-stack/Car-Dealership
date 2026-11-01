@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/lib/auth/session'
 import { createReferenceNumber } from '@/lib/references'
 import { sendEngagementConfirmation, sendLeadNotification } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 export async function POST(request: Request) {
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       },
       select: { id: true, referenceNumber: true, status: true, createdAt: true, email: true, fullName: true, phone: true, message: true, preferredDate: true, preferredTime: true },
     })
-    try { await sendEngagementConfirmation(testDrive.email, testDrive.fullName, testDrive.referenceNumber, 'test drive') } catch (emailError) { console.error('test_drive_confirmation_failed', { testDriveId: testDrive.id, emailError }) }
+    try { await sendEngagementConfirmation(testDrive.email, testDrive.fullName, testDrive.referenceNumber, 'test drive') } catch (emailError) { logSafeError('test_drive_confirmation_failed', emailError, { testDriveId: testDrive.id }) }
     try {
       await sendLeadNotification('test drive', {
         reference: testDrive.referenceNumber,
@@ -54,11 +55,11 @@ export async function POST(request: Request) {
         preferredTime: testDrive.preferredTime,
       })
     } catch (emailError) {
-      console.error('test_drive_staff_notification_failed', { testDriveId: testDrive.id, emailError })
+      logSafeError('test_drive_staff_notification_failed', emailError, { testDriveId: testDrive.id })
     }
     return NextResponse.json({ data: { id: testDrive.id, referenceNumber: testDrive.referenceNumber, status: testDrive.status, createdAt: testDrive.createdAt }, message: `Test-drive request received. Your reference is ${testDrive.referenceNumber}.` }, { status: 201 })
   } catch (error) {
-    console.error('test_drive_create_failed', { error })
+    logSafeError('test_drive_create_failed', error)
     return NextResponse.json({ error: { code: 'SUBMISSION_FAILED', message: 'The test-drive request could not be submitted.' } }, { status: 503 })
   }
 }

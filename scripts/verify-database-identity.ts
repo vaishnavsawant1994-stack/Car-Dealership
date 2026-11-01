@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Pool } from 'pg'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
+import { logSafeError } from '../lib/observability/safe-log'
 
 /** Validate a Car-Dealership database identity before seeding or migrating. */
 export async function verifyDatabaseIdentity(): Promise<void> {
@@ -31,7 +32,7 @@ export async function verifyDatabaseIdentity(): Promise<void> {
 
 if (process.argv[1]?.includes('verify-database-identity')) {
   verifyDatabaseIdentity().catch((error) => {
-    console.error(error instanceof Error ? error.message : 'Database identity verification failed')
+    logSafeError('database_identity_verification_failed', error)
     process.exitCode = 1
   })
 }

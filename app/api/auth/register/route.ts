@@ -7,6 +7,7 @@ import { prisma } from '@/lib/db/prisma'
 import { sendVerificationEmail } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { canUseSelfRegistration } from '@/lib/security/demo-access'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 export async function POST(request: Request) {
   if (!canUseSelfRegistration()) return NextResponse.json({ error: { code: 'DEMO_REGISTRATION_DISABLED', message: 'Public account registration is unavailable in the protected demonstration.' } }, { status: 403 })
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     const email = await sendVerificationEmail(user.email, user.name ?? 'Customer', token)
     return NextResponse.json({ data: { email: user.email, verificationRequired: true, emailPreview: email.preview }, message: 'Account created. Check your email to verify it.' }, { status: 201 })
   } catch (error) {
-    console.error('verification_email_failed', { userId: user.id, error })
+    logSafeError('verification_email_failed', error, { userId: user.id })
     return NextResponse.json({ data: { email: user.email, verificationRequired: true }, error: { code: 'EMAIL_DELIVERY_FAILED', message: 'Your account was created, but the verification email could not be sent. Use resend verification.' } }, { status: 503 })
   }
 }

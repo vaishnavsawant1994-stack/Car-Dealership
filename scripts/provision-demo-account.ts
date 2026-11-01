@@ -4,6 +4,7 @@ import { Pool } from 'pg'
 import { hashPassword, passwordSchema } from '../lib/auth/password'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
 import { demoAccountFixtureRoles } from '../lib/security/demo-access'
+import { logSafeError } from '../lib/observability/safe-log'
 
 async function main() {
   const env = getCarDealershipEnvironment()
@@ -62,6 +63,6 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error(error instanceof Error ? error.message : 'Demo provisioning failed.')
+  logSafeError('demo_account_provisioning_failed', error)
   process.exitCode = 1
 })

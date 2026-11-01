@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/prisma'
 import { createReferenceNumber } from '@/lib/references'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { deleteSellAttachment, storeSellAttachment, type StoredSellAttachment } from '@/lib/storage/sell-request-storage'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 export async function POST(request: Request) {
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json({ success: true, reference, message: `Valuation request ${reference} received. Our buying team will call you shortly.` }, { status: 201 })
   } catch (error) {
-    console.error('sell_request_create_failed', { error })
+    logSafeError('sell_request_create_failed', error)
     return NextResponse.json({ message: 'The valuation request could not be submitted. Please try again.' }, { status: 503 })
   }
 }

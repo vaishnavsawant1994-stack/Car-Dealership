@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { evaluatePhaseZeroEvidence } from '../lib/release/readiness'
+import { logSafeError } from '../lib/observability/safe-log'
 
 /**
  * Read-only stage gate: reports missing evidence; --verify exits nonzero when
@@ -25,7 +26,7 @@ if (args.some((arg) => !allowed.has(arg))) {
     if (result.invalidEvidence.length) console.log('Invalid evidence on:', result.invalidEvidence.join(', '))
     if (args.includes('--verify') && !result.releaseApproved) process.exitCode = 1
   } catch (error) {
-    console.error('Readiness check failed:', error instanceof Error ? error.message : 'invalid evidence')
+    logSafeError('phase0_readiness_check_failed', error)
     process.exitCode = 2
   }
 }
