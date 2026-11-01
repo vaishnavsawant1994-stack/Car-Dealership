@@ -130,7 +130,7 @@ export async function revokeStaffSessions(actor: Actor, userId: string) {
 /** Lists only safe invitation metadata; token and tokenHash never leave the DB. */
 export async function listStaffInvitations(actorRole: UserRole) {
   return prisma.staffInvitation.findMany({
-    where: actorRole === UserRole.SUPER_ADMIN ? {} : { role: { not: UserRole.ADMIN } },
+    where: actorRole === UserRole.SUPER_ADMIN ? {} : { role: { notIn: [UserRole.ADMIN, UserRole.SUPER_ADMIN] } },
     orderBy: { createdAt: 'desc' },
     take: 80,
     select: {
