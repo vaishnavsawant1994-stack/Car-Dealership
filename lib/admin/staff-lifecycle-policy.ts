@@ -52,5 +52,5 @@ export const staffInvitationRevokeSchema = z.object({
 }).strict()
 
 export function mayManageInvitationRole(actorRole: UserRole, invitedRole: UserRole): boolean {
-  return invitedRole !== UserRole.ADMIN || actorRole === UserRole.SUPER_ADMIN
+  return (invitedRole !== UserRole.ADMIN && invitedRole !== UserRole.SUPER_ADMIN) || actorRole === UserRole.SUPER_ADMIN
 }
