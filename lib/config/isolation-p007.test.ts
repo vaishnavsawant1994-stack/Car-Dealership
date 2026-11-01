@@ -19,6 +19,9 @@ const safeRole: AppRoleRow = {
   canWriteIdentity: false,
   canWriteMigrations: false,
   canReadVehicles: true,
+  canInsertAuditLog: true,
+  canUpdateAuditLog: false,
+  canDeleteAuditLog: false,
 }
 const uri = (name: string) => 'postgresql://tester:test@' + host + '/' + name
 
@@ -70,6 +73,7 @@ describe('P0-07 isolation and fault-injection regression gates', () => {
       { canCreateRoles: true }, { canCreateDatabases: true }, { inheritsRoles: true },
       { memberships: 1 }, { canCreateSchema: true }, { canWriteIdentity: true },
       { canWriteMigrations: true }, { canReadVehicles: false },
+      { canInsertAuditLog: false }, { canUpdateAuditLog: true }, { canDeleteAuditLog: true },
     ]) {
       expect(() => assertRestrictedAppRole({ ...safeRole, ...changed }, 'staging')).toThrow()
     }

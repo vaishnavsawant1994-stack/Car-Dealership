@@ -37,7 +37,10 @@ async function main() {
         "has_schema_privilege(current_user, 'public', 'CREATE') AS \"canCreateSchema\",",
         "has_table_privilege(current_user, '\"CarDealershipEnvironment\"', 'UPDATE') AS \"canWriteIdentity\",",
         "has_table_privilege(current_user, '\"_prisma_migrations\"', 'INSERT') AS \"canWriteMigrations\",",
-        "has_table_privilege(current_user, '\"Vehicle\"', 'SELECT') AS \"canReadVehicles\"",
+        "has_table_privilege(current_user, '\"Vehicle\"', 'SELECT') AS \"canReadVehicles\",",
+        "has_table_privilege(current_user, '\"AuditLog\"', 'INSERT') AS \"canInsertAuditLog\",",
+        "has_table_privilege(current_user, '\"AuditLog\"', 'UPDATE') AS \"canUpdateAuditLog\",",
+        "has_table_privilege(current_user, '\"AuditLog\"', 'DELETE') AS \"canDeleteAuditLog\"",
         "FROM pg_roles r WHERE r.rolname = current_user",
       ].join(' ')
       const roles = await client.query<AppRoleRow>(roleSql)

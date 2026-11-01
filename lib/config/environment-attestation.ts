@@ -15,6 +15,9 @@ export type AppRoleRow = {
   canWriteIdentity: boolean
   canWriteMigrations: boolean
   canReadVehicles: boolean
+  canInsertAuditLog: boolean
+  canUpdateAuditLog: boolean
+  canDeleteAuditLog: boolean
 }
 
 export function assertHostedIdentity(row: IdentityRow | undefined, environment: Hosted, expectedId: string | undefined) {
@@ -33,7 +36,8 @@ export function assertRestrictedAppRole(row: AppRoleRow | undefined, environment
       row.isSuperuser || row.canCreateRoles || row.canCreateDatabases ||
       row.inheritsRoles || row.memberships !== 0 ||
       row.canCreateSchema || row.canWriteIdentity || row.canWriteMigrations ||
-      !row.canReadVehicles) {
+      !row.canReadVehicles || !row.canInsertAuditLog ||
+      row.canUpdateAuditLog || row.canDeleteAuditLog) {
     throw new Error('Database runtime role failed least-privilege verification.')
   }
 }

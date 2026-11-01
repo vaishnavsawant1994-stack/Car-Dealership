@@ -55,3 +55,24 @@ This PR additionally validates the exact application database login username and
 **TLS follow-up:** The existing staging build uses a pg library that presently treats sslmode=require as verify-full and emits a compatibility warning. Explicit sslmode=verify-full is the target before the next major pg upgrade. Do not alter the deployed environment or weaken certificate verification as part of this draft PR.
 
 **Acceptance unchanged:** This is a CI-tested code-level baseline, not a proof of real credential cross-project denial, production-grade RTO/RPO, or final phase sign-off. Backup schedules could incur provider costs; select retention and budget before enabling. No main merge, app redeployment, privileged account activation, or further snapshot restore is authorized by this read-only continuation.
+
+## Blocking P0-07 audit-integrity finding (2026-11-01)
+
+Both hosted application roles currently have SELECT, INSERT, **UPDATE and DELETE** rights on `public."AuditLog"`. The reviewed application paths read and append audit events, so a compromised runtime could alter or remove its audit history.
+
+The read-only verifier now requires `canInsertAuditLog=true`, `canUpdateAuditLog=false`, and `canDeleteAuditLog=false`. The live verifier must report FAILED until these grants are corrected; do not bypass the failure.
+
+**Proposed SQL — NOT executed on either live database:**
+
+```sql
+-- Run separately with approval after verifying staging/demo project fingerprints and application audit use.
+REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
+-- Run the following command ONLY in the independent demo project/database:
+REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_demo_app";
+```
+
+Review P0-06 runtime impact before applying, and afterward verify INSERT remains available and UPDATE/DELETE are denied. No database permission changes were made during this continuation.
+
+### Cross-branch negative-role test
+
+Read-only Neon queries requesting staging's `cd_staging_app` role against the demo branch and demo's `cd_demo_app` against staging both failed with 'role not found for branch' (HTTP 404). This verifies branch role separation, not a real stolen-credential or TLS-level denial test; that remains pending.
