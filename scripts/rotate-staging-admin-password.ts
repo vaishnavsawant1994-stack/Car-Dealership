@@ -3,21 +3,33 @@ import { randomUUID } from 'node:crypto'
 import { Pool } from 'pg'
 import { hashPassword } from '../lib/auth/password'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
-import { assertStagingAdminRecovery, STAGING_ADMIN_EMAIL } from '../lib/security/staging-admin-recovery'
+import { assertStagingAdminRecovery, assertStagingAdminRecoveryApproval, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from '../lib/security/staging-admin-recovery'
 
 /**
  * Emergency fictional staging-only credential rotation.
  *
  * Execute only in a disposable maintenance process with an approved,
- * externally provided password. Never set recovery secrets in a Vercel
+ * privately entered password. Never set recovery secrets in a Vercel
  * deployment, GitHub Actions, repository file, command argument or log.
  */
 async function main() {
   const environment = getCarDealershipEnvironment()
   const directUrl = process.env.DIRECT_URL
   const expectedDatabaseId = process.env.EXPECTED_DATABASE_ID
-  const password = process.env.P006_STAGING_NEW_PASSWORD
+  if (process.env.P006_STAGING_NEW_PASSWORD !== undefined) {
+    throw new Error('Do not provide the recovery password through an environment variable.')
+  }
 
+  assertStagingAdminRecoveryApproval({
+    environment,
+    projectId: process.env.APP_PROJECT_ID,
+    approved: process.env.P006_STAGING_RESET_APPROVED,
+    email: process.env.P006_STAGING_RESET_EMAIL,
+    expectedDatabaseId,
+    directUrl,
+  })
+  assertAllowedDatabaseUrl(directUrl!, 'staging administrator password recovery')
+  let password = await readMaskedStagingAdminPassword(process.stdin, process.stdout)
   assertStagingAdminRecovery({
     environment,
     projectId: process.env.APP_PROJECT_ID,
@@ -27,8 +39,8 @@ async function main() {
     expectedDatabaseId,
     directUrl,
   })
-  assertAllowedDatabaseUrl(directUrl!, 'staging administrator password recovery')
-  const passwordHash = await hashPassword(password!)
+  const passwordHash = await hashPassword(password)
+  password = ''
   const pool = new Pool({ connectionString: directUrl, max: 1, connectionTimeoutMillis: 10_000 })
   const client = await pool.connect()
   try {
