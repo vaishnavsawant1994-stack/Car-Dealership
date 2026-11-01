@@ -16,9 +16,8 @@ import {
   VehicleImageCategory,
   VehicleStatus,
 } from '@prisma/client'
-import { Algorithm, hash } from '@node-rs/argon2'
-
 import { businessIdentity } from '../lib/constants/business'
+import { hashPassword, passwordSchema } from '../lib/auth/password'
 import { assertAllowedDatabaseUrl } from '../lib/config/isolation'
 import { createScriptPrismaClient } from '../scripts/script-prisma'
 
@@ -161,6 +160,11 @@ const vehicles: VehicleSeed[] = [
 
 async function main() {
   assertDevelopmentDatabase()
+  const password = passwordSchema.safeParse(process.env.SEED_ADMIN_PASSWORD)
+  if (!password.success) {
+    throw new Error('A valid SEED_ADMIN_PASSWORD must be supplied from an ignored local env file or an ephemeral test runner.')
+  }
+  const demoPasswordHash = await hashPassword(password.data)
 
   const brandByName = new Map<string, string>()
   for (const [name, slug, country, featured] of brands) {
@@ -326,12 +330,6 @@ async function main() {
     })
   }
 
-  const demoPasswordHash = await hash(process.env.SEED_ADMIN_PASSWORD ?? 'DriveLuxury!2026', {
-    algorithm: Algorithm.Argon2id,
-    memoryCost: 19456,
-    timeCost: 2,
-    parallelism: 1,
-  })
   const verifiedCustomer = await prisma.user.upsert({
     where: { email: 'customer@deccanwheels.local' },
     update: {

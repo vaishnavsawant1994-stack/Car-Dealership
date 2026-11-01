@@ -1,15 +1,20 @@
+import 'dotenv/config'
+
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { chromium, type Page } from '@playwright/test'
 
 const baseURL = process.env.ADMIN_VISUAL_BASE_URL ?? 'http://localhost:3001'
 const outputDir = resolve(process.cwd(), 'docs', 'screenshots', 'admin')
+const password = process.env.SEED_ADMIN_PASSWORD as string | undefined
+if (!password) throw new Error('Set SEED_ADMIN_PASSWORD in the ignored local .env file before capturing admin visuals.')
+const seedPassword = password as string
 
 async function signIn(page: Page) {
   await page.goto(`${baseURL}/login?callbackUrl=%2Fadmin`)
   const form = page.locator('.auth-form').first()
   await form.getByLabel('Email address').fill('admin@deccanwheels.local')
-  await form.getByLabel('Password', { exact: true }).fill('DriveLuxury!2026')
+  await form.getByLabel('Password', { exact: true }).fill(seedPassword)
   await form.getByRole('button', { name: /^sign in/i }).click()
   await page.waitForURL(/\/admin(?:\?.*)?$/, { timeout: 20_000 })
 }

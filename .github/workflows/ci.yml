@@ -50,7 +50,7 @@ jobs:
       - name: Prepare test database
         run: |
           npx prisma migrate deploy
-          npm run db:seed
+          npm run db:seed:ci
       - name: Lint
         run: npm run lint
       - name: Type-check
