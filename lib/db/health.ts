@@ -18,7 +18,9 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
       latencyMs: Math.round(performance.now() - startedAt),
     }
   } catch (error) {
-    console.error('[database-health] PostgreSQL connectivity check failed.', error)
+    console.error('[database-health] PostgreSQL connectivity check failed.', {
+      errorType: error instanceof Error ? error.name : 'UnknownError',
+    })
     return {
       healthy: false,
       checkedAt: new Date().toISOString(),

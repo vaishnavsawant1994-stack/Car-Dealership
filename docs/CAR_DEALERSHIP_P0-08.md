@@ -29,6 +29,14 @@ Evidence links are references only; verify current provider status and actual te
 - P0-07: append-only audit privileges, scheduled backups and RPO/RTO/retention, safe non-promoting recovery drill, verified private-object isolation and true credential-denial tests.
 - P0-08: approved release controls on the private repo, exact-head review of security changes and explicit recorded final acceptance.
 
+## Monitoring follow-up (2026-11-01)
+
+The staging project is on Vercel Hobby, with SSO protection required for every deployment. Vercel's runtime-log API reports a one-hour retention window; a recent 30-minute error/fatal count query returned no records, which does not prove alert delivery or full-period health. Observability Plus is not enabled on this team, so its configuration endpoint is unavailable. No external alert destination was added.
+
+The app previously had a database health helper but no HTTP health route. This PR now adds an uncached Node.js `GET /api/health` endpoint that returns HTTP 200 only when a `SELECT 1` check succeeds, otherwise 503. The response includes a timestamp, latency, and a boolean status only; database driver messages are not logged or returned. The staging SSO gate remains unchanged, and the route has not been deployed or tested against hosted staging.
+
+This improves an authenticated manual health check and gives a future authorized monitor a stable signal. It does not provide alerting, failed-deploy notifications, or longer log retention. Those remain P0-08 blockers; do not add an external notification provider without explicit authorization.
+
 P0-06 outstanding work is in Issue #3. P0-07 remediation is in Issues #5 and #6. The latest P0-07 PR #4 commit is `50b77eea599bc52a5e8de82c05faf4eb6d71b46d` (CI passed), but its changes must not be treated as deployed or merged.
 
 ## Decision rule
