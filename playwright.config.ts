@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import { defineConfig } from '@playwright/test'
 
 const port = Number(process.env.PLAYWRIGHT_PORT ?? 3001)
