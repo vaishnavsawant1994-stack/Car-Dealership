@@ -37,6 +37,12 @@ The app previously had a database health helper but no HTTP health route. This P
 
 This improves an authenticated manual health check and gives a future authorized monitor a stable signal. It does not provide alerting, failed-deploy notifications, or longer log retention. Those remain P0-08 blockers; do not add an external notification provider without explicit authorization.
 
+## P0-07 restore drill follow-up (2026-11-01)
+
+A new branch `p007-nonpromoting-drill-2026-11-01` (`br-empty-pond-aoikialy`) was restored from the staging snapshot with `finalize: false`. Provider state confirms it is ready, `primary=false`, and `default=false`; the original staging branch remains `primary=true` and `default=true`. Using the restricted `cd_staging_app` role, the restored database returned the expected staging fingerprint and the same four vehicles/four image records as the source branch. This is a verified database snapshot restore without promoting or modifying the live staging data. The snapshot point was `2026-11-01 03:24:49 UTC`; it was about 11 hours 52 minutes old at the 15:16 UTC verification. No automatic snapshot schedule is configured.
+
+The restore exposed an important coverage gap: the restored branch has no object-storage buckets, although database image rows exist. The database snapshot therefore does not by itself recover the vehicle media or private seller documents. End-to-end application recovery, private-object strategy, timed RTO measurement, and an approved retention schedule remain incomplete, so the combined P0-07 restore/backup gates stay pending/blocked. Neon automatically provisioned a 0.25-CU compute for the drill branch; it was suspended after database verification, and provider state confirms it is idle.
+
 P0-06 outstanding work is in Issue #3. P0-07 remediation is in Issues #5 and #6. The latest P0-07 PR #4 commit is `50b77eea599bc52a5e8de82c05faf4eb6d71b46d` (CI passed), but its changes must not be treated as deployed or merged.
 
 ## Decision rule
