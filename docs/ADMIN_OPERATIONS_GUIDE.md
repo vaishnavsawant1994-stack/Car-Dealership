@@ -4,7 +4,7 @@
 
 Run the app at `http://localhost:3001` and open `/admin`.
 
-All development staff accounts use `DriveLuxury!2026`:
+Set a unique `SEED_ADMIN_PASSWORD` in your ignored local `.env` file before running `npm run db:seed`. The seed refuses to continue without a valid password. Never commit or reuse this value outside the local development database.
 
 | Role | Email |
 | --- | --- |
@@ -14,7 +14,7 @@ All development staff accounts use `DriveLuxury!2026`:
 | OPERATIONS | `operations@deccanwheels.local` |
 | CONTENT_MANAGER | `content@deccanwheels.local` |
 
-These credentials are deterministic development data and must never be reused in production.
+The account emails and roles are deterministic development fixtures; their password is chosen locally and is not stored in the repository.
 
 ## Daily workflow
 

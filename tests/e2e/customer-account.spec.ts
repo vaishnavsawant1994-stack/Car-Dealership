@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test'
 
+const password = process.env.SEED_ADMIN_PASSWORD as string | undefined
+if (!password) throw new Error('Set SEED_ADMIN_PASSWORD in the ignored local .env file before running E2E tests.')
+const seedPassword = password as string
+
 async function signIn(page: import('@playwright/test').Page, callbackUrl = '/account') {
   await page.goto(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`)
   const form = page.locator('.auth-form').first()
   await form.getByLabel('Email address').fill('customer@deccanwheels.local')
-  await form.getByLabel('Password', { exact: true }).fill('DriveLuxury!2026')
+  await form.getByLabel('Password', { exact: true }).fill(seedPassword)
   await form.getByRole('button', { name: /^sign in/i }).click()
   await expect(page).toHaveURL(new RegExp(`${callbackUrl.replace('/', '\\/')}$`), { timeout: 15_000 })
 }
@@ -44,7 +48,7 @@ test('pending customer cannot sign in before email verification', async ({ page 
   await page.goto('/login')
   const form = page.locator('.auth-form').first()
   await form.getByLabel('Email address').fill('pending@deccanwheels.local')
-  await form.getByLabel('Password', { exact: true }).fill('DriveLuxury!2026')
+  await form.getByLabel('Password', { exact: true }).fill(seedPassword)
   await form.getByRole('button', { name: /^sign in/i }).click()
   await expect(form.getByRole('alert')).toContainText('Verify your email')
 })

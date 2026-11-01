@@ -1,12 +1,12 @@
-import 'dotenv/config'
-
 import { readFile, rm } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type APIResponse, type Browser, type Page } from '@playwright/test'
 import { createScriptPrismaClient } from '../../scripts/script-prisma'
 
 const prisma = createScriptPrismaClient()
-const password = 'DriveLuxury!2026'
+const password = process.env.SEED_ADMIN_PASSWORD as string | undefined
+if (!password) throw new Error('Set SEED_ADMIN_PASSWORD in the ignored local .env file before running E2E tests.')
+const seedPassword = password as string
 test.describe.configure({ timeout: 90_000 })
 const created = {
   vehicles: [] as string[],
@@ -25,7 +25,7 @@ async function signIn(page: Page, email = 'admin@deccanwheels.local') {
   await page.goto('/login?callbackUrl=%2Fadmin')
   const form = page.locator('.auth-form').first()
   await form.getByLabel('Email address').fill(email)
-  await form.getByLabel('Password', { exact: true }).fill(password)
+  await form.getByLabel('Password', { exact: true }).fill(seedPassword)
   await form.getByRole('button', { name: /^sign in/i }).click()
   await expect.poll(async () => /\/admin(?:\?.*)?$/.test(page.url()) || await page.getByRole('button', { name: 'Open customer account menu' }).count() > 0, { timeout: 30_000 }).toBe(true)
   if (!/\/admin(?:\?.*)?$/.test(page.url())) await page.goto('/admin')
@@ -44,7 +44,7 @@ async function customerPage(browser: Browser, route: string) {
   await page.goto('/login?callbackUrl=%2Faccount')
   const form = page.locator('.auth-form').first()
   await form.getByLabel('Email address').fill('customer@deccanwheels.local')
-  await form.getByLabel('Password', { exact: true }).fill(password)
+  await form.getByLabel('Password', { exact: true }).fill(seedPassword)
   await form.getByRole('button', { name: /^sign in/i }).click()
   await expect.poll(async () => /\/account(?:\?.*)?$/.test(page.url()) || await page.getByRole('button', { name: 'Open customer account menu' }).count() > 0, { timeout: 30_000 }).toBe(true)
   if (!/\/account(?:\?.*)?$/.test(page.url())) await page.goto('/account')

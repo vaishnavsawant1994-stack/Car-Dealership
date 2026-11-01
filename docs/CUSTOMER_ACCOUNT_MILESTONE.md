@@ -59,10 +59,10 @@ Running `npm run db:seed` creates:
 ```text
 Verified customer: customer@deccanwheels.local
 Pending customer:  pending@deccanwheels.local
-Password:          DriveLuxury!2026
+Password:          Set `SEED_ADMIN_PASSWORD` in your ignored local `.env` file before seeding.
 ```
 
-The verified customer includes saved vehicles, one tracked enquiry, one confirmed test drive, one sell request and notification preferences. The pending customer is useful for testing verification enforcement. These credentials are development-only and the seed refuses to run against a non-local or production database.
+The verified customer includes saved vehicles, one tracked enquiry, one confirmed test drive, one sell request and notification preferences. The pending customer is useful for testing verification enforcement. The seed requires a valid locally configured password and refuses to run against a non-local or production database. Do not commit or reuse the local password.
 
 ## Main routes
 
