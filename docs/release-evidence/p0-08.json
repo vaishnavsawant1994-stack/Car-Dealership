@@ -48,8 +48,9 @@
       "note": "P0-07 PR #4 passes CI but remains draft, unreviewed and unmerged."
     },
     "audit_append_only": {
-      "status": "blocked",
-      "note": "Both runtime roles still have AuditLog UPDATE and DELETE permissions."
+      "status": "passed",
+      "note": "After explicit owner approval, staging privileges were revoked and verified with has_table_privilege for cd_staging_app and inherited cd_staging_webapp: SELECT/INSERT true; UPDATE/DELETE false.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
     },
     "backup_policy": {
       "status": "blocked",
