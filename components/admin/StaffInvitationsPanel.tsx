@@ -95,7 +95,7 @@ export function StaffInvitationsPanel({ invitations, canInviteAdmin, hostedDemo 
                   <UserX aria-hidden="true" /> Revoke
                 </button> : null}
             </article>
-          )})}
+          })}
         </div> : <div className="admin-empty">
           <h2>No invitations</h2>
           <p>Create an invitation in an approved non-hosted environment or review past invitations here.</p>

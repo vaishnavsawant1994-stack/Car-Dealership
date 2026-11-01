@@ -1,4 +1,4 @@
-import { ContentStatus, GalleryCategory, LeadPriority, UserRole, UserStatus, VehicleImageCategory, VehicleStatus } from '@prisma/client'
+import { ContentStatus, GalleryCategory, LeadPriority, UserRole, VehicleImageCategory, VehicleStatus } from '@prisma/client'
 import { z } from 'zod'
 
 const currentYear = new Date().getFullYear()
