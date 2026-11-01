@@ -9,7 +9,7 @@
     },
     "release_controls": {
       "status": "pending",
-      "note": "Main branch currently lacks enforced protection; controlled exact-SHA releases are in use."
+      "note": "Earlier Issue #3 audit reported no enforceable main protection. Current branch-protection read is denied to the connected GitHub integration; ruleset API reports GitHub Pro or a public repository is required. Owner verification and an authorized protection mechanism remain outstanding."
     },
     "staging_isolation": {
       "status": "passed",

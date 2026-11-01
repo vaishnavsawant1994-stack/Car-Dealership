@@ -37,6 +37,10 @@ The app previously had a database health helper but no HTTP health route. This P
 
 This improves an authenticated manual health check and gives a future authorized monitor a stable signal. It does not provide alerting, failed-deploy notifications, or longer log retention. Those remain P0-08 blockers; do not add an external notification provider without explicit authorization.
 
+## Repository release controls follow-up (2026-11-01)
+
+The repository API confirms the project is private. Reading `main` branch protection through the connected GitHub integration returns 403 (`Resource not accessible by integration`), so this check cannot establish whether a branch rule currently exists. Reading repository rulesets returns GitHub's 403 message that rulesets require GitHub Pro or a public repository. The earlier Issue #3 audit reported no enforceable main protection. Keep `release_controls` pending until an account owner verifies the repository settings and an authorized protection mechanism is in place; do not make the repository public or change plans automatically.
+
 ## P0-07 restore drill follow-up (2026-11-01)
 
 A new branch `p007-nonpromoting-drill-2026-11-01` (`br-empty-pond-aoikialy`) was restored from the staging snapshot with `finalize: false`. Provider state confirms it is ready, `primary=false`, and `default=false`; the original staging branch remains `primary=true` and `default=true`. Using the restricted `cd_staging_app` role, the restored database returned the expected staging fingerprint and the same four vehicles/four image records as the source branch. This is a verified database snapshot restore without promoting or modifying the live staging data. The snapshot point was `2026-11-01 03:24:49 UTC`; it was about 11 hours 52 minutes old at the 15:16 UTC verification. No automatic snapshot schedule is configured.
