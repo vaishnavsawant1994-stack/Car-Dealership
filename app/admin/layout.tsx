@@ -6,7 +6,10 @@ import { AdminShell, type AdminNavItem } from '@/components/admin/AdminShell'
 import './admin.css'
 
 const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: AdminPermission }> }> = [
-  { label: 'Overview', items: [{ label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' }] },
+  { label: 'Overview', items: [
+    { label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' },
+    { label: 'My Showrooms', href: '/admin/my-showrooms', icon: 'showrooms', permission: 'dashboard.view' },
+  ] },
   { label: 'Inventory', items: [
     { label: 'Vehicles', href: '/admin/vehicles', icon: 'vehicles', permission: 'vehicle.view' },
     { label: 'Brands', href: '/admin/brands', icon: 'brands', permission: 'brand.manage' },
