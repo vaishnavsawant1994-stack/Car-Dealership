@@ -1,11 +1,43 @@
-import { UserRole, UserStatus } from '@prisma/client'
+import { UserRole } from '@prisma/client'
 import { NextResponse } from 'next/server'
+import { staffLifecycleError } from '@/lib/admin/staff-lifecycle-api'
+import { changeStaffLifecycle } from '@/lib/admin/staff-lifecycle-service'
 import { adminError, validationError } from '@/lib/admin/api'
-import { writeAuditLog } from '@/lib/admin/audit'
-import { isCriticalSelfChange, wouldRemoveLastSuperAdmin } from '@/lib/admin/staff-security'
-import { canManageUser } from '@/lib/auth/admin-resource-policy'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
 import { staffUpdateSchema } from '@/lib/validation/admin'
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) { try { await authorizeAdminRequest('user.view'); const { id } = await params; const data = await prisma.user.findUnique({ where: { id }, include: { sessions: { select: { id: true, expires: true } }, adminPreferences: true } }); if (!data) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 }); const { passwordHash: _, ...safe } = data; return NextResponse.json({ data: safe }) } catch (error) { return adminError(error) } }
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) { try { const actor = await authorizeAdminRequest('user.update'); const parsed = staffUpdateSchema.safeParse(await request.json().catch(() => null)); if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors); const { id } = await params; const target = await prisma.user.findUnique({ where: { id } }); if (!target) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 }); if (!canManageUser(actor, target)) return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'This protected account cannot be modified.' } }, { status: 403 }); if (parsed.data.role && actor.role !== UserRole.SUPER_ADMIN) return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'Only a super administrator can change staff roles.' } }, { status: 403 }); if (isCriticalSelfChange(actor, target, parsed.data)) return NextResponse.json({ error: { code: 'UNSAFE_SELF_CHANGE', message: 'You cannot change your own critical super-admin access.' } }, { status: 409 }); const count = await prisma.user.count({ where: { role: UserRole.SUPER_ADMIN, status: UserStatus.ACTIVE, deletedAt: null } }); if (wouldRemoveLastSuperAdmin(target, parsed.data, count)) return NextResponse.json({ error: { code: 'LAST_SUPER_ADMIN', message: 'The last active super administrator cannot be disabled or demoted.' } }, { status: 409 }); const data = await prisma.$transaction(async (tx) => { const updated = await tx.user.update({ where: { id }, data: { role: parsed.data.role, status: parsed.data.status, sessionVersion: parsed.data.status && parsed.data.status !== target.status ? { increment: 1 } : undefined } }); if (parsed.data.status && parsed.data.status !== target.status) await tx.session.deleteMany({ where: { userId: id } }); return updated }); await writeAuditLog({ actorId: actor.id, action: parsed.data.role && parsed.data.role !== target.role ? 'USER_ROLE_CHANGED' : parsed.data.status && parsed.data.status !== target.status ? 'USER_STATUS_CHANGED' : 'USER_UPDATED', resourceType: 'User', resourceId: id, summary: `Updated ${target.email}.`, metadata: { role: parsed.data.role, status: parsed.data.status }, request }); const { passwordHash: _, ...safe } = data; return NextResponse.json({ data: safe, message: 'User updated.' }) } catch (error) { return adminError(error) } }
+
+type Params = { params: Promise<{ id: string }> }
+
+export async function GET(_: Request, { params }: Params) {
+  try {
+    await authorizeAdminRequest('user.view')
+    const { id } = await params
+    const data = await prisma.user.findFirst({
+      where: { id, deletedAt: null, role: { not: UserRole.CUSTOMER } },
+      select: {
+        id: true, name: true, email: true, phone: true, role: true, status: true,
+        emailVerified: true, lastLoginAt: true, createdAt: true, sessionVersion: true,
+        showroomAssignments: { select: { showroom: {
+          select: { id: true, name: true, active: true },
+        } } },
+        sessions: { select: { expires: true }, orderBy: { expires: 'desc' } },
+      },
+    })
+    return data
+      ? NextResponse.json({ data }, { headers: { 'Cache-Control': 'private, no-store' } })
+      : NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
+  } catch (error) { return adminError(error) }
+}
+
+export async function PATCH(request: Request, { params }: Params) {
+  try {
+    const actor = await authorizeAdminRequest('user.update')
+    const parsed = staffUpdateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors)
+    const { id } = await params
+    const data = await changeStaffLifecycle(actor, id, parsed.data)
+    return NextResponse.json({ data, message: 'Staff lifecycle updated. Existing sessions were revoked.' },
+      { headers: { 'Cache-Control': 'private, no-store' } })
+  } catch (error) { return staffLifecycleError(error) }
+}
