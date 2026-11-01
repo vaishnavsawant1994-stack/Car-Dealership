@@ -63,4 +63,14 @@ describe('masked password input', () => {
     const { input, output } = fakeTTY(false)
     await expect(readMaskedStagingAdminPassword(input, output)).rejects.toThrow('private interactive TTY')
   })
+
+  it('cancels without exposing input and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('data', Buffer.from('partial-secret\u0003'))
+    await expect(passwordPromise).rejects.toThrow('cancelled')
+    expect(output.write).toHaveBeenCalledTimes(2)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+  })
 })

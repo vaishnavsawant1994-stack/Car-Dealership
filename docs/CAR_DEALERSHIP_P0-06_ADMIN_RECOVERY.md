@@ -18,14 +18,17 @@ Vercel deployment.
   Car-Dealership **staging** database maintenance connection.
 - Require `APP_ENV=staging`, `APP_PROJECT_ID=car-dealership`,
   `EXPECTED_DATABASE_ID`, `DIRECT_URL`,
-  `P006_STAGING_RESET_APPROVED=true`,
-  `P006_STAGING_RESET_EMAIL=demo.admin@car-dealership.test` and a
-  unique policy-compliant `P006_STAGING_NEW_PASSWORD` with 20+ characters.
+  `P006_STAGING_RESET_APPROVED=true` and
+  `P006_STAGING_RESET_EMAIL=demo.admin@car-dealership.test` in a disposable
+  private maintenance process.
 - Never put these recovery inputs in Git, Vercel deployment environment
   variables, CI secrets or shell history. Do not send passwords in chat.
-- Source the password from a trusted ephemeral secret input. The operator
-  must securely receive/choose the new password; random unretained passwords
-  reproduce the original lockout.
+- Enter the password only at the script's hidden interactive TTY prompt. It
+  requires stdin and stdout to be TTYs, enables raw mode, does not echo or log
+  characters, restores terminal mode on completion/cancellation, and rejects
+  `P006_STAGING_NEW_PASSWORD` if present. The operator must securely
+  receive/choose the new password; random unretained passwords reproduce the
+  original lockout.
 - The program checks the environment identity with a row lock, verifies the
   exact account role/active/verified/provisioned state, and atomically rotates
   the Argon2id password, increments `sessionVersion`, deletes database
