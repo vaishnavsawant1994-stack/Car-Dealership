@@ -112,3 +112,13 @@ A fresh snapshot list showed only `snap-wandering-tooth-ao72wvwl`, created at `2
 ## No-compute pre-recovery branch copy (2026-11-01 16:25 UTC)
 
 Because Neon refused another manual snapshot at the existing snapshot limit, a no-compute child branch was created from staging as a current pre-recovery checkpoint: `p006-pre-recovery-copy-2026-11-01` (`br-summer-moon-aon9y6co`). Provider metadata reports `ready`, parent staging `br-snowy-union-aoz83v84`, parent LSN `0/1F1F710` at `2026-11-01T16:23:05Z`, `primary=false`, `default=false`, and zero compute time/CPU. A read-only bucket listing confirms both inherited bucket definitions and their access levels match staging. No database query was run on this no-compute branch, and no object keys/content were listed; therefore this is a current database branch fork with bucket definitions confirmed, not a completed restore/object-content verification or timed recovery drill. The existing manual snapshot was not removed. The fork is retained for the pre-recovery window and reviewed cleanup remains separately authorized.
+
+## Staging append-only AuditLog grant applied (2026-11-01 16:29 UTC)
+
+After explicit owner approval in this conversation, the exact staging-only statement was applied using `cd_staging_owner` on branch `br-snowy-union-aoz83v84`, database `car_dealership_staging`, fingerprint `e0a5faff-8c8a-4955-b70e-f5c1c17c38eb`:
+
+```sql
+REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
+```
+
+A post-change read-only query verified both `cd_staging_app` and its inherited member `cd_staging_webapp`: SELECT=true, INSERT=true, UPDATE=false, DELETE=false. It also confirmed the staging identity row is unchanged and `cd_staging_webapp` still inherits `cd_staging_app`. No demo database, other role attributes, application data, or storage objects were changed. This satisfies the staging AuditLog append-only privilege check; the other P0-07 recovery and security gates remain open.
