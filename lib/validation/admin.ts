@@ -88,7 +88,7 @@ export const valuationSchema = z.object({
 
 export const contentUpdateSchema = z.object({ value: z.record(z.string(), z.unknown()), status: z.enum(ContentStatus), version: z.number().int().positive() })
 export const staffInviteSchema = z.object({ email: z.email().transform((value) => value.toLowerCase()), role: z.enum([UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN]) })
-export const staffUpdateSchema = z.object({ role: z.enum(UserRole).optional(), status: z.enum(UserStatus).optional(), sessionVersion: z.number().int().positive().optional() })
+export { staffLifecycleSchema as staffUpdateSchema } from '@/lib/admin/staff-lifecycle-policy'
 export const settingUpdateSchema = z.object({ value: z.string().trim().max(2000), version: z.number().int().positive() })
 export const imageMetadataSchema = z.object({ category: z.enum(VehicleImageCategory).exclude(['DOCUMENT']), altText: z.string().trim().min(3).max(240), isPrimary: z.boolean().default(false) })
 export const testimonialSchema = z.object({ name: z.string().trim().min(2).max(120), rating: z.coerce.number().int().min(1).max(5), quote: z.string().trim().min(10).max(1200), avatarUrl: z.string().trim().max(1000).optional().or(z.literal('')), purchase: z.string().trim().max(160).optional().or(z.literal('')), location: z.string().trim().max(160).optional().or(z.literal('')), vehicleId: z.string().cuid().nullable().optional(), verifiedBuyer: z.boolean().default(false), featured: z.boolean().default(false), published: z.boolean().default(false), archived: z.boolean().default(false), sortOrder: z.coerce.number().int().min(0).max(10000).default(0) })
