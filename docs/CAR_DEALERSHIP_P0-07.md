@@ -38,3 +38,20 @@ Conclusion: source database/hostname restored to original provider state, and a 
 - Keep demo undeployed and all real external messaging and payments disabled until approved.
 
 Important: This runbook records the P0-07 recovery hazard and remediation factually. Extra test branches and snapshot remain for reviewed cleanup; deletion requires separate authorization.
+
+
+## 2026-11-01 P0-07 continuation: independent read-only verification and hosted runtime hardening
+
+The staging and demo databases were checked again through their own Neon project and branch selectors. Both report:
+- Their expected independent instance fingerprints, exactly 4 fictional vehicles, 8 completed migrations, 0 failed/pending migrations, 0 active SUPER_ADMIN accounts, 0 saved passwords, and 0 non-fictional user email addresses.
+- Only each environment's own restricted role is present. Cross-environment roles are absent. Staging runtime role has LOGIN; demo role has NOLOGIN. Both have zero memberships and no schema CREATE, role/admin privileges, migration history writes, or environment-identity writes.
+- Public buckets are public_read and private buckets are private. No additional storage write, image lifecycle, or live cross-project credential test was carried out in this continuation.
+- Automatic snapshots are NOT scheduled in either database. A snapshot also exists for the demo baseline: snap-lingering-credit-a1g4ew3p. Staging snapshot snap-wandering-tooth-ao72wvwl remains available. These manual snapshots do not substitute for a tested retention policy.
+
+P0-06 Issue #3's latest acceptance update confirms ALL three temporary staging deployment automation-bypass credentials have been revoked and the old synthetic image probe has been removed. The earlier Issue #3 description is superseded on those two points. P0-06's fictional Super Admin is still disabled/passwordless: authenticated E2E tests remain blocked. Do not re-enable any automation bypasses in P0-07.
+
+This PR additionally validates the exact application database login username and requires TLS with sslmode=require or sslmode=verify-full in staging/demo. It rejects owner logins, cross-environment runtime roles, missing/disabled/ambiguous SSL options, and uselibpqcompat overrides. Importantly, the migration/seeding URL validator remains separate and does not require the runtime user, while the normal Prisma runtime and read-only verifier enforce the restricted role.
+
+**TLS follow-up:** The existing staging build uses a pg library that presently treats sslmode=require as verify-full and emits a compatibility warning. Explicit sslmode=verify-full is the target before the next major pg upgrade. Do not alter the deployed environment or weaken certificate verification as part of this draft PR.
+
+**Acceptance unchanged:** This is a CI-tested code-level baseline, not a proof of real credential cross-project denial, production-grade RTO/RPO, or final phase sign-off. Backup schedules could incur provider costs; select retention and budget before enabling. No main merge, app redeployment, privileged account activation, or further snapshot restore is authorized by this read-only continuation.

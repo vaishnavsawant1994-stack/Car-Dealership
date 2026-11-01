@@ -1,6 +1,6 @@
 import 'dotenv/config'
 import { Pool } from 'pg'
-import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
+import { assertRuntimeDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
 import { assertHostedIdentity, assertRestrictedAppRole, type AppRoleRow, type IdentityRow } from '../lib/config/environment-attestation'
 
 /**
@@ -15,7 +15,7 @@ async function main() {
   if (process.env.APP_PROJECT_ID !== 'car-dealership') throw new Error('Wrong project marker.')
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) throw new Error('Missing restricted runtime DATABASE_URL.')
-  assertAllowedDatabaseUrl(connectionString, 'P0-07 read-only attestation')
+  assertRuntimeDatabaseUrl(connectionString)
 
   const pool = new Pool({ connectionString, max: 1, connectionTimeoutMillis: 10000 })
   const client = await pool.connect()

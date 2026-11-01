@@ -62,3 +62,35 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
     throw new Error(`Database name does not match approved Car-Dealership target for ${purpose}.`)
   }
 }
+
+
+/**
+ * Enforce the exact hosted application login and an encrypted connection.
+ * This is intentionally separate from assertAllowedDatabaseUrl: migration
+ * maintenance uses a different approved role and is never a runtime query.
+ *
+ * pg 8 currently interprets sslmode=require as verify-full. It remains
+ * temporarily accepted for the existing staging deployment, but operators
+ * should migrate to explicit sslmode=verify-full before the pg 9 upgrade.
+ */
+export function assertRuntimeDatabaseUrl(connectionString: string): void {
+  assertAllowedDatabaseUrl(connectionString, 'application runtime')
+  const env = getCarDealershipEnvironment()
+  if (env !== 'staging' && env !== 'demo') return
+
+  const address = new URL(connectionString)
+  const expectedRole = env === 'staging' ? 'cd_staging_app' : 'cd_demo_app'
+  if (decodeURIComponent(address.username) !== expectedRole) {
+    throw new Error('Hosted application must use its restricted environment-specific database role.')
+  }
+
+  const sslmode = address.searchParams.get('sslmode')?.toLowerCase()
+  if (sslmode !== 'verify-full' && sslmode !== 'require') {
+    throw new Error('Hosted database connections require TLS and certificate verification.')
+  }
+  // Deny ambiguous or weakening driver configuration overrides. In
+  // particular, uselibpqcompat=true changes sslmode=require semantics.
+  if (address.searchParams.has('ssl') || address.searchParams.has('uselibpqcompat')) {
+    throw new Error('Hosted database TLS settings cannot be overridden.')
+  }
+}

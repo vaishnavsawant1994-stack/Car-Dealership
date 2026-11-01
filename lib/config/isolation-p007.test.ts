@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { assertAllowedDatabaseUrl } from './isolation'
+import { assertAllowedDatabaseUrl, assertRuntimeDatabaseUrl } from './isolation'
 import { assertHostedIdentity, assertRestrictedAppRole, type AppRoleRow } from './environment-attestation'
 
 const keys = ['APP_ENV', 'APP_PROJECT_ID', 'EXPECTED_DATABASE_HOST', 'EXPECTED_DATABASE_NAME'] as const
@@ -75,5 +75,49 @@ describe('P0-07 isolation and fault-injection regression gates', () => {
     }
     expect(() => assertRestrictedAppRole(safeRole, 'demo')).toThrow()
     expect(() => assertRestrictedAppRole({ ...safeRole, role: 'cd_demo_app' }, 'demo')).not.toThrow()
+  })
+})
+
+
+describe('P0-07 hosted runtime login and database TLS isolation', () => {
+  it('allows the restricted staging role with current TLS or explicit certificate verification', () => {
+    for (const mode of ['require', 'verify-full']) {
+      const url = 'postgresql://cd_staging_app:fictional@' + host + '/car_dealership_staging?sslmode=' + mode
+      expect(() => assertRuntimeDatabaseUrl(url)).not.toThrow()
+    }
+  })
+
+  it('denies the database owner, the other environment role, and missing role', () => {
+    for (const role of ['cd_staging_owner', 'cd_demo_app', '']) {
+      const url = 'postgresql://' + role + ':fictional@' + host + '/car_dealership_staging?sslmode=require'
+      expect(() => assertRuntimeDatabaseUrl(url)).toThrow()
+    }
+  })
+
+  it('denies insecure, missing, and ambiguous TLS configuration', () => {
+    const base = 'postgresql://cd_staging_app:fictional@' + host + '/car_dealership_staging'
+    for (const query of [
+      '', '?sslmode=disable', '?sslmode=allow', '?sslmode=prefer', '?sslmode=verify-ca',
+      '?sslmode=require&ssl=false', '?sslmode=require&uselibpqcompat=true',
+    ]) {
+      expect(() => assertRuntimeDatabaseUrl(base + query)).toThrow()
+    }
+  })
+
+  it('requires the demo role for a separate hosted demo', () => {
+    process.env.APP_ENV = 'demo'
+    process.env.EXPECTED_DATABASE_NAME = 'car_dealership_demo'
+    const base = 'postgresql://'
+    const tail = '@' + host + '/car_dealership_demo?sslmode=verify-full'
+    expect(() => assertRuntimeDatabaseUrl(base + 'cd_demo_app:fictional' + tail)).not.toThrow()
+    expect(() => assertRuntimeDatabaseUrl(base + 'cd_staging_app:fictional' + tail)).toThrow()
+  })
+
+  it('keeps isolated local test databases available without hosted TLS or role requirements', () => {
+    process.env.APP_ENV = 'test'
+    delete process.env.EXPECTED_DATABASE_HOST
+    delete process.env.EXPECTED_DATABASE_NAME
+    expect(() => assertRuntimeDatabaseUrl('postgresql://postgres:postgres@localhost:5432/car_dealership_test')).not.toThrow()
+    expect(() => assertRuntimeDatabaseUrl('postgresql://postgres:postgres@localhost:5432/other_db')).toThrow()
   })
 })
