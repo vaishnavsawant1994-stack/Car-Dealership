@@ -164,12 +164,22 @@ describe('P1-04 real PostgreSQL staff lifecycle', () => {
       expiresAt: new Date(Date.now() + 48 * 60 * 60_000),
     } })
     invitationIds.push(adminInvitation.id)
+    const superInvitation = await prisma.staffInvitation.create({ data: {
+      email: prefix + '-superinvite@car-dealership.test', role: UserRole.SUPER_ADMIN,
+      tokenHash: prefix + '-super-hash', invitedById: superId,
+      expiresAt: new Date(Date.now() + 48 * 60 * 60_000),
+    } })
+    invitationIds.push(superInvitation.id)
     const visible = await listStaffInvitations(UserRole.ADMIN)
     expect(visible.some((item) => item.id === invitation.id)).toBe(true)
     expect(visible.some((item) => item.id === adminInvitation.id)).toBe(false)
+    expect(visible.some((item) => item.id === superInvitation.id)).toBe(false)
     expect(JSON.stringify(visible)).not.toContain('tokenHash')
     await expect(revokeStaffInvitation(adminActor(), adminInvitation.id))
       .rejects.toMatchObject({ code: 'FORBIDDEN' })
+    await expect(revokeStaffInvitation(adminActor(), superInvitation.id))
+      .rejects.toMatchObject({ code: 'FORBIDDEN' })
+    expect((await revokeStaffInvitation(superActor(), superInvitation.id)).revoked).toBe(true)
     expect((await revokeStaffInvitation(adminActor(), invitation.id, 'Role reassignment')).revoked).toBe(true)
     await expect(revokeStaffInvitation(adminActor(), invitation.id))
       .rejects.toMatchObject({ code: 'INVITATION_UNAVAILABLE' })
