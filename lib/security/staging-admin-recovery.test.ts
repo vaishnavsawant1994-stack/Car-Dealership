@@ -43,6 +43,7 @@ describe('masked password input', () => {
       isRaw: false,
       setRawMode: vi.fn(function (this: { isRaw: boolean }, mode: boolean) { this.isRaw = mode; return this }),
       resume: vi.fn(),
+      pause: vi.fn(),
     })
     const output = { isTTY, write: vi.fn() }
     return { input: input as ReadStream, output: output as unknown as WriteStream }
@@ -57,6 +58,7 @@ describe('masked password input', () => {
     expect(output.write).toHaveBeenCalledWith('\n')
     expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
     expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
   })
 
   it('refuses non-interactive input', async () => {
@@ -72,5 +74,25 @@ describe('masked password input', () => {
     expect(output.write).toHaveBeenCalledTimes(2)
     expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
     expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+  })
+
+  it('cancels when the TTY closes and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('end')
+    await expect(passwordPromise).rejects.toThrow('TTY closed')
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
+  })
+
+  it('cancels on a TTY error and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('error', new Error('synthetic stream error'))
+    await expect(passwordPromise).rejects.toThrow('Password input failed')
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
   })
 })

@@ -27,6 +27,9 @@ export function readMaskedStagingAdminPassword(input: ReadStream, output: WriteS
     let settled = false
     const cleanup = () => {
       input.off('data', onData)
+      input.off('end', onEnd)
+      input.off('error', onError)
+      input.pause()
       input.setRawMode(wasRaw ?? false)
       output.write('\n')
     }
@@ -49,9 +52,13 @@ export function readMaskedStagingAdminPassword(input: ReadStream, output: WriteS
         else if (char >= ' ' && char !== '\u007f') value += char
       }
     }
+    const onEnd = () => finish(new Error('Password entry cancelled because the private TTY closed.'))
+    const onError = () => finish(new Error('Password input failed.'))
     output.write('New staging admin password (input hidden): ')
     input.setRawMode(true)
     input.on('data', onData)
+    input.once('end', onEnd)
+    input.once('error', onError)
     input.resume()
   })
 }

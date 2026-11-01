@@ -25,7 +25,8 @@ Vercel deployment.
   variables, CI secrets or shell history. Do not send passwords in chat.
 - Enter the password only at the script's hidden interactive TTY prompt. It
   requires stdin and stdout to be TTYs, enables raw mode, does not echo or log
-  characters, restores terminal mode on completion/cancellation, and rejects
+  characters, pauses stdin after entry, restores terminal mode on completion/
+  cancellation, rejects a closed or errored TTY, and rejects
   `P006_STAGING_NEW_PASSWORD` if present. The operator must securely
   receive/choose the new password; random unretained passwords reproduce the
   original lockout.
