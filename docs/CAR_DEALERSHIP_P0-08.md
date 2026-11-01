@@ -56,3 +56,9 @@ P0-06 outstanding work is in Issue #3. P0-07 remediation is in Issues #5 and #6.
 - **Safety:** Do not bypass P0-06/P0-07 by editing labels. No auto-promotion, Neon restore, destructive cleanup, branch force-push or secret exposure is allowed.
 
 After all gates pass, reconfirm provider state, run `--verify` on the exact release commit, obtain explicit authorized sign-off and archive a dated evidence report.
+
+## Safe error logging follow-up (2026-11-01)
+
+Commit `58d388ce3d508272f4a18a2d6a9d5fbcbe026bb4` adds `lib/observability/safe-log.ts` and migrates application/API/authentication/operations error paths away from logging raw exception objects. The logger records an allowlisted error class and only explicitly selected context; tests verify database URLs, passwords and tokens in exception messages are omitted. The homepage database-failure path was included in the final scan. Local checks passed: `npm run typecheck`, `npm run lint`, and `npx vitest run --exclude 'tests/integration/**' --maxWorkers=1 --no-file-parallelism` (64 tests, 13 files); `git diff --check` was clean. GitHub Actions run [41321270163](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41321270163) passed on that exact commit. This code remains unmerged and undeployed pending PR review and release gates.
+
+A fresh runtime-log query returned HTTP 403 from the Vercel API. The local Vercel CLI is not installed, so this session could not independently recheck current runtime errors or SSL warnings. The earlier Hobby retention/alerting observations remain documented above; do not treat unavailable log access as evidence that no errors occurred.
