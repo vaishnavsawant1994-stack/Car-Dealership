@@ -130,3 +130,17 @@ A read-only object listing against staging branch `br-snowy-union-aoz83v84` retu
 This means the current database image rows do not reference objects in Neon storage; their URL backing was not validated in this check. The earlier snapshot restore branch's missing bucket definitions remain a recovery gap, but this run did not demonstrate loss of populated object data because the source buckets held no objects. A future non-empty storage restore test must use a clearly synthetic object, validate the object and access level on the restored branch, and remove only that synthetic object afterward. P0-06's authenticated upload acceptance is still outstanding.
 
 Neon's current [Object Storage branching description](https://neon.com/blog/building-neon-object-storage) states that branches inherit buckets and objects. The project's live ordinary-child check verified bucket definitions, while the snapshot-restored branch did not expose buckets. Until a populated-object restore test succeeds for the exact snapshot workflow used here, P0-07 remains incomplete.
+
+## Current recovery boundaries and operating assumptions (2026-11-01 16:52 UTC)
+
+| Layer | Verified coverage | Current limit |
+|---|---|---|
+| PostgreSQL | Provider history exposes a 6-hour PITR window. One manual snapshot, `snap-wandering-tooth-ao72wvwl`, was created at `2026-11-01 03:25:31 UTC`. | No recurring snapshot schedule is configured. At this check the manual snapshot was about 13h27m old. No guaranteed RPO or 30-day retention is established. |
+| Object storage | Live staging has separate public and private buckets; both currently list zero objects. | The snapshot-restored branch exposed no buckets. No populated-object backup/restore has been tested. |
+| Application source | Source and runbooks are versioned in Git; deployment records identify the deployed commit. | Secret environment values are not exported into an independent backup. Vercel environment recovery has not been tested. |
+
+**RPO assumption:** there is no approved business RPO and no scheduled snapshot guarantee. Best-effort database recovery is a point inside the provider's current 6-hour history window; beyond that, the only known manual recovery point is the snapshot above. This is not a 30-day recovery guarantee.
+
+**RTO evidence:** the non-promoting restore branch became ready at `15:14:54 UTC`; its compute was suspended at `15:16:44 UTC`, an observed interval of about 110 seconds. That interval includes only branch readiness and the limited database verification. It is **not** a measured end-to-end RTO: storage restoration, application cutover, user acceptance, and rollback were not exercised. No RTO commitment is established.
+
+**Ownership and escalation:** the application/repository owner approves incident scope and the intended target; the Neon project owner performs and verifies database restore; the Vercel project owner controls deployment rollback and environment wiring; an independent reviewer checks fingerprints, branch state, storage access, and evidence before any cutover. If the restored identity or object coverage does not match, stop and preserve the original staging branch. Do not promote, delete retained recovery branches, change plans, or broaden credentials without separate authorization.
