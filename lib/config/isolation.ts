@@ -45,6 +45,11 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
     }
   } else {
     if (local) throw new Error(`Remote ${env} environment cannot use a loopback database for ${purpose}.`)
+    // P0-07: a changed EXPECTED_DATABASE_NAME must not permit staging/demo swaps.
+    const dedicatedDatabase = env === 'staging' ? 'car_dealership_staging' : env === 'demo' ? 'car_dealership_demo' : null
+    if (dedicatedDatabase && (database !== dedicatedDatabase || process.env.EXPECTED_DATABASE_NAME !== dedicatedDatabase)) {
+      throw new Error('Car-Dealership environment/database isolation mismatch for ' + purpose + '.')
+    }
     if (!process.env.EXPECTED_DATABASE_HOST || !process.env.EXPECTED_DATABASE_NAME || !process.env.APP_PROJECT_ID) {
       throw new Error(`Explicit Car-Dealership remote database approval is required for ${purpose}.`)
     }

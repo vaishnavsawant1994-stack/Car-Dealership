@@ -24,7 +24,9 @@
     "db:health": "tsx scripts/db-health.ts",
     "db:identity:check": "tsx scripts/verify-database-identity.ts",
     "isolation:check": "tsx scripts/verify-isolation.ts",
-    "db:reset:dev": "tsx scripts/reset-development-database.ts"
+    "db:reset:dev": "tsx scripts/reset-development-database.ts",
+    "security:p007:tests": "vitest run lib/config/isolation.test.ts lib/config/isolation-p007.test.ts lib/security/demo-access.test.ts lib/email/capture-crypto.test.ts lib/auth/demo-mail-permissions.test.ts --maxWorkers=1 --no-file-parallelism",
+    "security:p007:readonly": "tsx scripts/verify-p007-readonly.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.901.0",
