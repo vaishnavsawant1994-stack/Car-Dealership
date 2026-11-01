@@ -39,7 +39,7 @@ This improves an authenticated manual health check and gives a future authorized
 
 ## Repository release controls follow-up (2026-11-01)
 
-The repository API confirms the project is private. Reading `main` branch protection through the connected GitHub integration returns 403 (`Resource not accessible by integration`), so this check cannot establish whether a branch rule currently exists. Reading repository rulesets returns GitHub's 403 message that rulesets require GitHub Pro or a public repository. The earlier Issue #3 audit reported no enforceable main protection. Keep `release_controls` pending until an account owner verifies the repository settings and an authorized protection mechanism is in place; do not make the repository public or change plans automatically.
+The current GitHub repository API reports the project as **public**, which differs from the earlier audit's private status. No visibility change was made during this work. The connected GitHub integration still returns 403 (`Resource not accessible by integration`) for `main` branch protection, and the current rulesets endpoint returns an empty list. A prior browser inspection displayed “Your main branch isn't protected”; because the protection endpoint remains unreadable now, recheck in the owner dashboard before release. Keep `release_controls` pending until an account owner confirms the intended repository visibility and an authorized enforceable protection mechanism is verified. Do not change repository visibility or permissions without explicit owner approval.
 
 ## P0-07 restore drill follow-up (2026-11-01)
 
