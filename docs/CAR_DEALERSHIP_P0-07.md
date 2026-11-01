@@ -48,13 +48,13 @@ The staging and demo databases were checked again through their own Neon project
 - Public buckets are public_read and private buckets are private. No additional storage write, image lifecycle, or live cross-project credential test was carried out in this continuation.
 - Automatic snapshots are NOT scheduled in either database. A snapshot also exists for the demo baseline: snap-lingering-credit-a1g4ew3p. Staging snapshot snap-wandering-tooth-ao72wvwl remains available. These manual snapshots do not substitute for a tested retention policy.
 
-P0-06 Issue #3's latest acceptance update confirms ALL three temporary staging deployment automation-bypass credentials have been revoked and the old synthetic image probe has been removed. The earlier Issue #3 description is superseded on those two points. P0-06's fictional Super Admin is still disabled/passwordless: authenticated E2E tests remain blocked. Do not re-enable any automation bypasses in P0-07.
+An earlier Issue #3 update claimed the temporary staging deployment automation-bypass credentials were revoked and the synthetic image probe removed. The probe's exact key was subsequently confirmed absent. Current bypass-record status could not be independently verified through the connected Vercel API or logged-out browser, so dashboard verification remains outstanding. Do not re-enable any automation bypasses in P0-07. The prior note that the fictional Super Admin was disabled/passwordless is stale: the latest read-only database check found the account active and email-verified with a password hash, but no recorded login or sessions. Recovery and authenticated E2E tests remain outstanding.
 
 This PR additionally validates the exact application database login username and requires TLS with sslmode=require or sslmode=verify-full in staging/demo. It rejects owner logins, cross-environment runtime roles, missing/disabled/ambiguous SSL options, and uselibpqcompat overrides. Importantly, the migration/seeding URL validator remains separate and does not require the runtime user, while the normal Prisma runtime and read-only verifier enforce the restricted role.
 
 **TLS follow-up:** The existing staging build uses a pg library that presently treats sslmode=require as verify-full and emits a compatibility warning. Explicit sslmode=verify-full is the target before the next major pg upgrade. Do not alter the deployed environment or weaken certificate verification as part of this draft PR.
 
-**Acceptance unchanged:** This is a CI-tested code-level baseline, not a proof of real credential cross-project denial, production-grade RTO/RPO, or final phase sign-off. Backup schedules could incur provider costs; select retention and budget before enabling. No main merge, app redeployment, privileged account activation, or further snapshot restore is authorized by this read-only continuation.
+**Acceptance unchanged at that earlier check:** This is a CI-tested code-level baseline, not a proof of real credential cross-project denial, production-grade RTO/RPO, or final phase sign-off. Backup schedules could incur provider costs; select retention and budget before enabling. No main merge, app redeployment, or privileged account activation was performed.
 
 ## Blocking P0-07 audit-integrity finding (2026-11-01)
 
@@ -76,3 +76,11 @@ Review P0-06 runtime impact before applying, and afterward verify INSERT remains
 ### Cross-branch negative-role test
 
 Read-only Neon queries requesting staging's `cd_staging_app` role against the demo branch and demo's `cd_demo_app` against staging both failed with 'role not found for branch' (HTTP 404). This verifies branch role separation, not a real stolen-credential or TLS-level denial test; that remains pending.
+
+## 2026-11-01 non-promoting restore drill
+
+The staging snapshot `snap-wandering-tooth-ao72wvwl` was restored with `finalize:false` to a separate branch `p007-nonpromoting-drill-2026-11-01` (`br-empty-pond-aoikialy`). Provider metadata confirms the drill branch is `ready`, `primary=false`, and `default=false`; original staging remains `primary=true` and `default=true`. The restricted `cd_staging_app` login read the restored identity row and verified environment `staging`, the expected staging fingerprint, 4 vehicles and 4 vehicle-image rows. It returned the same counts and identity from the original staging branch. No staging row or compute attachment was changed.
+
+The restored branch has **no object-storage buckets**, although it has four image rows. The database snapshot did not restore vehicle media or private seller documents. Database-only restore therefore does not establish full application recovery. The snapshot point was `2026-11-01 03:24:49 UTC`, about 11h52m before verification at 15:16 UTC; automatic snapshot schedule is empty and the current plan exposes a 6-hour history window. Neon automatically created endpoint `ep-sweet-bread-ao4l34yq` for the drill; it was suspended after verification, and provider state confirms it is idle. The temporary branch remains for review; do not delete it without authorization.
+
+**Drill result:** Non-promoting database restore is verified. Overall P0-07 remains incomplete: no full storage restore, timed RTO measurement, recurring retention policy, approved cost plan, true cross-project credential denial, or audited runtime-role grant correction has been completed.
