@@ -1,6 +1,6 @@
 import { UserRole } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
-import { canAccessAssignedResource, canAccessScopedResource, canAssignResource, canManageUser, mayViewPrivateDocuments, showroomScopeWhere } from './admin-resource-policy'
+import { accessibleResourceWhere, canAccessAssignedResource, canAccessScopedResource, canAssignResource, canManageUser, mayViewPrivateDocuments, showroomScopeWhere } from './admin-resource-policy'
 
 const actor = (id: string, role: UserRole) => ({ id, role })
 const assignedResource = (assignedToId: string | null) => ({ assignedToId })
@@ -57,10 +57,20 @@ describe('admin resource access boundaries', () => {
     expect(showroomScopeWhere(scope)).toEqual({ showroomId: { in: ['showroom-a'] } })
   })
 
+  it.each([UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s database mutations retain showroom and assignment predicates', (role) => {
+    const current = actor('staff-a', role)
+    const scope = { global: false as const, showroomIds: ['showroom-a', 'showroom-b'] }
+    expect(accessibleResourceWhere(current, scope)).toEqual({
+      showroomId: { in: ['showroom-a', 'showroom-b'] },
+      OR: [{ assignedToId: null }, { assignedToId: 'staff-a' }],
+    })
+  })
+
   it('allows the organization-wide administrator scope and does not constrain it to assignments', () => {
     const current = actor('admin-a', UserRole.ADMIN)
     const scope = { global: true as const, showroomIds: [] }
     expect(canAccessScopedResource(current, { assignedToId: null, showroomId: 'other-showroom' }, scope)).toBe(true)
     expect(showroomScopeWhere(scope)).toEqual({})
+    expect(accessibleResourceWhere(current, scope)).toEqual({})
   })
 })

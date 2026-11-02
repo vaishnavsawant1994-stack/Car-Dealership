@@ -3,15 +3,15 @@ import 'server-only'
 import { RequestStatus, TestDriveStatus } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import type { AdminActor } from '@/lib/auth/require-admin'
-import { accessibleLeadWhere, requireAccessibleLead } from '@/lib/admin/lead-service'
+import { requireAccessibleLead } from '@/lib/admin/lead-service'
 import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
-import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
+import { accessibleResourceWhere, showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 
 export async function scheduleTestDrive(id: string, actor: AdminActor, input: { confirmedDate: Date; confirmedTime: string; version: number; note?: string }, mode: 'confirm' | 'reschedule') {
   const record = await requireAccessibleLead('test-drives', id, actor)
   if (!record || !('vehicleId' in record) || !record.vehicleId || !('userId' in record)) return { type: 'not-found' as const }
   const scope = await getActorShowroomScope(actor)
-  const accessible = accessibleLeadWhere(actor, scope)
+  const accessible = accessibleResourceWhere(actor, scope)
   const allowed: TestDriveStatus[] = mode === 'confirm'
     ? [TestDriveStatus.REQUESTED, TestDriveStatus.RESCHEDULED]
     : [TestDriveStatus.REQUESTED, TestDriveStatus.CONFIRMED, TestDriveStatus.RESCHEDULE_REQUESTED]
@@ -37,7 +37,7 @@ export async function saveSellInspection(id: string, actor: AdminActor, input: R
   const record = await requireAccessibleLead('sell-requests', id, actor)
   if (!record) return null
   const scope = await getActorShowroomScope(actor)
-  const accessible = accessibleLeadWhere(actor, scope)
+  const accessible = accessibleResourceWhere(actor, scope)
   const isComplete = Boolean(input.overallConditionScore && input.documentsVerified)
   return prisma.$transaction(async (tx) => {
     const updated = await tx.sellRequest.updateMany({ where: { id, ...accessible }, data: { status: isComplete ? RequestStatus.INSPECTION_COMPLETED : RequestStatus.INSPECTION_SCHEDULED, version: { increment: 1 } } })
@@ -52,7 +52,7 @@ export async function createSellValuation(id: string, actor: AdminActor, input: 
   const record = await requireAccessibleLead('sell-requests', id, actor)
   if (!record) return null
   const scope = await getActorShowroomScope(actor)
-  const accessible = accessibleLeadWhere(actor, scope)
+  const accessible = accessibleResourceWhere(actor, scope)
   return prisma.$transaction(async (tx) => {
     const status = input.finalOffer ? RequestStatus.OFFER_MADE : RequestStatus.VALUATION_READY
     const updated = await tx.sellRequest.updateMany({ where: { id, ...accessible }, data: { status, version: { increment: 1 } } })

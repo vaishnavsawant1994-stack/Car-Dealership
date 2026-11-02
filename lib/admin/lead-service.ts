@@ -2,21 +2,13 @@ import 'server-only'
 
 import { ContactInquiryStatus, InquiryStatus, OperationalMessageType, RequestStatus, TestDriveStatus, type LeadPriority } from '@prisma/client'
 import { contactTransitions, inquiryTransitions, sellRequestTransitions, testDriveTransitions, canTransition } from '@/lib/admin/lead-workflows'
-import { canAccessScopedResource, canAssignResource, showroomScopeWhere, type ShowroomScope } from '@/lib/auth/admin-resource-policy'
+import { accessibleResourceWhere, canAccessScopedResource, canAssignResource, showroomScopeWhere, type ShowroomScope } from '@/lib/auth/admin-resource-policy'
 import type { AdminActor } from '@/lib/auth/require-admin'
 import { prisma } from '@/lib/db/prisma'
 import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 
 export type LeadKind = 'enquiries' | 'test-drives' | 'sell-requests' | 'contact-inquiries'
 export const leadResource: Record<LeadKind, string> = { enquiries: 'Inquiry', 'test-drives': 'TestDrive', 'sell-requests': 'SellRequest', 'contact-inquiries': 'ContactMessage' }
-
-/** Database-side predicate matching the same showroom and assignment checks as requireAccessibleLead. */
-export function accessibleLeadWhere(actor: AdminActor, scope: ShowroomScope) {
-  return {
-    ...showroomScopeWhere(scope),
-    ...(!scope.global ? { OR: [{ assignedToId: null }, { assignedToId: actor.id }] } : {}),
-  }
-}
 
 const safeCustomer = { id: true, name: true, email: true, phone: true, role: true, status: true } as const
 const safeAssignee = { id: true, name: true, email: true, role: true, status: true } as const
@@ -57,7 +49,7 @@ export async function assignLead(kind: LeadKind, id: string, actor: AdminActor, 
     if (!membership) throw new Error('ASSIGNEE_OUTSIDE_SHOWROOM')
   }
   const model = kind === 'enquiries' ? prisma.inquiry : kind === 'test-drives' ? prisma.testDrive : kind === 'sell-requests' ? prisma.sellRequest : prisma.contactMessage
-  const result = await (model.updateMany as Function)({ where: { id, version, ...showroomScopeWhere(scope) }, data: { assignedToId: assigneeId, version: { increment: 1 }, ...(kind === 'enquiries' ? { status: InquiryStatus.ASSIGNED } : kind === 'contact-inquiries' ? { status: ContactInquiryStatus.ASSIGNED } : {}) } }) as { count: number }
+  const result = await (model.updateMany as Function)({ where: { id, version, ...accessibleResourceWhere(actor, scope) }, data: { assignedToId: assigneeId, version: { increment: 1 }, ...(kind === 'enquiries' ? { status: InquiryStatus.ASSIGNED } : kind === 'contact-inquiries' ? { status: ContactInquiryStatus.ASSIGNED } : {}) } }) as { count: number }
   if (!result.count) return null
   await prisma.operationalActivity.create({ data: { resourceType: leadResource[kind], resourceId: id, actorId: actor.id, action: 'ASSIGNED', summary: assigneeId ? 'Record assigned to staff.' : 'Record returned to unassigned queue.', metadata: { assigneeId } } })
   return findLead(kind, id, scope)
@@ -77,7 +69,7 @@ export async function updateLead(kind: LeadKind, id: string, actor: AdminActor, 
   const data = { status: input.status, priority: input.priority, followUpAt: input.followUpAt, version: { increment: 1 } }
   const scope = await getActorShowroomScope(actor)
   const model = kind === 'enquiries' ? prisma.inquiry : kind === 'test-drives' ? prisma.testDrive : kind === 'sell-requests' ? prisma.sellRequest : prisma.contactMessage
-  const result = await (model.updateMany as Function)({ where: { id, version: input.version, ...showroomScopeWhere(scope) }, data }) as { count: number }
+  const result = await (model.updateMany as Function)({ where: { id, version: input.version, ...accessibleResourceWhere(actor, scope) }, data }) as { count: number }
   if (!result.count) return { type: 'conflict' as const }
   await prisma.operationalActivity.create({ data: { resourceType: leadResource[kind], resourceId: id, actorId: actor.id, action: 'STATUS_CHANGED', summary: `${current.status} changed to ${input.status}.`, metadata: { from: current.status, to: input.status } } })
   return { type: 'success' as const, data: await findLead(kind, id, scope) }

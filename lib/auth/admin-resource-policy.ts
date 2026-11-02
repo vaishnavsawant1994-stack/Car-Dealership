@@ -19,6 +19,14 @@ export function showroomScopeWhere(scope: ShowroomScope): { showroomId?: { in: s
   return scope.global ? {} : { showroomId: { in: [...scope.showroomIds] } }
 }
 
+/** Database predicate for mutations that must retain both branch and queue access. */
+export function accessibleResourceWhere(actor: Pick<AdminActor, 'id' | 'role'>, scope: ShowroomScope) {
+  return {
+    ...showroomScopeWhere(scope),
+    ...(!scope.global ? { OR: [{ assignedToId: null }, { assignedToId: actor.id }] } : {}),
+  }
+}
+
 export function canAccessAssignedResource(actor: Pick<AdminActor, 'id' | 'role'>, resource: AssignableResource): boolean {
   if (actor.role === UserRole.SUPER_ADMIN || actor.role === UserRole.ADMIN) return true
   return resource.assignedToId === null || resource.assignedToId === actor.id
