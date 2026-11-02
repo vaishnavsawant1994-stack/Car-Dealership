@@ -62,3 +62,9 @@ The remaining route audit found that the CSV endpoint gated non-newsletter expor
 - Focused route/policy/authorization-contract run — **3 files, 7 tests passed**. The full non-integration suite passed **25 files, 129 tests** with a synthetic loopback `car_dealership_test` URL; no database connection was made.
 - `npm.cmd run lint` and `npm.cmd run typecheck` — **passed**.
 - `git diff --check` — **passed**. This fix remains on the local dependent P1-05 branch; it has not been pushed, reviewed, migrated to staging, or deployed.
+
+## Newsletter mutation permission audit follow-up (2026-11-02)
+
+The newsletter subscriber PATCH endpoint previously used `newsletter.view` for a status mutation. The endpoint now requires the existing `content.manage` permission, consistent with the approved role model in which newsletter operations belong to the Content Manager function; GET remains `newsletter.view`, and export remains `newsletter.export`. Regression tests verify the mutation guard and that denial happens before the database write or audit insertion.
+
+- Newsletter route authorization regression — **1 file, 2 tests passed**. The full non-integration suite passed **26 files, 131 tests** with the synthetic loopback `car_dealership_test` URL; no database connection was made. Lint, typecheck, and `git diff --check` passed.
