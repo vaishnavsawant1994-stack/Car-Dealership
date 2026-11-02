@@ -3,6 +3,22 @@ import type { AdminActor } from '@/lib/auth/require-admin'
 
 type AssignableResource = { assignedToId: string | null }
 
+export type ShowroomScope = { global: true; showroomIds: string[] } | { global: false; showroomIds: string[] }
+
+export function canAccessScopedResource(
+  actor: Pick<AdminActor, 'id' | 'role'>,
+  resource: AssignableResource & { showroomId: string | null },
+  scope: ShowroomScope,
+): boolean {
+  if (scope.global) return true
+  if (!resource.showroomId || !scope.showroomIds.includes(resource.showroomId)) return false
+  return canAccessAssignedResource(actor, resource)
+}
+
+export function showroomScopeWhere(scope: ShowroomScope): { showroomId?: { in: string[] } } {
+  return scope.global ? {} : { showroomId: { in: [...scope.showroomIds] } }
+}
+
 export function canAccessAssignedResource(actor: Pick<AdminActor, 'id' | 'role'>, resource: AssignableResource): boolean {
   if (actor.role === UserRole.SUPER_ADMIN || actor.role === UserRole.ADMIN) return true
   return resource.assignedToId === null || resource.assignedToId === actor.id

@@ -6,12 +6,15 @@ import { VehicleListClient } from '@/components/admin/VehicleListClient'
 import { hasPermission } from '@/lib/auth/admin-permissions'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 
 export default async function AdminVehiclesPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const actor = await requirePermission('vehicle.view', '/admin/vehicles')
+  const showroom = showroomScopeWhere(await getActorShowroomScope(actor))
   const query = await searchParams; const page = Math.max(1, Number(query.page) || 1); const pageSize = 20
   const status = Object.values(VehicleStatus).includes(query.status as VehicleStatus) ? query.status as VehicleStatus : undefined
-  const where: Prisma.VehicleWhereInput = { ...(status ? { status } : {}), ...(query.brand ? { brandId: query.brand } : {}), ...(query.search ? { OR: [{ stockNumber: { contains: query.search, mode: 'insensitive' } }, { model: { contains: query.search, mode: 'insensitive' } }, { variant: { contains: query.search, mode: 'insensitive' } }, { slug: { contains: query.search, mode: 'insensitive' } }, { brand: { name: { contains: query.search, mode: 'insensitive' } } }] } : {}) }
+  const where: Prisma.VehicleWhereInput = { ...showroom, ...(status ? { status } : {}), ...(query.brand ? { brandId: query.brand } : {}), ...(query.search ? { OR: [{ stockNumber: { contains: query.search, mode: 'insensitive' } }, { model: { contains: query.search, mode: 'insensitive' } }, { variant: { contains: query.search, mode: 'insensitive' } }, { slug: { contains: query.search, mode: 'insensitive' } }, { brand: { name: { contains: query.search, mode: 'insensitive' } } }] } : {}) }
   const [vehicles, total, brands] = await Promise.all([
     prisma.vehicle.findMany({ where, orderBy: { updatedAt: 'desc' }, skip: (page - 1) * pageSize, take: pageSize, include: { brand: { select: { name: true } }, images: { where: { isPrimary: true }, take: 1, select: { url: true, altText: true } }, _count: { select: { images: true, favorites: true } } } }),
     prisma.vehicle.count({ where }), prisma.brand.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }),

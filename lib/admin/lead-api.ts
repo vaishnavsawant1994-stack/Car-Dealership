@@ -15,6 +15,9 @@ import { addLeadMessage, assignLead, leadResource, requireAccessibleLead, update
 import type { AdminPermission } from '@/lib/auth/admin-permissions'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
+import { andFilters } from './scoped-query'
 import { assignmentSchema, leadUpdateSchema, operationalMessageSchema } from '@/lib/validation/admin'
 
 const permissions: Record<LeadKind, { view: AdminPermission; update: AdminPermission; assign: AdminPermission }> = {
@@ -53,18 +56,23 @@ function enumValue<T extends string>(values: readonly T[], value?: string): T | 
 async function listLeads(kind: LeadKind, actor: { id: string; role: UserRole }, query: z.output<typeof listQuery>) {
   const skip = (query.page - 1) * query.pageSize
   const assignment = assignmentWhere(actor, query.assigned)
+  const scope = await getActorShowroomScope(actor)
+  const showroomScope = showroomScopeWhere(scope)
   const pagination = { skip, take: query.pageSize }
 
   if (kind === 'enquiries') {
     const where: Prisma.InquiryWhereInput = {
-      ...assignment,
-      status: enumValue(Object.values(InquiryStatus), query.status),
-      priority: query.priority,
-      ...(query.search ? { OR: [
+      ...andFilters<Prisma.InquiryWhereInput>(
+        assignment,
+        showroomScope,
+        enumValue(Object.values(InquiryStatus), query.status) ? { status: enumValue(Object.values(InquiryStatus), query.status) } : undefined,
+        query.priority ? { priority: query.priority } : undefined,
+        query.search ? { OR: [
         { referenceNumber: { contains: query.search, mode: 'insensitive' } },
         { fullName: { contains: query.search, mode: 'insensitive' } },
         { email: { contains: query.search, mode: 'insensitive' } },
-      ] } : {}),
+        ] } : undefined,
+      ),
     }
     return Promise.all([
       prisma.inquiry.findMany({ where, ...pagination, orderBy: { submittedAt: 'desc' }, include: { vehicle: { select: { shortTitle: true } }, assignedTo: { select: { name: true } } } }),
@@ -73,13 +81,16 @@ async function listLeads(kind: LeadKind, actor: { id: string; role: UserRole }, 
   }
   if (kind === 'test-drives') {
     const where: Prisma.TestDriveWhereInput = {
-      ...assignment,
-      status: enumValue(Object.values(TestDriveStatus), query.status),
-      priority: query.priority,
-      ...(query.search ? { OR: [
+      ...andFilters<Prisma.TestDriveWhereInput>(
+        assignment,
+        showroomScope,
+        enumValue(Object.values(TestDriveStatus), query.status) ? { status: enumValue(Object.values(TestDriveStatus), query.status) } : undefined,
+        query.priority ? { priority: query.priority } : undefined,
+        query.search ? { OR: [
         { referenceNumber: { contains: query.search, mode: 'insensitive' } },
         { fullName: { contains: query.search, mode: 'insensitive' } },
-      ] } : {}),
+        ] } : undefined,
+      ),
     }
     return Promise.all([
       prisma.testDrive.findMany({ where, ...pagination, orderBy: { submittedAt: 'desc' }, include: { vehicle: { select: { shortTitle: true } }, assignedTo: { select: { name: true } } } }),
@@ -88,15 +99,18 @@ async function listLeads(kind: LeadKind, actor: { id: string; role: UserRole }, 
   }
   if (kind === 'sell-requests') {
     const where: Prisma.SellRequestWhereInput = {
-      ...assignment,
-      status: enumValue(Object.values(RequestStatus), query.status),
-      priority: query.priority,
-      ...(query.search ? { OR: [
+      ...andFilters<Prisma.SellRequestWhereInput>(
+        assignment,
+        showroomScope,
+        enumValue(Object.values(RequestStatus), query.status) ? { status: enumValue(Object.values(RequestStatus), query.status) } : undefined,
+        query.priority ? { priority: query.priority } : undefined,
+        query.search ? { OR: [
         { referenceNumber: { contains: query.search, mode: 'insensitive' } },
         { name: { contains: query.search, mode: 'insensitive' } },
         { make: { contains: query.search, mode: 'insensitive' } },
         { model: { contains: query.search, mode: 'insensitive' } },
-      ] } : {}),
+        ] } : undefined,
+      ),
     }
     return Promise.all([
       prisma.sellRequest.findMany({ where, ...pagination, orderBy: { createdAt: 'desc' }, include: { assignedTo: { select: { name: true } } } }),
@@ -104,14 +118,17 @@ async function listLeads(kind: LeadKind, actor: { id: string; role: UserRole }, 
     ])
   }
   const where: Prisma.ContactMessageWhereInput = {
-    ...assignment,
-    status: enumValue(Object.values(ContactInquiryStatus), query.status),
-    priority: query.priority,
-    ...(query.search ? { OR: [
+    ...andFilters<Prisma.ContactMessageWhereInput>(
+      assignment,
+      showroomScope,
+      enumValue(Object.values(ContactInquiryStatus), query.status) ? { status: enumValue(Object.values(ContactInquiryStatus), query.status) } : undefined,
+      query.priority ? { priority: query.priority } : undefined,
+      query.search ? { OR: [
       { referenceNumber: { contains: query.search, mode: 'insensitive' } },
       { name: { contains: query.search, mode: 'insensitive' } },
       { email: { contains: query.search, mode: 'insensitive' } },
-    ] } : {}),
+      ] } : undefined,
+    ),
   }
   return Promise.all([
     prisma.contactMessage.findMany({ where, ...pagination, orderBy: { createdAt: 'desc' }, include: { assignedTo: { select: { name: true } } } }),

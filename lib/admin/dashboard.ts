@@ -1,8 +1,11 @@
 import 'server-only'
 
-import { UserRole } from '@prisma/client'
+import { Prisma, UserRole } from '@prisma/client'
 import { endOfDay, startOfDay } from '@/lib/admin/date-utils'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
+import { andFilters } from './scoped-query'
 
 export type DashboardRange = 'today' | '7d' | '30d' | 'month' | 'custom'
 
@@ -17,6 +20,8 @@ export function resolveDashboardRange(range: DashboardRange, customFrom?: Date, 
 
 export async function getAdminDashboard(input: { from: Date; to: Date; actorId: string; actorRole: UserRole }) {
   try {
+    const scope = await getActorShowroomScope({ id: input.actorId, role: input.actorRole })
+    const showroom = showroomScopeWhere(scope)
     const period = { gte: input.from, lte: input.to }
     const assigned =
       input.actorRole === UserRole.ADMIN || input.actorRole === UserRole.SUPER_ADMIN
@@ -46,31 +51,29 @@ export async function getAdminDashboard(input: { from: Date; to: Date; actorId: 
       sellPipeline,
       audit,
     ] = await Promise.all([
-      prisma.vehicle.count({ where: { status: 'AVAILABLE' } }),
-      prisma.vehicle.count({ where: { status: 'RESERVED' } }),
-      prisma.vehicle.count({ where: { status: 'SOLD' } }),
-      prisma.vehicle.count({ where: { status: 'DRAFT' } }),
-      prisma.vehicle.count({ where: { images: { none: { isPrimary: true } } } }),
-      prisma.inquiry.count({ where: { ...assigned, submittedAt: period } }),
+      prisma.vehicle.count({ where: { ...showroom, status: 'AVAILABLE' } }),
+      prisma.vehicle.count({ where: { ...showroom, status: 'RESERVED' } }),
+      prisma.vehicle.count({ where: { ...showroom, status: 'SOLD' } }),
+      prisma.vehicle.count({ where: { ...showroom, status: 'DRAFT' } }),
+      prisma.vehicle.count({ where: { ...showroom, images: { none: { isPrimary: true } } } }),
+      prisma.inquiry.count({ where: andFilters<Prisma.InquiryWhereInput>(assigned, showroom, { submittedAt: period }) }),
       prisma.inquiry.count({
-        where: {
-          ...assigned,
+        where: andFilters<Prisma.InquiryWhereInput>(assigned, showroom, {
           followUpAt: { lte: input.to },
           status: { notIn: ['CLOSED', 'CANCELLED', 'SPAM'] },
-        },
+        }),
       }),
       prisma.testDrive.count({
-        where: {
-          ...assigned,
+        where: andFilters<Prisma.TestDriveWhereInput>(assigned, showroom, {
           preferredDate: { gte: startOfDay(new Date()) },
           status: { in: ['CONFIRMED', 'RESCHEDULED'] },
-        },
+        }),
       }),
-      prisma.testDrive.count({ where: { ...assigned, createdAt: period, status: 'REQUESTED' } }),
-      prisma.sellRequest.count({ where: { ...assigned, createdAt: period } }),
-      prisma.sellRequest.count({ where: { ...assigned, status: 'INSPECTION_SCHEDULED' } }),
+      prisma.testDrive.count({ where: andFilters<Prisma.TestDriveWhereInput>(assigned, showroom, { createdAt: period, status: 'REQUESTED' }) }),
+      prisma.sellRequest.count({ where: andFilters<Prisma.SellRequestWhereInput>(assigned, showroom, { createdAt: period }) }),
+      prisma.sellRequest.count({ where: andFilters<Prisma.SellRequestWhereInput>(assigned, showroom, { status: 'INSPECTION_SCHEDULED' }) }),
       prisma.contactMessage.count({
-        where: { ...assigned, status: { notIn: ['CLOSED', 'SPAM', 'DUPLICATE'] } },
+        where: andFilters<Prisma.ContactMessageWhereInput>(assigned, showroom, { status: { notIn: ['CLOSED', 'SPAM', 'DUPLICATE'] } }),
       }),
       prisma.testimonial.count({ where: { published: false, archived: false } }),
       prisma.galleryItem.count({ where: { published: false } }),
@@ -80,18 +83,18 @@ export async function getAdminDashboard(input: { from: Date; to: Date; actorId: 
         where: { assignedToId: input.actorId, completedAt: null, dueAt: { lt: new Date() } },
       }),
       prisma.inquiry.findMany({
-        where: { ...assigned, submittedAt: period },
+        where: andFilters<Prisma.InquiryWhereInput>(assigned, showroom, { submittedAt: period }),
         orderBy: { submittedAt: 'desc' },
         take: 6,
         include: { vehicle: { select: { shortTitle: true } }, assignedTo: { select: { name: true } } },
       }),
       prisma.testDrive.findMany({
-        where: { ...assigned, preferredDate: { gte: startOfDay(new Date()) } },
+        where: andFilters<Prisma.TestDriveWhereInput>(assigned, showroom, { preferredDate: { gte: startOfDay(new Date()) } }),
         orderBy: { preferredDate: 'asc' },
         take: 6,
         include: { vehicle: { select: { shortTitle: true } } },
       }),
-      prisma.sellRequest.groupBy({ by: ['status'], _count: true }),
+      prisma.sellRequest.groupBy({ by: ['status'], where: showroom, _count: true }),
       prisma.auditLog.findMany({
         orderBy: { createdAt: 'desc' },
         take: 7,

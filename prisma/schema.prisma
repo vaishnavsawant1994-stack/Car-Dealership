@@ -323,6 +323,8 @@ model BodyType {
 
 model Vehicle {
   id                       String                 @id @default(cuid())
+  showroomId               String?
+  showroom                 Showroom?              @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   slug                     String                 @unique
   stockNumber              String                 @unique
   brandId                  String
@@ -399,6 +401,7 @@ model Vehicle {
   @@index([publishedAt])
   @@index([scheduledPublishAt])
   @@index([updatedById])
+  @@index([showroomId, status, published])
   @@index([published, status])
   @@index([brandId, published, status])
   @@index([bodyTypeId, published, status])
@@ -505,6 +508,8 @@ model Favorite {
 
 model Inquiry {
   id                     String                      @id @default(cuid())
+  showroomId             String?
+  showroom               Showroom?                   @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber        String                      @unique
   userId                 String?
   vehicleId              String?
@@ -534,10 +539,13 @@ model Inquiry {
   @@index([priority])
   @@index([followUpAt])
   @@index([submittedAt])
+  @@index([showroomId, assignedToId, submittedAt])
 }
 
 model TestDrive {
   id                     String                      @id @default(cuid())
+  showroomId             String?
+  showroom               Showroom?                   @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber        String                      @unique
   userId                 String?
   vehicleId              String
@@ -573,10 +581,13 @@ model TestDrive {
   @@index([followUpAt])
   @@index([preferredDate])
   @@index([submittedAt])
+  @@index([showroomId, assignedToId, submittedAt])
 }
 
 model SellRequest {
   id              String                  @id @default(cuid())
+  showroomId      String?
+  showroom        Showroom?               @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber String                  @unique
   userId          String?
   assignedToId    String?
@@ -610,6 +621,7 @@ model SellRequest {
   @@index([priority])
   @@index([followUpAt])
   @@index([createdAt])
+  @@index([showroomId, assignedToId, createdAt])
 }
 
 model SellRequestAttachment {
@@ -755,6 +767,8 @@ model ReferenceCounter {
 
 model ContactMessage {
   id              String               @id @default(cuid())
+  showroomId      String?
+  showroom        Showroom?            @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber String               @unique
   name            String
   phone           String
@@ -777,6 +791,7 @@ model ContactMessage {
   @@index([priority])
   @@index([assignedToId])
   @@index([followUpAt])
+  @@index([showroomId, assignedToId, createdAt])
 }
 
 model NewsletterSubscriber {
@@ -859,6 +874,11 @@ model Showroom {
   updatedAt    DateTime @updatedAt
   version      Int      @default(1)
   staffAssignments ShowroomStaffAssignment[]
+  vehicles Vehicle[]
+  inquiries Inquiry[]
+  testDrives TestDrive[]
+  sellRequests SellRequest[]
+  contactMessages ContactMessage[]
 
   @@index([active])
   @@index([isPrimary])

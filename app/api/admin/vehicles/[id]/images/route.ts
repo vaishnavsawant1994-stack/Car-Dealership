@@ -4,6 +4,8 @@ import { z } from 'zod'
 import { adminError, validationError } from '@/lib/admin/api'
 import { writeAuditLog } from '@/lib/admin/audit'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { getImageStorage } from '@/lib/storage'
 import { validatePublicImage } from '@/lib/storage/image-validation'
@@ -13,8 +15,9 @@ const reorderSchema = z.object({ images: z.array(z.object({ id: z.string().cuid(
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const actor = await authorizeAdminRequest('vehicle.update')
+    const scope = await getActorShowroomScope(actor)
     const { id } = await context.params
-    const vehicle = await prisma.vehicle.findUnique({ where: { id }, select: { id: true, stockNumber: true, _count: { select: { images: true } } } })
+    const vehicle = await prisma.vehicle.findFirst({ where: { id, ...showroomScopeWhere(scope) }, select: { id: true, stockNumber: true, _count: { select: { images: true } } } })
     if (!vehicle) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Vehicle not found.' } }, { status: 404 })
     if (vehicle._count.images >= 40) return NextResponse.json({ error: { code: 'IMAGE_LIMIT', message: 'A vehicle can contain at most 40 images.' } }, { status: 422 })
     const form = await request.formData()
@@ -45,7 +48,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const actor = await authorizeAdminRequest('vehicle.update')
+    const scope = await getActorShowroomScope(actor)
     const { id } = await context.params
+    const vehicle = await prisma.vehicle.findFirst({ where: { id, ...showroomScopeWhere(scope) }, select: { id: true } })
+    if (!vehicle) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Vehicle not found.' } }, { status: 404 })
     const parsed = reorderSchema.safeParse(await request.json().catch(() => null))
     if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors)
     const existing = await prisma.vehicleImage.findMany({ where: { vehicleId: id, id: { in: parsed.data.images.map((item) => item.id) } }, select: { id: true } })

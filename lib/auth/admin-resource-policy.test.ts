@@ -1,6 +1,6 @@
 import { UserRole } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
-import { canAccessAssignedResource, canAssignResource, canManageUser, mayViewPrivateDocuments } from './admin-resource-policy'
+import { canAccessAssignedResource, canAccessScopedResource, canAssignResource, canManageUser, mayViewPrivateDocuments, showroomScopeWhere } from './admin-resource-policy'
 
 const actor = (id: string, role: UserRole) => ({ id, role })
 const assignedResource = (assignedToId: string | null) => ({ assignedToId })
@@ -45,5 +45,22 @@ describe('admin resource access boundaries', () => {
     expect(mayViewPrivateDocuments(UserRole.OPERATIONS)).toBe(true)
     expect(mayViewPrivateDocuments(UserRole.ADMIN)).toBe(true)
     expect(mayViewPrivateDocuments(UserRole.SUPER_ADMIN)).toBe(true)
+  })
+
+  it('requires an active assigned showroom as well as assignment access for focused roles', () => {
+    const current = actor('staff-a', UserRole.SALES)
+    const scope = { global: false as const, showroomIds: ['showroom-a'] }
+    expect(canAccessScopedResource(current, { assignedToId: null, showroomId: 'showroom-a' }, scope)).toBe(true)
+    expect(canAccessScopedResource(current, { assignedToId: 'staff-b', showroomId: 'showroom-a' }, scope)).toBe(false)
+    expect(canAccessScopedResource(current, { assignedToId: 'staff-a', showroomId: 'showroom-b' }, scope)).toBe(false)
+    expect(canAccessScopedResource(current, { assignedToId: null, showroomId: null }, scope)).toBe(false)
+    expect(showroomScopeWhere(scope)).toEqual({ showroomId: { in: ['showroom-a'] } })
+  })
+
+  it('allows the organization-wide administrator scope and does not constrain it to assignments', () => {
+    const current = actor('admin-a', UserRole.ADMIN)
+    const scope = { global: true as const, showroomIds: [] }
+    expect(canAccessScopedResource(current, { assignedToId: null, showroomId: 'other-showroom' }, scope)).toBe(true)
+    expect(showroomScopeWhere(scope)).toEqual({})
   })
 })
