@@ -84,3 +84,12 @@ A read-only listing of the live staging branch found zero objects in each existi
 After explicit owner approval, the staging-only AuditLog permission change was verified with PostgreSQL `has_table_privilege` for both `cd_staging_app` and inherited `cd_staging_webapp`: SELECT and INSERT are allowed; UPDATE and DELETE are denied. This closes the live staging append-only privilege gate. It does not close backup retention, media recovery, RPO/RTO, private-object isolation or cross-project credential-denial gates.
 
 P0-07 PR #4 exact head `5226d8b23a7294713c2f193c2a10dbc76698f6b7` passed CI run [41329105473](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41329105473). The PR remains draft and has no independent review. Its code has not been merged or deployed.
+
+## Fresh P0-06/P0-07 release-evidence refresh (2026-11-02)
+
+- PR #12 current head `18478ac06057eb6efd8d87036d53503b2dc48c72` passed exact-head CI [41425771447](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41425771447). Recovery is still unexecuted and PR #12 has no independent review. Its existing second-account approval is an owner self-review.
+- PR #4 current head `90d8b883f39fd85bfd3007e2fea821bc1aea50d6` passed exact-head CI [41426857586](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41426857586). It remains unmerged and without independent review.
+- Refreshed Neon provider state confirms `free_v3`, six-hour history, one manual snapshot, no automated snapshot schedule, empty source media buckets, and no buckets on the non-promoting restored branch. This is database-only recovery evidence; media backup and restore remain unproven.
+- Direct requests for independent reviews are posted for the current PR #4 and #12 heads. GitHub rejects formal reviewer assignment because OmgAj is not a repository collaborator. No permissions were changed.
+- Current exact-head PR #7 remains draft and its CI pass is [41408794106](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41408794106). The readiness manifest continues to block release for repository privacy, enforceable reviewed controls, administrator/image acceptance, backup policy, alert delivery, and final approval.
+- The local health-contract tests described above are included in the current PR #7 branch and have exact-head CI evidence; they are not merely unpushed local changes. No staging deployment was performed.
