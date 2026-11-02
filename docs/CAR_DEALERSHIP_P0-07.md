@@ -1,0 +1,194 @@
+# P0-07 — Security, Isolation and Disaster Recovery
+
+Date: 2026-11-01. Status: in progress, alongside unfinished P0-06. Scope: Car-Dealership staging and demo ONLY.
+
+## Live read-only baseline
+- Staging project empty-dew-20186400, original branch br-snowy-union-aoz83v84, DB car_dealership_staging, fingerprint e0a5faff-8c8a-4955-b70e-f5c1c17c38eb.
+- Demo project young-paper-44003842, branch br-nameless-sea-a129d9oy, DB car_dealership_demo, fingerprint 37edbbfe-3ed1-4f34-9d75-a7a13ec05720.
+- Both databases show four fictional vehicles, eight completed migrations, no active superadministrators.
+- Staging role cd_staging_app has LOGIN, no memberships, NOINHERIT, cannot create schema, roles, database, modify environment identity, or write migration history. Demo role cd_demo_app has NOLOGIN with the same restricted rights.
+- No automatic snapshot schedule was present on either branch at audit. Backup scheduling, retention and cost approvals are pending.
+- Vercel staging remains SSO protected and READY. P0-06 is still open; external messaging/payment remains disabled.
+
+## Recovery exercise and important Neon hazard
+1. On 2026-11-01, created snapshot snap-wandering-tooth-ao72wvwl from the original staging branch.
+2. A restore_snapshot call with omitted target and default finalize=true unexpectedly promoted the restored copy and swapped compute attachments and branch names. Do NOT use that mode for non-promoting recovery verification in a live project.
+3. Reestablished ORIGINAL staging branch br-snowy-union-aoz83v84 as primary/default and restored the name staging.
+4. Original compute ep-red-king-ao2lq5tj (and ep-red-king-ao2lq5tj-pooler) was moved back onto original staging. Temporary buffer branch br-fragrant-hill-ao0w1gd3 carries ep-delicate-feather-aoxbcaak.
+5. Independent restored data copy br-cold-thunder-ao0rv7cx is named p007-snapshot-restore-copy-2026-11-01. Prior to compute reassignment its database fingerprint, four vehicles and eight migrations were verified by SQL.
+6. Rechecked original staging: exact fingerprint, default=true, primary=true, correct original compute hostname, four vehicles and eight migrations. Vercel staging deployment still READY.
+
+Conclusion: source database/hostname restored to original provider state, and a recoverable snapshot copy was verified. This is NOT a proven zero-downtime failover, restore RTO or recovery point objective.
+
+## Security changes in this PR
+- Reject staging/demo cross-connections even when EXPECTED_DATABASE_NAME is changed to match the wrong database.
+- Add pure fingerprint and least-privilege role attestations with negative tests.
+- Provide a fully read-only runtime verifier that refuses privileged owners and non-fictional users; it does not migrate, seed or alter data.
+- Make the regression suite a named GitHub CI gate: npm run security:p007:tests.
+- Run npm run security:p007:readonly only from a secrets-protected runner with the correctly scoped restricted runtime DATABASE_URL, APP_ENV, APP_PROJECT_ID, EXPECTED_DATABASE_HOST, EXPECTED_DATABASE_NAME, EXPECTED_DATABASE_ID. Never put secrets in CI logs or issue descriptions.
+
+## Open acceptance gates
+- Confirm exact-head CI on P0-07 PR and review before merging. Do not auto-deploy this PR.
+- Complete actual wrong-environment credential denial tests using isolated test credentials.
+- Test an explicitly non-promoting snapshot recovery procedure in a separate sandbox; never finalize a restore to live staging.
+- Configure and verify snapshot schedule/retention and document RPO, RTO and costs.
+- Verify private media isolation and recoverability, audit-event integrity and rate-limit behavior.
+- Resolve outstanding P0-06 admin authentication, image upload and remaining temporary Vercel bypass credentials in Issue #3.
+- Review TLS compatibility warning while maintaining certificate verification; recheck dependency advisories and legal media licenses.
+- Keep demo undeployed and all real external messaging and payments disabled until approved.
+
+Important: This runbook records the P0-07 recovery hazard and remediation factually. Extra test branches and snapshot remain for reviewed cleanup; deletion requires separate authorization.
+
+
+## 2026-11-01 P0-07 continuation: independent read-only verification and hosted runtime hardening
+
+The staging and demo databases were checked again through their own Neon project and branch selectors. Both report:
+- Their expected independent instance fingerprints, exactly 4 fictional vehicles, 8 completed migrations, 0 failed/pending migrations, 0 active SUPER_ADMIN accounts, 0 saved passwords, and 0 non-fictional user email addresses.
+- Only each environment's own restricted role is present. Cross-environment roles are absent. Staging runtime role has LOGIN; demo role has NOLOGIN. Both have zero memberships and no schema CREATE, role/admin privileges, migration history writes, or environment-identity writes.
+- Public buckets are public_read and private buckets are private. No additional storage write, image lifecycle, or live cross-project credential test was carried out in this continuation.
+- Automatic snapshots are NOT scheduled in either database. A snapshot also exists for the demo baseline: snap-lingering-credit-a1g4ew3p. Staging snapshot snap-wandering-tooth-ao72wvwl remains available. These manual snapshots do not substitute for a tested retention policy.
+
+An earlier Issue #3 update claimed the temporary staging deployment automation-bypass credentials were revoked and the synthetic image probe removed. The probe's exact key was subsequently confirmed absent. Current bypass-record status could not be independently verified through the connected Vercel API or logged-out browser, so dashboard verification remains outstanding. Do not re-enable any automation bypasses in P0-07. The prior note that the fictional Super Admin was disabled/passwordless is stale: the latest read-only database check found the account active and email-verified with a password hash, but no recorded login or sessions. Recovery and authenticated E2E tests remain outstanding.
+
+This PR additionally validates the exact application database login username and requires TLS with sslmode=require or sslmode=verify-full in staging/demo. It rejects owner logins, cross-environment runtime roles, missing/disabled/ambiguous SSL options, and uselibpqcompat overrides. Importantly, the migration/seeding URL validator remains separate and does not require the runtime user, while the normal Prisma runtime and read-only verifier enforce the restricted role.
+
+**TLS follow-up:** The existing staging build uses a pg library that presently treats sslmode=require as verify-full and emits a compatibility warning. Explicit sslmode=verify-full is the target before the next major pg upgrade. Do not alter the deployed environment or weaken certificate verification as part of this draft PR.
+
+**Acceptance unchanged at that earlier check:** This is a CI-tested code-level baseline, not a proof of real credential cross-project denial, production-grade RTO/RPO, or final phase sign-off. Backup schedules could incur provider costs; select retention and budget before enabling. No main merge, app redeployment, or privileged account activation was performed.
+
+## Blocking P0-07 audit-integrity finding (2026-11-01)
+
+The original 2026-11-01 audit found that both hosted application roles had SELECT, INSERT, UPDATE and DELETE rights on `public."AuditLog"`. The reviewed application paths read and append audit events, so a compromised runtime could alter or remove its audit history.
+
+The read-only verifier requires `canInsertAuditLog=true`, `canUpdateAuditLog=false`, and `canDeleteAuditLog=false`. Staging now satisfies these checks; keep the demo verifier blocked until its own grants are separately reviewed and verified. Do not bypass a failing verifier.
+
+**Approved staging remediation:**
+
+```sql
+-- Applied only to the verified staging branch after owner approval.
+REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
+```
+
+A fresh effective-privilege query on 2026-11-02 confirmed both `cd_staging_app` and `cd_staging_webapp` have SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. Staging therefore meets the approved append-only target. No demo database permission was changed. The staging branch compute was returned to idle after verification.
+
+### Cross-branch negative-role test
+
+Read-only Neon queries requesting staging's `cd_staging_app` role against the demo branch and demo's `cd_demo_app` against staging both failed with 'role not found for branch' (HTTP 404). This verifies branch role separation, not a real stolen-credential or TLS-level denial test; that remains pending.
+
+## 2026-11-01 non-promoting restore drill
+
+The staging snapshot `snap-wandering-tooth-ao72wvwl` was restored with `finalize:false` to a separate branch `p007-nonpromoting-drill-2026-11-01` (`br-empty-pond-aoikialy`). Provider metadata confirms the drill branch is `ready`, `primary=false`, and `default=false`; original staging remains `primary=true` and `default=true`. The restricted `cd_staging_app` login read the restored identity row and verified environment `staging`, the expected staging fingerprint, 4 vehicles and 4 vehicle-image rows. It returned the same counts and identity from the original staging branch. No staging row or compute attachment was changed.
+
+The restored branch has **no object-storage buckets**, although it has four image rows. A later live staging inventory found both source buckets empty, so this drill did not establish that populated media or private documents were lost. Database-only restore therefore does not establish full application recovery. The snapshot point was `2026-11-01 03:24:49 UTC`, about 11h52m before verification at 15:16 UTC; automatic snapshot schedule is empty and the current plan exposes a 6-hour history window. Neon’s [published snapshot guidance](https://neon.com/blog/three-ways-to-use-your-snapshots) says scheduled snapshots are available on paid plans. The requested daily, 30-day schedule therefore requires a plan change, which is not authorized automatically. Neon automatically created endpoint `ep-sweet-bread-ao4l34yq` for the drill; it was suspended after verification, and provider state confirms it is idle. The temporary branch remains for review; do not delete it without authorization.
+
+**Drill result:** Non-promoting database restore is verified. Overall P0-07 remains incomplete: no full storage restore, timed RTO measurement, recurring retention policy, approved cost plan, true cross-project credential denial, or audited runtime-role grant correction has been completed.
+
+## 2026-11-01 follow-up: verifier logging and current Neon state
+
+Commit `4bccd08bf173170f6c56c5a182ef97213c67930f` hardens the read-only verifier failure handler: it now logs only a validated exception class and never includes raw exception/provider text. Local typecheck, lint, focused security tests (24 tests), and full non-integration tests (65 tests) passed; exact-head GitHub CI is pending.
+
+A fresh provider read confirms the staging branch `br-snowy-union-aoz83v84` remains `primary=true`, `default=true`; the non-promoting drill branch `br-empty-pond-aoikialy` remains non-primary/non-default. Drill endpoint `ep-sweet-bread-ao4l34yq` is idle and suspended since `2026-11-01T15:16:44Z`. Staging's snapshot schedule is still empty. The restored drill branch still exposes no storage buckets. Existing temporary drill/buffer branches and snapshots are retained for review; no cleanup or live permission changes were performed.
+## TLS compatibility warning verification
+
+The current checkout resolves `pg` 8.22.0 and `pg-connection-string` 2.14.0. Locally parsing a non-secret sample URI with `sslmode=require` returns an SSL options object and emits the driver's security warning: in these versions `require`, `prefer`, and `verify-ca` are aliases for `verify-full`; the driver warns that pg 9 / pg-connection-string 3 will adopt weaker standard libpq semantics for these modes. The hosted runtime validator therefore continues to reject `uselibpqcompat`, requires TLS, and temporarily accepts `require` for the current staging-compatible behavior. Explicit `sslmode=verify-full` is the forward-compatible target. No deployed connection setting was changed. This is consistent with the [upstream node-postgres connection-string documentation](https://github.com/brianc/node-postgres/blob/master/packages/pg-connection-string/README.md), which documents current and libpq-compatible mode behavior.
+## Object Storage branch-vs-snapshot restore verification
+
+A read-only comparison now distinguishes the two Neon paths. The live staging branch exposes its `car-dealership-staging-private` (private) and `car-dealership-staging-public` (public_read) buckets. An ordinary staging child branch, `br-fragrant-hill-ao0w1gd3`, exposes the same inherited bucket definitions. The snapshot-restored drill branch, `br-empty-pond-aoikialy`, reports Object Storage enabled but returns no buckets. No object keys or contents were enumerated, copied, or changed.
+
+Neon's [Object Storage branching description](https://neon.com/blog/building-neon-object-storage) says a normal new branch inherits its parent's buckets and objects. The live API check confirms that behavior for an ordinary child; the non-promoting snapshot restore did not include the bucket definitions. For this project's tested recovery path, database snapshot restore alone is insufficient for media/private documents. The recovery runbook must provide and test a separate object-recovery step or use a supported full-backend recovery path before P0-07 can pass.
+
+## Fresh staging audit-log grant and snapshot-limit check (2026-11-01 16:14 UTC)
+
+Read-only SQL against the verified staging database/branch found direct non-grantable SELECT, INSERT, UPDATE and DELETE grants on `public."AuditLog"` for `cd_staging_app`. `cd_staging_webapp` is a member of `cd_staging_app`, so it inherits those effective UPDATE/DELETE grants. Vercel environment metadata labels `DATABASE_URL` as the restricted staging app login and `DIRECT_URL` as the restricted staging webapp role; secret values were not read. The P0-07 verifier correctly requires runtime UPDATE/DELETE to be denied.
+
+Source review found only audit-row INSERT/SELECT operations in application/runtime paths. The sole `prisma.auditLog.deleteMany` is in the synthetic seed, which refuses `APP_ENV` other than local/test and refuses production. Hosted account provisioning only inserts an audit row. The staging-only remediation proposed in Issue #6 is therefore `REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";`. **No grants were changed**; explicit owner approval is pending. After approval, verify SELECT/INSERT remain allowed and UPDATE/DELETE are denied for both the app role and inherited webapp role. Do not change demo grants until independently verified and separately authorized.
+
+Read-only role metadata also shows `cd_staging_runtime` and `cd_staging_owner` are non-superuser LOGIN roles with CREATEROLE, CREATEDB and BYPASSRLS. Their operational purpose and credential custody have not been confirmed; neither role was included in the Vercel environment metadata inspected. No role attributes were changed.
+
+A fresh snapshot list showed only `snap-wandering-tooth-ao72wvwl`, created at `2026-11-01 03:25:31 UTC`; the automatic schedule remains empty. Creating another pre-recovery snapshot was rejected by Neon with HTTP 422 `snapshots limit exceeded`. The existing snapshot remains untouched and was approximately 12h49m old at the check, so it is not a current pre-mutation checkpoint. No plan or billing change was made. The snapshot limit and absent storage restoration remain open recovery blockers.
+
+## No-compute pre-recovery branch copy (2026-11-01 16:25 UTC)
+
+Because Neon refused another manual snapshot at the existing snapshot limit, a no-compute child branch was created from staging as a current pre-recovery checkpoint: `p006-pre-recovery-copy-2026-11-01` (`br-summer-moon-aon9y6co`). Provider metadata reports `ready`, parent staging `br-snowy-union-aoz83v84`, parent LSN `0/1F1F710` at `2026-11-01T16:23:05Z`, `primary=false`, `default=false`, and zero compute time/CPU. A read-only bucket listing confirms both inherited bucket definitions and their access levels match staging. No database query was run on this no-compute branch, and no object keys/content were listed; therefore this is a current database branch fork with bucket definitions confirmed, not a completed restore/object-content verification or timed recovery drill. The existing manual snapshot was not removed. The fork is retained for the pre-recovery window and reviewed cleanup remains separately authorized.
+
+## Staging append-only AuditLog grant applied (2026-11-01 16:29 UTC)
+
+After explicit owner approval in this conversation, the exact staging-only statement was applied using `cd_staging_owner` on branch `br-snowy-union-aoz83v84`, database `car_dealership_staging`, fingerprint `e0a5faff-8c8a-4955-b70e-f5c1c17c38eb`:
+
+```sql
+REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
+```
+
+A post-change read-only query verified both `cd_staging_app` and its inherited member `cd_staging_webapp`: SELECT=true, INSERT=true, UPDATE=false, DELETE=false. It also confirmed the staging identity row is unchanged and `cd_staging_webapp` still inherits `cd_staging_app`. No demo database, other role attributes, application data, or storage objects were changed. This satisfies the staging AuditLog append-only privilege check; the other P0-07 recovery and security gates remain open.
+
+## Fresh staging object inventory (2026-11-01 16:52 UTC)
+
+A read-only object listing against staging branch `br-snowy-union-aoz83v84` returned zero objects in both `car-dealership-staging-public` and `car-dealership-staging-private`. An aggregate read-only query against the verified staging fingerprint (`e0a5faff-8c8a-4955-b70e-f5c1c17c38eb`) found four `VehicleImage` rows, zero non-null `storageKey` values, and zero thumbnail, card, gallery, or Open Graph variant URLs. No image URLs, object keys, object contents, or private document metadata were read or exposed.
+
+This means the current database image rows do not reference objects in Neon storage; their URL backing was not validated in this check. The earlier snapshot restore branch's missing bucket definitions remain a recovery gap, but this run did not demonstrate loss of populated object data because the source buckets held no objects. A future non-empty storage restore test must use a clearly synthetic object, validate the object and access level on the restored branch, and remove only that synthetic object afterward. P0-06's authenticated upload acceptance is still outstanding.
+
+Neon's current [Object Storage branching description](https://neon.com/blog/building-neon-object-storage) states that branches inherit buckets and objects. The project's live ordinary-child check verified bucket definitions, while the snapshot-restored branch did not expose buckets. Until a populated-object restore test succeeds for the exact snapshot workflow used here, P0-07 remains incomplete.
+
+## Current recovery boundaries and operating assumptions (2026-11-01 16:52 UTC)
+
+| Layer | Verified coverage | Current limit |
+|---|---|---|
+| PostgreSQL | Provider history exposes a 6-hour PITR window. One manual snapshot, `snap-wandering-tooth-ao72wvwl`, was created at `2026-11-01 03:25:31 UTC`. | No recurring snapshot schedule is configured. At this check the manual snapshot was about 13h27m old. No guaranteed RPO or 30-day retention is established. |
+| Object storage | Live staging has separate public and private buckets; both currently list zero objects. | The snapshot-restored branch exposed no buckets. No populated-object backup/restore has been tested. |
+| Application source | Source and runbooks are versioned in Git; deployment records identify the deployed commit. | Secret environment values are not exported into an independent backup. Vercel environment recovery has not been tested. |
+
+**RPO assumption:** there is no approved business RPO and no scheduled snapshot guarantee. Best-effort database recovery is a point inside the provider's current 6-hour history window; beyond that, the only known manual recovery point is the snapshot above. This is not a 30-day recovery guarantee.
+
+**RTO evidence:** the non-promoting restore branch became ready at `15:14:54 UTC`; its compute was suspended at `15:16:44 UTC`, an observed interval of about 110 seconds. That interval includes only branch readiness and the limited database verification. It is **not** a measured end-to-end RTO: storage restoration, application cutover, user acceptance, and rollback were not exercised. No RTO commitment is established.
+
+**Ownership and escalation:** the application/repository owner approves incident scope and the intended target; the Neon project owner performs and verifies database restore; the Vercel project owner controls deployment rollback and environment wiring; an independent reviewer checks fingerprints, branch state, storage access, and evidence before any cutover. If the restored identity or object coverage does not match, stop and preserve the original staging branch. Do not promote, delete retained recovery branches, change plans, or broaden credentials without separate authorization.
+
+## 2026-11-02 01:26 IST — current Neon plan and checkpoint recheck
+
+Current provider metadata identifies staging project `empty-dew-20186400` as Neon plan `free_v3`, with `history_retention_seconds=21600` (six hours) and a 10-branch project limit. The live staging branch still has no scheduled snapshots, and the project has one manual snapshot: `snap-wandering-tooth-ao72wvwl` from `2026-11-01 03:25:31 UTC`. Neon’s current [plan table](https://neon.com/docs/introduction/plans) lists one manual snapshot and a six-hour history window for Free; the [Backup & Restore guide](https://neon.com/docs/guides/backup-restore) says automated snapshot schedules are available on paid plans. Daily snapshots with 30-day retention cannot be configured under the current Free plan. No billing-plan change was made.
+
+The no-compute pre-recovery branch copy `br-summer-moon-aon9y6co` (`p006-pre-recovery-copy-2026-11-01`) remains ready, non-primary and non-default. It was forked from staging at LSN `0/1F1F710` / `2026-11-01T16:23:05Z`; its provider record shows zero compute time. At this recheck it is about 3h33m old. It is a recent branch checkpoint, not a scheduled or immutable backup, and it does not demonstrate object-content recovery. Preserve it through any future credential recovery; do not treat its presence as a substitute for a retention policy or an approved RPO/RTO.
+
+The available no-plan-change coverage is therefore limited to the six-hour best-effort history window, the existing older manual snapshot, and this short-lived branch checkpoint. The one-snapshot Free limit and lack of automatic schedules leave the requested daily/30-day coverage open until the owner authorizes a suitable paid plan and cost. The separate object recovery, timed end-to-end RTO, and private-object verification gates also remain open.
+
+## Fresh Neon state recheck (2026-11-02 10:16 IST)
+
+Using the staging project and branch selectors, the provider returned one manual snapshot (`snap-wandering-tooth-ao72wvwl`, created `2026-11-01T03:25:31Z`) and an empty snapshot schedule. The existing staging compute is `idle`/suspended; the staging branch remains the original staging target. The retained pre-recovery checkpoint `br-summer-moon-aon9y6co` has no compute endpoints. The retained non-promoting restore drill `br-empty-pond-aoikialy` has an idle/suspended compute and still exposes no object-storage buckets. Staging still exposes separate `car-dealership-staging-private` (`private`) and `car-dealership-staging-public` (`public_read`) buckets. No database, branch, compute, snapshot, or storage resource was changed during this check.
+
+This recheck confirms that the snapshot, storage-recovery and retention limitations recorded above remain current. It does not establish a new restore drill, private-object access denial, populated-object recovery, or an approved RPO/RTO.
+
+## Fresh provider metadata and snapshot cost baseline (2026-11-02 07:39 UTC)
+
+Read-only Neon project metadata and branch/storage listings confirm the staging project remains `free_v3`, with six-hour history, an empty scheduled-snapshot list, and one manual snapshot `snap-wandering-tooth-ao72wvwl` created at `2026-11-01T03:25:31Z` (about 28h14m old at this check). The original staging branch remains primary/default. Its compute is idle/suspended since `2026-11-02T06:25:47Z`; no SQL was run and no compute was started for this audit.
+
+Provider branch metadata reports the staging logical size as 34,775,040 bytes (33.16 MiB), against a 1 GiB branch logical-size limit. At the documented snapshot-storage rate of $0.09/GB-month, one full snapshot of the current branch size is approximately $0.0029/month before incremental changes, billing granularity and compute. This is a baseline size estimate, not a quote for a daily 30-day schedule; retained deltas and paid-plan charges are not measured or approved. The public and private staging buckets both list zero objects. The restored branch `br-empty-pond-aoikialy` still exposes no buckets. This does not prove restoration of populated object data, private-object denial, or an approved RPO/RTO. No plan, schedule, branch, snapshot, bucket, object, or database state changed.
+
+## Effective audit-log privileges rechecked (2026-11-02 07:53 UTC)
+
+On staging database `car_dealership_staging`, branch `br-snowy-union-aoz83v84`, a read-only query of `has_table_privilege` confirmed `cd_staging_app` and `cd_staging_webapp` each retain SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. This confirms the approved staging remediation is in effect; it does not authorize or evidence the same change on the separate demo database. The original staging compute was suspended immediately after the query, and the non-promoting restore branch compute remains suspended. No audit-log rows were modified.
+
+## 2026-11-02 live backup and storage coverage refresh
+
+Read-only provider metadata refreshed against Neon project `empty-dew-20186400` and staging branch `br-snowy-union-aoz83v84` confirms:
+
+- The staging branch remains `primary=true`, `default=true`, and `ready`; its project is still on `free_v3` with a six-hour history window.
+- The only manual snapshot remains `snap-wandering-tooth-ao72wvwl` (created 2026-11-01 03:25:31 UTC). The automated snapshot schedule is empty. The requested daily snapshots with 30-day retention are unavailable under the current plan; no paid plan or billing setting was changed.
+- The last provider-reported staging logical size is 34,775,040 bytes (about 33.2 MiB). This is only a size baseline and does not predict a 30-day retention bill, which depends on plan and retained changes.
+- Staging Object Storage is enabled with a private bucket (`car-dealership-staging-private`) and a public-read bucket (`car-dealership-staging-public`). Both currently contain zero objects. The restored branch `br-empty-pond-aoikialy` remains ready/non-primary/non-default and exposes no buckets. This does not prove populated-object recovery.
+- The retained restore/checkpoint branches are distinct from active staging. No branch was promoted, no database was queried, and no object or storage configuration was changed in this refresh.
+
+### Current no-billing-change coverage and operating procedure
+
+1. Treat Neon’s six-hour history window as best-effort point-in-time recovery only. There is no provider-guaranteed business RPO or 30-day recovery point under the current plan.
+2. Before a planned staging mutation, verify the project, branch, database, fingerprint, snapshot quota, and snapshot age. If the single manual snapshot slot is occupied or the snapshot is stale, stop before mutation; do not delete the only recovery point to make room.
+3. Keep source, migration history, and runbooks in Git. Recreate configuration from the approved environment-variable inventory and secret manager; never put secret values in Git or a backup archive.
+4. Treat private/public media recovery as a separate layer. Before storing real media, select an owner-approved, separately administered, encrypted, versioned object-backup destination. Copy and checksum objects without changing source access controls, then restore a synthetic fixture to an isolated branch and verify private-object denial and authorized access. No destination or transfer credential is currently approved/configured, so independent media backups are not established.
+5. For recovery, create a non-promoting branch, verify its immutable environment identity, schema/migrations, row counts, role grants, and required storage/object coverage. Do not attach staging traffic or swap branch names until the application owner and independent reviewer accept the evidence and a rollback path.
+
+The observed drill measured only database-branch readiness plus limited verification; it is not end-to-end RTO. Until an owner approves business targets and the missing media/configuration layers are tested, the best available RPO statement remains a six-hour provider history window plus the dated manual snapshot, and end-to-end RTO remains unmeasured. Escalation ownership remains with the repository/application owner (scope and authorization), Neon project owner (database restore), Vercel project owner (deployment/configuration rollback), and an independent reviewer (identity, grants, storage access, and evidence).
+
+## Current paid-plan option and variable-cost estimate (2026-11-02)
+
+Neon's current [plan table](https://neon.com/docs/introduction/plans) lists Launch as usage-based with no monthly minimum. It enables scheduled snapshots and charges $0.09/GB-month for snapshot storage; the first scheduled snapshot is full and later snapshots use incremental/delta storage. Scheduled snapshots may be retained up to 35 days, so daily snapshots with 30-day retention fit the Launch feature set. Launch PITR history is limited to seven days; 30-day PITR would require Scale. The current [Backup & Restore guide](https://neon.com/docs/guides/backup-restore) confirms the schedule and retention rules.
+
+At the last provider-reported staging logical size (34,775,040 bytes / 33.16 MiB), one full-snapshot-equivalent volume is approximately **$0.003/month** at the published snapshot-storage rate; daily retained deltas are unmeasured and may add cost. Paid Launch root Postgres storage is $0.35/GB-month; at the same size this is approximately $0.012/month before future growth. A 0.25-CU compute on Launch is $0.0265 per active hour ($0.106/CU-hour); this endpoint is currently suspended. These are estimates, not a quote or spending cap. Actual spend depends on active compute, growth, retained snapshot deltas, egress and other product use. No plan or billing change has been made; explicit owner approval is required before upgrading or scheduling paid backups.

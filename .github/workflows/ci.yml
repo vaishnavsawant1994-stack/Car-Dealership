@@ -55,5 +55,7 @@ jobs:
         run: npm run lint
       - name: Type-check
         run: npm run typecheck
+      - name: P0-07 security isolation tests
+        run: npm run security:p007:tests
       - name: Test
         run: npm test
