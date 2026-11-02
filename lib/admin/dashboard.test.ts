@@ -76,13 +76,24 @@ describe('role and showroom scope for dashboard data', () => {
   it('loads each content alert only for roles with that content permission', async () => {
     getScope.mockResolvedValue({ global: false, showroomIds: ['showroom-content'] })
 
-    await getAdminDashboard({
+    const data = await getAdminDashboard({
       from: new Date('2026-01-01T00:00:00.000Z'),
       to: new Date('2026-01-31T23:59:59.999Z'),
       actorId: 'content-a',
       actorRole: UserRole.CONTENT_MANAGER,
     })
 
+    expect(db.inquiry.count).not.toHaveBeenCalled()
+    expect(db.inquiry.findMany).not.toHaveBeenCalled()
+    expect(db.testDrive.count).not.toHaveBeenCalled()
+    expect(db.testDrive.findMany).not.toHaveBeenCalled()
+    expect(db.sellRequest.count).not.toHaveBeenCalled()
+    expect(db.sellRequest.groupBy).not.toHaveBeenCalled()
+    expect(db.contactMessage.count).not.toHaveBeenCalled()
+    expect(data.operations).toEqual({ newEnquiries: 0, followUpEnquiries: 0, upcomingDrives: 0, pendingDrives: 0, newSellRequests: 0, inspections: 0, openContacts: 0 })
+    expect(data.recentEnquiries).toEqual([])
+    expect(data.drives).toEqual([])
+    expect(data.sellPipeline).toEqual([])
     expect(db.testimonial.count).toHaveBeenCalledOnce()
     expect(db.galleryItem.count).toHaveBeenCalledOnce()
     expect(db.newsletterSubscriber.count).not.toHaveBeenCalled()

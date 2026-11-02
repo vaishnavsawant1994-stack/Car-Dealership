@@ -48,6 +48,8 @@ A final dashboard scope audit found that Sales and Operations roles could trigge
 - `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd exec prisma validate`, and `npm.cmd run build` — **passed**. The build ran the isolation preflight with test-only environment values and generated 123 static pages. No hosted database or deployment was used.
 - The test container was local and disposable; no Vercel/Neon staging state was changed. These changes remain unpushed and unmerged pending Phase 1 dependency reconciliation and review.
 
+Dashboard permission follow-up (2026-11-02): operational metrics and panels for enquiries, test drives, sell requests, contact inquiries, and inventory now require the matching view permission. The server skips operational and vehicle queries when the actor lacks that permission. Assigned-work totals remain limited to the signed-in user's own follow-ups. Content Manager retains vehicle metrics because its role grants `vehicle.view`. Focused dashboard tests (1 file, 4 tests), lint, typecheck, and a production build passed. The build generated 123 static pages and logged expected database-unavailable messages against the isolated loopback test URL `127.0.0.1:55432`. No hosted database or deployment was used.
+
 ## Acceptance still required
 
 Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
