@@ -66,7 +66,10 @@ the session/token revocation and audit event. No staging write or password
 prompt has been run. The latest read-only account check found one unused reset
 token; the approved rotation transaction invalidates outstanding tokens.
 
-Validation after this hardening: focused recovery tests **22 passed**, full
-local PostgreSQL CI-style suite **14 files / 91 tests passed**, lint and
-typecheck passed. This is local test evidence; PR exact-head CI and independent
-review are still required before any live recovery.
+Validation after this hardening: focused recovery tests **23 passed**, full
+local PostgreSQL CI-style suite **14 files / 92 tests passed**, lint and
+typecheck passed, and the production build generated **117 static pages**.
+The CI seed used a generated test-only password on an isolated loopback
+PostgreSQL 16 container, which was removed after verification. This is local
+test evidence; PR exact-head CI and independent review are still required
+before any live recovery.
