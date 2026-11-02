@@ -2,9 +2,12 @@ import 'dotenv/config'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+const permissionMocks = vi.hoisted(() => ({ authorizeAdminRequest: vi.fn() }))
+vi.mock('@/lib/auth/require-permission', () => permissionMocks)
 
 import { UserRole, VehicleStatus } from '@prisma/client'
 import { addLeadMessage, assignLead, requireAccessibleLead, updateLead } from '@/lib/admin/lead-service'
+import { leadCollectionHandlers, leadDetailHandlers } from '@/lib/admin/lead-api'
 import { createSellValuation, saveSellInspection, scheduleTestDrive } from '@/lib/admin/specialist-workflows'
 import { getPublicationReadiness } from '@/lib/admin/vehicle-workflow'
 import { prisma } from '@/lib/db/prisma'
@@ -18,6 +21,7 @@ let originalContactCounter: number | null = null
 const ref = (kind: string) => `OA-${kind}-TEST-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
 afterEach(async () => {
+  permissionMocks.authorizeAdminRequest.mockReset()
   const resources = [...ids.inquiries.map((id) => ['Inquiry', id]), ...ids.drives.map((id) => ['TestDrive', id]), ...ids.sells.map((id) => ['SellRequest', id])] as Array<[string, string]>
   if (resources.length) {
     await prisma.operationalMessage.deleteMany({ where: { OR: resources.map(([resourceType, resourceId]) => ({ resourceType, resourceId })) } })
@@ -77,11 +81,24 @@ describe('admin operations against PostgreSQL', () => {
     ids.showrooms.push(outside.id)
     const outsideLead = await prisma.contactMessage.create({ data: { showroomId: outside.id, referenceNumber: ref('CON'), name: 'Outside showroom', phone: '9876543210', email: 'outside@example.test', message: 'Temporary branch-scope fixture.' } })
     const otherQueueLead = await prisma.contactMessage.create({ data: { showroomId: primary.id, referenceNumber: ref('CON'), name: 'Other staff queue', phone: '9876543210', email: 'other-queue@example.test', message: 'Temporary assignment-scope fixture.', assignedToId: operations.id } })
-    ids.contacts.push(outsideLead.id, otherQueueLead.id)
+    const ownQueueLead = await prisma.contactMessage.create({ data: { showroomId: primary.id, referenceNumber: ref('CON'), name: 'Sales queue', phone: '9876543210', email: 'own-queue@example.test', message: 'Temporary allowed-scope fixture.' } })
+    ids.contacts.push(outsideLead.id, otherQueueLead.id, ownQueueLead.id)
 
     const scope = await getActorShowroomScope(sales)
     expect(scope.showroomIds).toContain(primary.id)
     expect(scope.showroomIds).not.toContain(outside.id)
+    permissionMocks.authorizeAdminRequest.mockImplementation(async () => sales)
+    const collection = await leadCollectionHandlers('contact-inquiries').GET(new Request('http://localhost/api/admin/contact-inquiries'))
+    const collectionPayload = await collection.json()
+    expect(collection.status).toBe(200)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).toContain(ownQueueLead.id)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).not.toContain(outsideLead.id)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).not.toContain(otherQueueLead.id)
+    const detail = leadDetailHandlers('contact-inquiries')
+    for (const lead of [outsideLead, otherQueueLead]) {
+      const response = await detail.GET(new Request('http://localhost/api/admin/contact-inquiries'), { params: Promise.resolve({ id: lead.id }) })
+      expect(response.status).toBe(404)
+    }
     for (const lead of [outsideLead, otherQueueLead]) {
       await expect(requireAccessibleLead('contact-inquiries', lead.id, sales)).resolves.toBeNull()
       await expect(updateLead('contact-inquiries', lead.id, sales, { status: 'ASSIGNED', version: lead.version })).resolves.toMatchObject({ type: 'not-found' })
