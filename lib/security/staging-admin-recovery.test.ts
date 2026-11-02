@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import type { ReadStream, WriteStream } from 'node:tty'
 import { describe, expect, it, vi } from 'vitest'
-import { assertStagingAdminPasswordIsNew, assertStagingAdminRecovery, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from './staging-admin-recovery'
+import { assertStagingAdminPasswordIsNew, assertStagingAdminRecovery, assertStagingAdminRecoveryConnection, assertStagingAdminRecoveryDatabaseRole, assertStagingAdminRecoveryInstanceId, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL, STAGING_ADMIN_RECOVERY_ROLE, STAGING_NEON_ENDPOINT_ID, STAGING_NEON_INSTANCE_ID } from './staging-admin-recovery'
 
 const approved = {
   environment: 'staging',
@@ -32,6 +32,56 @@ describe('P0-06 staging-only password recovery preflight', () => {
     { directUrl: '' },
   ])('fails closed for invalid input %o', (invalid) => {
     expect(() => assertStagingAdminRecovery({ ...approved, ...invalid })).toThrow()
+  })
+})
+
+describe('staging recovery database connection', () => {
+  const connection = `postgresql://${STAGING_ADMIN_RECOVERY_ROLE}:synthetic-only@${STAGING_NEON_ENDPOINT_ID}.c-2.ap-southeast-1.aws.neon.tech/car_dealership_staging?sslmode=verify-full`
+
+  it('requires the restricted app login and certificate-verifying TLS', () => {
+    expect(() => assertStagingAdminRecoveryConnection(connection)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace(STAGING_NEON_ENDPOINT_ID, 'ep-empty-pond-aoikialy'))).toThrow('restricted staging app role')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace(STAGING_ADMIN_RECOVERY_ROLE, 'cd_staging_owner'))).toThrow('restricted staging app role')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace('verify-full', 'require'))).toThrow('sslmode=verify-full')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace('?sslmode=verify-full', ''))).toThrow('sslmode=verify-full')
+    expect(() => assertStagingAdminRecoveryConnection(`${connection}&uselibpqcompat=true`)).toThrow('sslmode=verify-full')
+  })
+})
+
+describe('staging recovery database identity', () => {
+  it('pins recovery to the live staging database fingerprint', () => {
+    expect(() => assertStagingAdminRecoveryInstanceId(STAGING_NEON_INSTANCE_ID)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryInstanceId('restore-branch-copy')).toThrow('verified staging database identity')
+    expect(() => assertStagingAdminRecoveryInstanceId(undefined)).toThrow('verified staging database identity')
+  })
+})
+
+describe('staging recovery database role', () => {
+  const restrictedRole = {
+    roleName: STAGING_ADMIN_RECOVERY_ROLE,
+    superuser: false,
+    createDb: false,
+    createRole: false,
+    bypassRls: false,
+    inherit: false,
+    memberships: 0,
+    identityRead: true,
+    userRead: true,
+    userUpdate: true,
+    sessionDelete: true,
+    resetTokenUpdate: true,
+    auditInsert: true,
+    auditUpdate: false,
+    auditDelete: false,
+  }
+
+  it('allows only the verified restricted recovery privilege profile', () => {
+    expect(() => assertStagingAdminRecoveryDatabaseRole(restrictedRole)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, roleName: 'cd_staging_owner' })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, superuser: true })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, memberships: 1 })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, userUpdate: false })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, auditUpdate: true })).toThrow()
   })
 })
 

@@ -3,6 +3,56 @@ import { StringDecoder } from 'node:string_decoder'
 import type { ReadStream, WriteStream } from 'node:tty'
 
 export const STAGING_ADMIN_EMAIL = 'demo.admin@car-dealership.test'
+export const STAGING_ADMIN_RECOVERY_ROLE = 'cd_staging_app'
+export const STAGING_NEON_ENDPOINT_ID = 'ep-red-king-ao2lq5tj'
+export const STAGING_NEON_INSTANCE_ID = 'e0a5faff-8c8a-4955-b70e-f5c1c17c38eb'
+
+export function assertStagingAdminRecoveryInstanceId(expectedDatabaseId?: string) {
+  if (expectedDatabaseId !== STAGING_NEON_INSTANCE_ID) {
+    throw new Error('Recovery is pinned to the verified staging database identity.')
+  }
+}
+
+export function assertStagingAdminRecoveryConnection(connectionString: string) {
+  try {
+    const url = new URL(connectionString)
+    const sslModes = url.searchParams.getAll('sslmode')
+    if (url.protocol !== 'postgresql:' || url.hostname.split('.')[0] !== STAGING_NEON_ENDPOINT_ID ||
+        decodeURIComponent(url.username) !== STAGING_ADMIN_RECOVERY_ROLE ||
+        sslModes.length !== 1 || sslModes[0] !== 'verify-full' || url.searchParams.has('uselibpqcompat')) {
+      throw new Error('invalid connection configuration')
+    }
+  } catch {
+    throw new Error('Recovery requires the restricted staging app role and sslmode=verify-full.')
+  }
+}
+
+export type StagingAdminRecoveryDatabaseRole = {
+  roleName: string
+  superuser: boolean
+  createDb: boolean
+  createRole: boolean
+  bypassRls: boolean
+  inherit: boolean
+  memberships: number
+  identityRead: boolean
+  userRead: boolean
+  userUpdate: boolean
+  sessionDelete: boolean
+  resetTokenUpdate: boolean
+  auditInsert: boolean
+  auditUpdate: boolean
+  auditDelete: boolean
+}
+
+export function assertStagingAdminRecoveryDatabaseRole(role: StagingAdminRecoveryDatabaseRole) {
+  if (role.roleName !== STAGING_ADMIN_RECOVERY_ROLE || role.superuser || role.createDb || role.createRole ||
+      role.bypassRls || role.inherit || role.memberships !== 0 || !role.identityRead || !role.userRead ||
+      !role.userUpdate || !role.sessionDelete || !role.resetTokenUpdate || !role.auditInsert ||
+      role.auditUpdate || role.auditDelete) {
+    throw new Error('Database role does not match the restricted staging recovery privilege profile.')
+  }
+}
 
 type RecoveryInputs = {
   environment?: string
