@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { Pool } from 'pg'
 import { hashPassword } from '../lib/auth/password'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
-import { assertStagingAdminRecovery, assertStagingAdminRecoveryApproval, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from '../lib/security/staging-admin-recovery'
+import { assertStagingAdminPasswordIsNew, assertStagingAdminRecovery, assertStagingAdminRecoveryApproval, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from '../lib/security/staging-admin-recovery'
 
 /**
  * Emergency fictional staging-only credential rotation.
@@ -62,6 +62,7 @@ async function main() {
         !account.rows[0].passwordHash) {
       throw new Error('The expected active, previously provisioned administrator was not found.')
     }
+    await assertStagingAdminPasswordIsNew(password, account.rows[0].passwordHash as string)
 
     const userId = account.rows[0].id as string
     await client.query(

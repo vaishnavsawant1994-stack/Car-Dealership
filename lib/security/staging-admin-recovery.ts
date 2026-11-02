@@ -1,4 +1,4 @@
-import { passwordSchema } from '@/lib/auth/password'
+import { passwordSchema, verifyPassword } from '@/lib/auth/password'
 import { StringDecoder } from 'node:string_decoder'
 import type { ReadStream, WriteStream } from 'node:tty'
 
@@ -80,5 +80,16 @@ export function assertStagingAdminRecovery(inputs: RecoveryInputs) {
   assertStagingAdminRecoveryApproval(inputs)
   if (!inputs.password || inputs.password.length < 20 || !passwordSchema.safeParse(inputs.password).success) {
     throw new Error('A new, unique 20+ character password meeting the password policy is required.')
+  }
+}
+
+/** Require an actual credential change, even if the operator re-enters the old password. */
+export async function assertStagingAdminPasswordIsNew(
+  newPassword: string,
+  currentPasswordHash: string,
+  verify: typeof verifyPassword = verifyPassword,
+) {
+  if (await verify(currentPasswordHash, newPassword)) {
+    throw new Error('The new password must differ from the existing staging admin password.')
   }
 }

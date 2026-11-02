@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import type { ReadStream, WriteStream } from 'node:tty'
 import { describe, expect, it, vi } from 'vitest'
-import { assertStagingAdminRecovery, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from './staging-admin-recovery'
+import { assertStagingAdminPasswordIsNew, assertStagingAdminRecovery, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL } from './staging-admin-recovery'
 
 const approved = {
   environment: 'staging',
@@ -32,6 +32,24 @@ describe('P0-06 staging-only password recovery preflight', () => {
     { directUrl: '' },
   ])('fails closed for invalid input %o', (invalid) => {
     expect(() => assertStagingAdminRecovery({ ...approved, ...invalid })).toThrow()
+  })
+})
+
+describe('staging admin recovery password rotation', () => {
+  it('rejects reusing the current password', async () => {
+    await expect(assertStagingAdminPasswordIsNew(
+      'SyntheticOnlySecure!2026-Stage',
+      'synthetic-existing-hash',
+      async (hash, password) => hash === 'synthetic-existing-hash' && password === 'SyntheticOnlySecure!2026-Stage',
+    )).rejects.toThrow('must differ from the existing')
+  })
+
+  it('allows a password that does not match the current hash', async () => {
+    await expect(assertStagingAdminPasswordIsNew(
+      'SyntheticOnlySecure!2026-Stage',
+      'synthetic-existing-hash',
+      async () => false,
+    )).resolves.toBeUndefined()
   })
 })
 
