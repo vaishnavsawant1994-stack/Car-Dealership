@@ -69,7 +69,7 @@ The read-only verifier requires `canInsertAuditLog=true`, `canUpdateAuditLog=fal
 REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
 ```
 
-The staging SQL was applied on the verified staging branch. A fresh effective-privilege query on 2026-11-02 confirmed both `cd_staging_app` and `cd_staging_webapp` have SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. No demo database permission was changed. The staging branch compute was returned to idle after verification.
+A fresh effective-privilege query on 2026-11-02 confirmed both `cd_staging_app` and `cd_staging_webapp` have SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. Staging therefore meets the approved append-only target. No demo database permission was changed. The staging branch compute was returned to idle after verification.
 
 ### Cross-branch negative-role test
 
