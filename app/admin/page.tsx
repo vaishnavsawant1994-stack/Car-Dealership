@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { AdminMetric, AdminPageHeader, AdminStatus } from '@/components/admin/AdminPrimitives'
 import { getAdminDashboard, resolveDashboardRange, type DashboardRange } from '@/lib/admin/dashboard'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { hasPermission } from '@/lib/auth/admin-permissions'
 import { adminDateRangeSchema } from '@/lib/validation/admin'
 
 export default async function AdminDashboard({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -26,7 +27,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
       <article className="admin-panel admin-panel--narrow"><header><h2>Today&apos;s actions</h2></header><div className="admin-panel__body admin-kv"><div><small>Assigned to you</small><strong>{data.team.assignedWork}</strong></div><div><small>Overdue</small><strong>{data.team.overdueWork}</strong></div><div><small>Inspection queue</small><strong>{data.operations.inspections}</strong></div><div><small>Incomplete images</small><strong>{data.inventory.incompleteImages}</strong></div></div></article>
       <article className="admin-panel"><header><h2>Upcoming test drives</h2><Link href="/admin/test-drives">Schedule</Link></header><div className="admin-list">{data.drives.map((item) => <Link href={`/admin/test-drives/${item.id}`} key={item.id}><div><h3>{item.vehicle.shortTitle}</h3><p>{item.fullName} · {item.preferredDate.toLocaleDateString('en-IN')} {item.preferredTime}</p></div><AdminStatus value={item.status} /></Link>)}</div></article>
       <article className="admin-panel"><header><h2>Inventory & content alerts</h2></header><div className="admin-panel__body admin-kv"><div><small>Draft vehicles</small><strong>{data.inventory.drafts}</strong></div><div><small>Sold vehicles</small><strong>{data.inventory.sold}</strong></div><div><small>Draft testimonials</small><strong>{data.content.draftTestimonials}</strong></div><div><small>Draft gallery items</small><strong>{data.content.draftGallery}</strong></div></div></article>
-      <article className="admin-panel admin-panel--full"><header><h2>Recent staff activity</h2><Link href="/admin/audit-logs">Audit log</Link></header><div className="admin-list">{data.audit.map((item) => <article key={item.id}><div><h3>{item.summary ?? item.action}</h3><p>{item.actor?.name ?? 'System'} · {item.createdAt.toLocaleString('en-IN')}</p></div><AdminStatus value={item.action.replace('SEED_ADMIN_', '')} /></article>)}</div></article>
+      {hasPermission(actor.role, 'auditLog.view') ? <article className="admin-panel admin-panel--full"><header><h2>Recent staff activity</h2><Link href="/admin/audit-logs">Audit log</Link></header><div className="admin-list">{data.audit.map((item) => <article key={item.id}><div><h3>{item.summary ?? item.action}</h3><p>{item.actor?.name ?? 'System'} · {item.createdAt.toLocaleString('en-IN')}</p></div><AdminStatus value={item.action.replace('SEED_ADMIN_', '')} /></article>)}</div></article> : null}
     </section>
   </>
 }

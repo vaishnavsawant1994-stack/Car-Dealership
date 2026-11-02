@@ -4,6 +4,7 @@ import { Prisma, UserRole } from '@prisma/client'
 import { endOfDay, startOfDay } from '@/lib/admin/date-utils'
 import { prisma } from '@/lib/db/prisma'
 import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { hasPermission } from '@/lib/auth/admin-permissions'
 import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 import { andFilters } from './scoped-query'
 
@@ -94,12 +95,14 @@ export async function getAdminDashboard(input: { from: Date; to: Date; actorId: 
         take: 6,
         include: { vehicle: { select: { shortTitle: true } } },
       }),
-      prisma.sellRequest.groupBy({ by: ['status'], where: showroom, _count: true }),
-      prisma.auditLog.findMany({
-        orderBy: { createdAt: 'desc' },
-        take: 7,
-        include: { actor: { select: { name: true } } },
-      }),
+      prisma.sellRequest.groupBy({ by: ['status'], where: andFilters<Prisma.SellRequestWhereInput>(assigned, showroom), _count: true }),
+      hasPermission(input.actorRole, 'auditLog.view')
+        ? prisma.auditLog.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 7,
+            include: { actor: { select: { name: true } } },
+          })
+        : Promise.resolve([]),
     ])
     return {
       inventory: { available, reserved, sold, drafts, incompleteImages },
