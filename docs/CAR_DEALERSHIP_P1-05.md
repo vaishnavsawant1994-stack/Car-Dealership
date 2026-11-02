@@ -1,3 +1,4 @@
+- Full `npm.cmd test`: 19 files passed (106 tests); 7 database-backed suites failed before tests ran because this worktree has no DATABASE_URL or local isolated PostgreSQL service. No staging or production database was used.
 # P1-05 — Roles & Access Matrix
 
 **Status: in progress on `codex/p1-05-role-access-matrix`, based on local Phase 1 integration commit `119b34623e2e045f9b8ca674ab37f32a018276f6`. Draft work only; no PR, merge, staging migration, or deployment.**
