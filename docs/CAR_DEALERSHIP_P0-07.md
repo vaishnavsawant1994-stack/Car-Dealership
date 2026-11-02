@@ -166,3 +166,23 @@ Provider branch metadata reports the staging logical size as 34,775,040 bytes (3
 ## Effective audit-log privileges rechecked (2026-11-02 07:53 UTC)
 
 On staging database `car_dealership_staging`, branch `br-snowy-union-aoz83v84`, a read-only query of `has_table_privilege` confirmed `cd_staging_app` and `cd_staging_webapp` each retain SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. This confirms the approved staging remediation is in effect; it does not authorize or evidence the same change on the separate demo database. The original staging compute was suspended immediately after the query, and the non-promoting restore branch compute remains suspended. No audit-log rows were modified.
+
+## 2026-11-02 live backup and storage coverage refresh
+
+Read-only provider metadata refreshed against Neon project `empty-dew-20186400` and staging branch `br-snowy-union-aoz83v84` confirms:
+
+- The staging branch remains `primary=true`, `default=true`, and `ready`; its project is still on `free_v3` with a six-hour history window.
+- The only manual snapshot remains `snap-wandering-tooth-ao72wvwl` (created 2026-11-01 03:25:31 UTC). The automated snapshot schedule is empty. The requested daily snapshots with 30-day retention are unavailable under the current plan; no paid plan or billing setting was changed.
+- The last provider-reported staging logical size is 34,775,040 bytes (about 33.2 MiB). This is only a size baseline and does not predict a 30-day retention bill, which depends on plan and retained changes.
+- Staging Object Storage is enabled with a private bucket (`car-dealership-staging-private`) and a public-read bucket (`car-dealership-staging-public`). Both currently contain zero objects. The restored branch `br-empty-pond-aoikialy` remains ready/non-primary/non-default and exposes no buckets. This does not prove populated-object recovery.
+- The retained restore/checkpoint branches are distinct from active staging. No branch was promoted, no database was queried, and no object or storage configuration was changed in this refresh.
+
+### Current no-billing-change coverage and operating procedure
+
+1. Treat Neon’s six-hour history window as best-effort point-in-time recovery only. There is no provider-guaranteed business RPO or 30-day recovery point under the current plan.
+2. Before a planned staging mutation, verify the project, branch, database, fingerprint, snapshot quota, and snapshot age. If the single manual snapshot slot is occupied or the snapshot is stale, stop before mutation; do not delete the only recovery point to make room.
+3. Keep source, migration history, and runbooks in Git. Recreate configuration from the approved environment-variable inventory and secret manager; never put secret values in Git or a backup archive.
+4. Treat private/public media recovery as a separate layer. Before storing real media, select an owner-approved, separately administered, encrypted, versioned object-backup destination. Copy and checksum objects without changing source access controls, then restore a synthetic fixture to an isolated branch and verify private-object denial and authorized access. No destination or transfer credential is currently approved/configured, so independent media backups are not established.
+5. For recovery, create a non-promoting branch, verify its immutable environment identity, schema/migrations, row counts, role grants, and required storage/object coverage. Do not attach staging traffic or swap branch names until the application owner and independent reviewer accept the evidence and a rollback path.
+
+The observed drill measured only database-branch readiness plus limited verification; it is not end-to-end RTO. Until an owner approves business targets and the missing media/configuration layers are tested, the best available RPO statement remains a six-hour provider history window plus the dated manual snapshot, and end-to-end RTO remains unmeasured. Escalation ownership remains with the repository/application owner (scope and authorization), Neon project owner (database restore), Vercel project owner (deployment/configuration rollback), and an independent reviewer (identity, grants, storage access, and evidence).
