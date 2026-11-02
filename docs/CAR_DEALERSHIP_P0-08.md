@@ -17,7 +17,7 @@ Evidence links are references only; verify current provider status and actual te
 
 ## Current accepted independent work
 
-- Repository isolation/visibility and separate approved Neon database fingerprints.
+- Separate approved Neon database fingerprints. The GitHub repository currently reports public visibility, so the source-privacy release gate is blocked.
 - Protected staging deploy with public website/API smoke checks.
 - No external messaging or payment activation.
 - P0-07 security source changes and regression tests under review in draft PR #4.
