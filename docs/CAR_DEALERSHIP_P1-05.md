@@ -19,7 +19,7 @@ The slice makes current role grants visible in the staff application and adds co
 ## Limits that remain open
 
 - This is showroom/branch scoping within one organization, not multi-tenant organization isolation. Admins intentionally have organization-wide access. Every remaining direct record access and derived child resource must be audited before acceptance.
-- The migration leaves the new showroom foreign keys nullable for migration-before-seed compatibility. It backfills existing data to the active primary showroom and aborts if operational records exist without one. Database execution and post-migration verification have not been performed in this worktree.
+- The migration leaves the new showroom foreign keys nullable for migration-before-seed compatibility. It backfills existing data to the active primary showroom and aborts if operational records exist without one. It was applied and verified against a disposable local PostgreSQL 16 CI-style database; it has not been applied to staging.
 - This slice does not add runtime-editable permission grants. A later approved data model would need migration, privilege-boundary review, change audit, and rollback design before grants could be edited in the UI.
 - Full per-role browser journeys, isolated PostgreSQL migration/backfill tests, branch-scoped fixtures, and cross-organization denial tests remain required before this module can be accepted.
 - The branch is based on locally integrated P1-01–P1-04 preview commits whose upstream PRs remain unmerged. Rebase or reconcile only after those reviewed PRs are integrated; do not merge this branch into `main` or deploy it ahead of those gates.
@@ -38,4 +38,4 @@ The slice makes current role grants visible in the staff application and adds co
 
 ## Acceptance still required
 
-Run the isolated PostgreSQL integration suites, finish production build verification, and run the authenticated E2E matrix; complete the route-by-route authorization audit; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
+Run the authenticated E2E matrix; complete the route-by-route authorization audit; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
