@@ -97,6 +97,17 @@
 .admin-table th { padding: 11px 13px; background: #0b0e0e; color: #8e9996; text-align: left; font-size: 12px; text-transform: uppercase; white-space: nowrap; }
 .admin-table td { padding: 12px 13px; border-top: 1px solid #222827; vertical-align: middle; }
 .admin-table tbody tr:hover { background: #141817; }
+.access-matrix-notice, .access-matrix-section { margin-top: 18px; padding: 18px; }
+.access-matrix-notice h2, .access-matrix-section h2 { margin: 0 0 12px; font-family: var(--admin-serif, Georgia, serif); font-size: 20px; }
+.access-matrix-notice p { max-width: 980px; color: var(--admin-muted); line-height: 1.65; }
+.access-matrix-notice p:last-child { margin-bottom: 0; }
+.access-matrix-notice strong { color: var(--admin-text); }
+.access-matrix-table { min-width: 920px; }
+.access-matrix-table th, .access-matrix-table td { text-align: center; }
+.access-matrix-table th:first-child { text-align: left; }
+.access-matrix-table code { color: var(--admin-text); font-size: 11px; }
+.access-matrix-granted { color: #72d4a4; font-weight: 700; }
+.access-matrix-denied { color: var(--admin-muted); }
 .admin-table a { color: var(--admin-text); text-decoration: none; }
 .admin-table a:hover { color: var(--admin-gold-soft); }
 .admin-record { display: flex; align-items: center; gap: 10px; min-width: 190px; }
