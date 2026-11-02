@@ -53,3 +53,11 @@ Dashboard permission follow-up (2026-11-02): operational metrics and panels for 
 ## Acceptance still required
 
 Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
+
+## Export permission audit follow-up (2026-11-02)
+
+The remaining route audit found that the CSV endpoint gated non-newsletter exports on the general `export.create` permission without also checking the resource's view permission. Operations therefore could export enquiries even though its role does not grant `enquiry.view`. The endpoint now requires both export permission and matching resource-view permission before querying or exporting data. Newsletter export continues to require its distinct `newsletter.export` and `newsletter.view` permissions. Showroom/assignment predicates remain applied to records after authorization.
+
+- `npm.cmd test -- lib/auth/admin-export-policy.test.ts` — **1 file, 4 tests passed**, covering role/resource pairs and the Operations enquiry denial.
+- `npm.cmd run lint` and `npm.cmd run typecheck` — **passed**.
+- `git diff --check` — **passed**. This fix remains on the local dependent P1-05 branch; it has not been pushed, reviewed, migrated to staging, or deployed.
