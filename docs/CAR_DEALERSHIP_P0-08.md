@@ -1,6 +1,6 @@
 # P0-08 — Phase 0 Acceptance and Safe Transition to P1
 
-**2026-11-01 | STATUS: BLOCKED FOR RELEASE, DEVELOPMENT MAY CONTINUE**
+**2026-11-02 | STATUS: BLOCKED FOR RELEASE, DEVELOPMENT MAY CONTINUE**
 
 This phase is a documented release decision, not permission to call unfinished P0-06 or P0-07 "passed." The user explicitly chose to proceed with independent later-stage work while P0-06 is open. The Car-Dealership client demo remains undeployed.
 
@@ -42,6 +42,10 @@ This improves an authenticated manual health check and gives a future authorized
 ## Repository release controls follow-up (2026-11-01)
 
 The current GitHub repository API reports the project as **public**, which differs from the earlier audit's private status. No visibility change was made during this work. The connected GitHub integration still returns 403 (`Resource not accessible by integration`) for `main` branch protection, and the current rulesets endpoint returns an empty list. A prior browser inspection displayed “Your main branch isn't protected”; because the protection endpoint remains unreadable now, recheck in the owner dashboard before release. Keep `release_controls` pending until an account owner confirms the intended repository visibility and an authorized enforceable protection mechanism is verified. Do not change repository visibility or permissions without explicit owner approval.
+
+## Current manifest correction (2026-11-02)
+
+Fresh GitHub repository metadata reports `Car-Dealership` visibility as `public`. This contradicts the `repo_private` gate's prior `passed` assertion and the P0-08 requirement that source remain private. The manifest now records this gate as `blocked`, with the GitHub repository as the evidence reference. Repository visibility was not changed; explicit owner authorization is required before any visibility or access-control mutation.
 
 ## P0-07 restore drill follow-up (2026-11-01)
 

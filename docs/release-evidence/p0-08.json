@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "lastReviewed": "2026-11-01",
+  "lastReviewed": "2026-11-02",
   "gates": {
     "repo_private": {
-      "status": "passed",
-      "note": "Independent repository access and visibility were verified.",
+      "status": "blocked",
+      "note": "GitHub repository metadata currently reports public visibility; the source privacy requirement is unmet. No visibility change was made without explicit owner authorization.",
       "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership"
     },
     "release_controls": {
