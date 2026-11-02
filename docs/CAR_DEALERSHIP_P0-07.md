@@ -58,20 +58,18 @@ This PR additionally validates the exact application database login username and
 
 ## Blocking P0-07 audit-integrity finding (2026-11-01)
 
-Both hosted application roles currently have SELECT, INSERT, **UPDATE and DELETE** rights on `public."AuditLog"`. The reviewed application paths read and append audit events, so a compromised runtime could alter or remove its audit history.
+The original 2026-11-01 audit found that both hosted application roles had SELECT, INSERT, UPDATE and DELETE rights on `public."AuditLog"`. The reviewed application paths read and append audit events, so a compromised runtime could alter or remove its audit history.
 
-The read-only verifier now requires `canInsertAuditLog=true`, `canUpdateAuditLog=false`, and `canDeleteAuditLog=false`. The live verifier must report FAILED until these grants are corrected; do not bypass the failure.
+The read-only verifier requires `canInsertAuditLog=true`, `canUpdateAuditLog=false`, and `canDeleteAuditLog=false`. Staging now satisfies these checks; keep the demo verifier blocked until its own grants are separately reviewed and verified. Do not bypass a failing verifier.
 
-**Proposed SQL — NOT executed on either live database:**
+**Approved staging remediation:**
 
 ```sql
--- Run separately with approval after verifying staging/demo project fingerprints and application audit use.
+-- Applied only to the verified staging branch after owner approval.
 REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_staging_app";
--- Run the following command ONLY in the independent demo project/database:
-REVOKE UPDATE, DELETE ON TABLE public."AuditLog" FROM "cd_demo_app";
 ```
 
-Review P0-06 runtime impact before applying, and afterward verify INSERT remains available and UPDATE/DELETE are denied. No database permission changes were made during this continuation.
+The staging SQL was applied on the verified staging branch. A fresh effective-privilege query on 2026-11-02 confirmed both `cd_staging_app` and `cd_staging_webapp` have SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. No demo database permission was changed. The staging branch compute was returned to idle after verification.
 
 ### Cross-branch negative-role test
 
@@ -164,3 +162,7 @@ This recheck confirms that the snapshot, storage-recovery and retention limitati
 Read-only Neon project metadata and branch/storage listings confirm the staging project remains `free_v3`, with six-hour history, an empty scheduled-snapshot list, and one manual snapshot `snap-wandering-tooth-ao72wvwl` created at `2026-11-01T03:25:31Z` (about 28h14m old at this check). The original staging branch remains primary/default. Its compute is idle/suspended since `2026-11-02T06:25:47Z`; no SQL was run and no compute was started for this audit.
 
 Provider branch metadata reports the staging logical size as 34,775,040 bytes (33.16 MiB), against a 1 GiB branch logical-size limit. At the documented snapshot-storage rate of $0.09/GB-month, one full snapshot of the current branch size is approximately $0.0029/month before incremental changes, billing granularity and compute. This is a baseline size estimate, not a quote for a daily 30-day schedule; retained deltas and paid-plan charges are not measured or approved. The public and private staging buckets both list zero objects. The restored branch `br-empty-pond-aoikialy` still exposes no buckets. This does not prove restoration of populated object data, private-object denial, or an approved RPO/RTO. No plan, schedule, branch, snapshot, bucket, object, or database state changed.
+
+## Effective audit-log privileges rechecked (2026-11-02 07:53 UTC)
+
+On staging database `car_dealership_staging`, branch `br-snowy-union-aoz83v84`, a read-only query of `has_table_privilege` confirmed `cd_staging_app` and `cd_staging_webapp` each retain SELECT/INSERT and are denied UPDATE/DELETE on `public."AuditLog"`. This confirms the approved staging remediation is in effect; it does not authorize or evidence the same change on the separate demo database. The original staging compute was suspended immediately after the query, and the non-promoting restore branch compute remains suspended. No audit-log rows were modified.
