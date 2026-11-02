@@ -1,0 +1,166 @@
+import { EventEmitter } from 'node:events'
+import type { ReadStream, WriteStream } from 'node:tty'
+import { describe, expect, it, vi } from 'vitest'
+import { assertStagingAdminPasswordIsNew, assertStagingAdminRecovery, assertStagingAdminRecoveryConnection, assertStagingAdminRecoveryDatabaseRole, assertStagingAdminRecoveryInstanceId, readMaskedStagingAdminPassword, STAGING_ADMIN_EMAIL, STAGING_ADMIN_RECOVERY_ROLE, STAGING_NEON_ENDPOINT_ID, STAGING_NEON_INSTANCE_ID } from './staging-admin-recovery'
+
+const approved = {
+  environment: 'staging',
+  projectId: 'car-dealership',
+  approved: 'true',
+  email: STAGING_ADMIN_EMAIL,
+  password: 'SyntheticOnlySecure!2026-Stage',
+  directUrl: 'postgresql://test@localhost/car_dealership_staging',
+  expectedDatabaseId: 'synthetic-fixture-identity',
+}
+
+describe('P0-06 staging-only password recovery preflight', () => {
+  it('allows only a fully approved staging admin recovery request', () => {
+    expect(() => assertStagingAdminRecovery(approved)).not.toThrow()
+  })
+  it.each([
+    { environment: 'demo' },
+    { environment: 'commercial' },
+    { environment: 'test' },
+    { projectId: 'other-project' },
+    { approved: 'false' },
+    { email: 'demo.manager@car-dealership.test' },
+    { email: 'customer@example.com' },
+    { password: 'short' },
+    { password: 'alllowercaseandnothingelse' },
+    { password: '' },
+    { expectedDatabaseId: '' },
+    { directUrl: '' },
+  ])('fails closed for invalid input %o', (invalid) => {
+    expect(() => assertStagingAdminRecovery({ ...approved, ...invalid })).toThrow()
+  })
+})
+
+describe('staging recovery database connection', () => {
+  const connection = `postgresql://${STAGING_ADMIN_RECOVERY_ROLE}:synthetic-only@${STAGING_NEON_ENDPOINT_ID}.c-2.ap-southeast-1.aws.neon.tech/car_dealership_staging?sslmode=verify-full`
+
+  it('requires the restricted app login and certificate-verifying TLS', () => {
+    expect(() => assertStagingAdminRecoveryConnection(connection)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace(STAGING_NEON_ENDPOINT_ID, 'ep-empty-pond-aoikialy'))).toThrow('restricted staging app role')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace(STAGING_ADMIN_RECOVERY_ROLE, 'cd_staging_owner'))).toThrow('restricted staging app role')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace('verify-full', 'require'))).toThrow('sslmode=verify-full')
+    expect(() => assertStagingAdminRecoveryConnection(connection.replace('?sslmode=verify-full', ''))).toThrow('sslmode=verify-full')
+    expect(() => assertStagingAdminRecoveryConnection(`${connection}&uselibpqcompat=true`)).toThrow('sslmode=verify-full')
+  })
+})
+
+describe('staging recovery database identity', () => {
+  it('pins recovery to the live staging database fingerprint', () => {
+    expect(() => assertStagingAdminRecoveryInstanceId(STAGING_NEON_INSTANCE_ID)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryInstanceId('restore-branch-copy')).toThrow('verified staging database identity')
+    expect(() => assertStagingAdminRecoveryInstanceId(undefined)).toThrow('verified staging database identity')
+  })
+})
+
+describe('staging recovery database role', () => {
+  const restrictedRole = {
+    roleName: STAGING_ADMIN_RECOVERY_ROLE,
+    superuser: false,
+    createDb: false,
+    createRole: false,
+    bypassRls: false,
+    inherit: false,
+    memberships: 0,
+    identityRead: true,
+    userRead: true,
+    userUpdate: true,
+    sessionDelete: true,
+    resetTokenUpdate: true,
+    auditInsert: true,
+    auditUpdate: false,
+    auditDelete: false,
+  }
+
+  it('allows only the verified restricted recovery privilege profile', () => {
+    expect(() => assertStagingAdminRecoveryDatabaseRole(restrictedRole)).not.toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, roleName: 'cd_staging_owner' })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, superuser: true })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, memberships: 1 })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, userUpdate: false })).toThrow()
+    expect(() => assertStagingAdminRecoveryDatabaseRole({ ...restrictedRole, auditUpdate: true })).toThrow()
+  })
+})
+
+describe('staging admin recovery password rotation', () => {
+  it('rejects reusing the current password', async () => {
+    await expect(assertStagingAdminPasswordIsNew(
+      'SyntheticOnlySecure!2026-Stage',
+      'synthetic-existing-hash',
+      async (hash, password) => hash === 'synthetic-existing-hash' && password === 'SyntheticOnlySecure!2026-Stage',
+    )).rejects.toThrow('must differ from the existing')
+  })
+
+  it('allows a password that does not match the current hash', async () => {
+    await expect(assertStagingAdminPasswordIsNew(
+      'SyntheticOnlySecure!2026-Stage',
+      'synthetic-existing-hash',
+      async () => false,
+    )).resolves.toBeUndefined()
+  })
+})
+
+describe('masked password input', () => {
+  function fakeTTY(isTTY = true) {
+    const input = new EventEmitter() as EventEmitter & Partial<ReadStream>
+    Object.assign(input, {
+      isTTY,
+      isRaw: false,
+      setRawMode: vi.fn(function (this: { isRaw: boolean }, mode: boolean) { this.isRaw = mode; return this }),
+      resume: vi.fn(),
+      pause: vi.fn(),
+    })
+    const output = { isTTY, write: vi.fn() }
+    return { input: input as ReadStream, output: output as unknown as WriteStream }
+  }
+
+  it('accepts a hidden interactive secret and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('data', Buffer.from('SyntheticOnlySecure!2026-Stage\r'))
+    await expect(passwordPromise).resolves.toBe('SyntheticOnlySecure!2026-Stage')
+    expect(output.write).toHaveBeenCalledWith('New staging admin password (input hidden): ')
+    expect(output.write).toHaveBeenCalledWith('\n')
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
+  })
+
+  it('refuses non-interactive input', async () => {
+    const { input, output } = fakeTTY(false)
+    await expect(readMaskedStagingAdminPassword(input, output)).rejects.toThrow('private interactive TTY')
+  })
+
+  it('cancels without exposing input and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('data', Buffer.from('partial-secret\u0003'))
+    await expect(passwordPromise).rejects.toThrow('cancelled')
+    expect(output.write).toHaveBeenCalledTimes(2)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+  })
+
+  it('cancels when the TTY closes and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('end')
+    await expect(passwordPromise).rejects.toThrow('TTY closed')
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
+  })
+
+  it('cancels on a TTY error and restores terminal mode', async () => {
+    const { input, output } = fakeTTY()
+    const passwordPromise = readMaskedStagingAdminPassword(input, output)
+    input.emit('error', new Error('synthetic stream error'))
+    await expect(passwordPromise).rejects.toThrow('Password input failed')
+    expect(input.setRawMode).toHaveBeenNthCalledWith(1, true)
+    expect(input.setRawMode).toHaveBeenNthCalledWith(2, false)
+    expect(input.pause).toHaveBeenCalledOnce()
+  })
+})
