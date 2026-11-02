@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/lib/auth/session'
 import { createReferenceNumber } from '@/lib/references'
 import { sendEngagementConfirmation, sendLeadNotification } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 export async function POST(request: Request) {
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
       },
       select: { id: true, referenceNumber: true, createdAt: true, email: true, fullName: true, phone: true, message: true },
     })
-    try { await sendEngagementConfirmation(inquiry.email, inquiry.fullName, inquiry.referenceNumber, 'enquiry') } catch (emailError) { console.error('inquiry_confirmation_failed', { inquiryId: inquiry.id, emailError }) }
+    try { await sendEngagementConfirmation(inquiry.email, inquiry.fullName, inquiry.referenceNumber, 'enquiry') } catch (emailError) { logSafeError('inquiry_confirmation_failed', emailError, { inquiryId: inquiry.id }) }
     try {
       await sendLeadNotification('enquiry', {
         reference: inquiry.referenceNumber,
@@ -50,11 +51,11 @@ export async function POST(request: Request) {
         message: inquiry.message,
       })
     } catch (emailError) {
-      console.error('inquiry_staff_notification_failed', { inquiryId: inquiry.id, emailError })
+      logSafeError('inquiry_staff_notification_failed', emailError, { inquiryId: inquiry.id })
     }
     return NextResponse.json({ data: { id: inquiry.id, referenceNumber: inquiry.referenceNumber, createdAt: inquiry.createdAt }, message: `Enquiry received. Your reference is ${inquiry.referenceNumber}.` }, { status: 201 })
   } catch (error) {
-    console.error('inquiry_create_failed', { error })
+    logSafeError('inquiry_create_failed', error)
     return NextResponse.json({ error: { code: 'SUBMISSION_FAILED', message: 'The enquiry could not be submitted.' } }, { status: 503 })
   }
 }

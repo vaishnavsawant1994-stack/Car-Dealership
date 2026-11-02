@@ -1,4 +1,5 @@
 import { HomePage } from '@/components/home/HomePage'
+import { logSafeError } from '@/lib/observability/safe-log'
 import { brands as fallbackBrands, vehicles as fallbackVehicles } from '@/lib/constants/site'
 import { mapVehicleCard } from '@/lib/mappers/vehicle-mapper'
 import { getFeaturedBrands } from '@/lib/repositories/brand-repository'
@@ -13,7 +14,7 @@ export default async function Page() {
     const [vehicleRecords, brandRecords] = await Promise.all([getNewArrivalVehicles(10), getFeaturedBrands(10)])
     return <HomePage vehicles={vehicleRecords.map(mapVehicleCard)} brands={brandRecords.map(mapBrandSummary)} />
   } catch (error) {
-    console.error('homepage_inventory_database_failed', { error })
+    logSafeError('homepage_inventory_database_failed', error)
     if (process.env.NODE_ENV === 'production') throw error
     return <HomePage vehicles={developmentVehicleFallback()} brands={developmentBrandFallback()} />
   }

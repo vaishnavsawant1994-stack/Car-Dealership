@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "lastReviewed": "2026-11-02",
+  "gates": {
+    "repo_private": {
+      "status": "blocked",
+      "note": "GitHub repository metadata currently reports public visibility; the source privacy requirement is unmet. No visibility change was made without explicit owner authorization.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership"
+    },
+    "release_controls": {
+      "status": "pending",
+      "note": "Earlier Issue #3 audit reported no enforceable main protection. Current branch-protection read is denied to the connected GitHub integration; ruleset API reports GitHub Pro or a public repository is required. Owner verification and an authorized protection mechanism remain outstanding."
+    },
+    "staging_isolation": {
+      "status": "passed",
+      "note": "Original staging database identity and restricted role verified.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "demo_isolation": {
+      "status": "passed",
+      "note": "Independent demo branch and unique database fingerprint verified; role disabled.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "staging_deployment": {
+      "status": "passed",
+      "note": "CI-approved baseline deployed READY with SSO required.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/3"
+    },
+    "admin_signin": {
+      "status": "blocked",
+      "note": "PR #12 head 18478ac06057eb6efd8d87036d53503b2dc48c72 passed exact-head CI 41425771447, but no independent review, staging password rotation, or authenticated login/session/logout test is complete.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/12"
+    },
+    "image_workflow": {
+      "status": "blocked",
+      "note": "Authenticated image upload, variants, audit and deletion are not verified."
+    },
+    "demo_deployment": {
+      "status": "blocked",
+      "note": "Separate protected client demo has not been deployed or authenticated."
+    },
+    "messaging_disabled": {
+      "status": "passed",
+      "note": "External messaging and payments kept disabled in protected hosted demo.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/3"
+    },
+    "security_change_review": {
+      "status": "pending",
+      "note": "P0-07 PR #4 head 90d8b883f39fd85bfd3007e2fea821bc1aea50d6 passed exact-head CI 41426857586; it remains unreviewed and unmerged.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/41426857586"
+    },
+    "audit_append_only": {
+      "status": "passed",
+      "note": "After explicit owner approval, staging privileges were revoked and verified with has_table_privilege for cd_staging_app and inherited cd_staging_webapp: SELECT/INSERT true; UPDATE/DELETE false.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "backup_policy": {
+      "status": "blocked",
+      "note": "Staging remains Neon Free with six-hour history, one manual snapshot, and no automated schedule. Daily/30-day retention is unavailable on this plan; media backup target, recovery objectives and paid costs are not approved."
+    },
+    "restore_drill": {
+      "status": "passed",
+      "note": "A staging snapshot was restored to a separate non-primary/non-default branch with finalize=false; restricted-role SQL verified the staging fingerprint and four vehicle/image rows while original staging remained primary/default. This verifies database restore only; object-storage recovery and timed RTO remain open under backup_policy.",
+      "evidence": "https://github.com/vaishnavsawant1994-stack/Car-Dealership/issues/5"
+    },
+    "credential_isolation": {
+      "status": "pending",
+      "note": "Provider branch role selection denied but full cross-account credential and private-object tests remain."
+    },
+    "final_approval": {
+      "status": "pending",
+      "note": "Phase 0 security/release sign-off is not authorized while acceptance gates remain."
+    }
+  }
+}

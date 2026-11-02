@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { prisma } from '@/lib/db/prisma'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 type RateLimitResult = {
   allowed: boolean
@@ -37,7 +38,7 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
     const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt.getTime() - now.getTime()) / 1000))
     return { allowed: bucket.count <= limit, remaining: Math.max(0, limit - bucket.count), retryAfterSeconds }
   } catch (error) {
-    console.error('Shared rate limiter is unavailable', error)
+    logSafeError('shared_rate_limiter_unavailable', error)
     return { allowed: false, remaining: 0, retryAfterSeconds: 60, unavailable: true }
   }
 }
