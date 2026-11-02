@@ -2,7 +2,7 @@ import 'server-only'
 
 import { ContactInquiryStatus, InquiryStatus, OperationalMessageType, RequestStatus, TestDriveStatus, type LeadPriority } from '@prisma/client'
 import { contactTransitions, inquiryTransitions, sellRequestTransitions, testDriveTransitions, canTransition } from '@/lib/admin/lead-workflows'
-import { accessibleResourceWhere, canAccessScopedResource, canAssignResource, showroomScopeWhere, type ShowroomScope } from '@/lib/auth/admin-resource-policy'
+import { accessibleResourceWhere, canAccessScopedResource, canAssignResource, type ShowroomScope } from '@/lib/auth/admin-resource-policy'
 import type { AdminActor } from '@/lib/auth/require-admin'
 import { prisma } from '@/lib/db/prisma'
 import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
@@ -21,8 +21,8 @@ const safeVehicle = {
   images: { where: { isPrimary: true }, take: 1, select: { id: true, url: true, altText: true } },
 } as const
 
-export async function findLead(kind: LeadKind, id: string, scope: ShowroomScope) {
-  const where = { id, ...showroomScopeWhere(scope) }
+export async function findLead(kind: LeadKind, id: string, actor: AdminActor, scope: ShowroomScope) {
+  const where = { id, ...accessibleResourceWhere(actor, scope) }
   if (kind === 'enquiries') return prisma.inquiry.findFirst({ where, include: { vehicle: { select: safeVehicle }, user: { select: safeCustomer }, assignedTo: { select: safeAssignee } } })
   if (kind === 'test-drives') return prisma.testDrive.findFirst({ where, include: { vehicle: { select: safeVehicle }, user: { select: safeCustomer }, assignedTo: { select: safeAssignee } } })
   if (kind === 'sell-requests') return prisma.sellRequest.findFirst({ where, include: { user: { select: safeCustomer }, assignedTo: { select: safeAssignee }, inspection: true, valuations: { orderBy: { createdAt: 'desc' } } } })
@@ -31,7 +31,7 @@ export async function findLead(kind: LeadKind, id: string, scope: ShowroomScope)
 
 export async function requireAccessibleLead(kind: LeadKind, id: string, actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
-  const lead = await findLead(kind, id, scope)
+  const lead = await findLead(kind, id, actor, scope)
   if (!lead || !canAccessScopedResource(actor, lead, scope)) return null
   return lead
 }
@@ -39,7 +39,7 @@ export async function requireAccessibleLead(kind: LeadKind, id: string, actor: A
 export async function assignLead(kind: LeadKind, id: string, actor: AdminActor, assigneeId: string | null, version: number) {
   if (!canAssignResource(actor, assigneeId)) throw new Error('ASSIGNMENT_FORBIDDEN')
   const scope = await getActorShowroomScope(actor)
-  const current = await findLead(kind, id, scope)
+  const current = await findLead(kind, id, actor, scope)
   if (!current || !canAccessScopedResource(actor, current, scope)) return null
   if (assigneeId) {
     const membership = await prisma.showroomStaffAssignment.findFirst({
@@ -52,7 +52,7 @@ export async function assignLead(kind: LeadKind, id: string, actor: AdminActor, 
   const result = await (model.updateMany as Function)({ where: { id, version, ...accessibleResourceWhere(actor, scope) }, data: { assignedToId: assigneeId, version: { increment: 1 }, ...(kind === 'enquiries' ? { status: InquiryStatus.ASSIGNED } : kind === 'contact-inquiries' ? { status: ContactInquiryStatus.ASSIGNED } : {}) } }) as { count: number }
   if (!result.count) return null
   await prisma.operationalActivity.create({ data: { resourceType: leadResource[kind], resourceId: id, actorId: actor.id, action: 'ASSIGNED', summary: assigneeId ? 'Record assigned to staff.' : 'Record returned to unassigned queue.', metadata: { assigneeId } } })
-  return findLead(kind, id, scope)
+  return findLead(kind, id, actor, scope)
 }
 
 function validStatus(kind: LeadKind, current: string, next: string): boolean {
@@ -72,7 +72,7 @@ export async function updateLead(kind: LeadKind, id: string, actor: AdminActor, 
   const result = await (model.updateMany as Function)({ where: { id, version: input.version, ...accessibleResourceWhere(actor, scope) }, data }) as { count: number }
   if (!result.count) return { type: 'conflict' as const }
   await prisma.operationalActivity.create({ data: { resourceType: leadResource[kind], resourceId: id, actorId: actor.id, action: 'STATUS_CHANGED', summary: `${current.status} changed to ${input.status}.`, metadata: { from: current.status, to: input.status } } })
-  return { type: 'success' as const, data: await findLead(kind, id, scope) }
+  return { type: 'success' as const, data: await findLead(kind, id, actor, scope) }
 }
 
 export async function addLeadMessage(kind: LeadKind, id: string, actor: AdminActor, input: { body: string; customerVisible: boolean; type: Exclude<OperationalMessageType, 'SYSTEM'> }) {
