@@ -71,7 +71,7 @@ A fresh Vercel runtime-error query for the last seven days returned one warning 
 
 ## 2026-11-02 health signal contract tests (local)
 
-Added tests for the `/api/health` success and failure responses, their no-cache headers, and the database probe's sanitized failure behavior. Focused local run passed **2 files / 4 tests**; `npm.cmd run typecheck`, `npm.cmd run lint`, and `git diff --check` passed. These tests exercise the handler and health helper with controlled mocks; they do not verify hosted database connectivity, deployment monitoring, log retention, or alert delivery. The test-only changes remain local and unpushed; PR #7's latest remote head still needs CI rerun if this work is added to it.
+Added tests for the `/api/health` success and failure responses, their no-cache headers, and the database probe's sanitized failure behavior. Focused local run passed **2 files / 4 tests**. The complete local non-integration suite passed **15 files / 73 tests** with a synthetic loopback URL at port 1 (no database connection). `npm.cmd run typecheck`, `npm.cmd run lint`, and `git diff --check` passed. These tests exercise the handler and health helper with controlled mocks; they do not verify hosted database connectivity, deployment monitoring, log retention, or alert delivery. The test-only changes are committed locally and unpushed; PR #7's latest remote head still needs CI rerun if this work is added to it.
 
 ## Fresh P0-07 storage and permissions check (2026-11-01)
 
