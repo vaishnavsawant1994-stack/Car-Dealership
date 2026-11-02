@@ -28,10 +28,11 @@ The slice makes current role grants visible in the staff application and adds co
 
 - No hosted resource was mutated. A local schema/migration change is now included; the migration has not been applied to staging.
 - `npm.cmd test -- lib/auth/admin-permissions.test.ts lib/auth/admin-resource-policy.test.ts lib/admin/scoped-query.test.ts` — **3 files, 24 tests passed**. Tests cover role grants, lead policy, user management, private-document policy and preserving separate OR filters.
-- Full `npm.cmd test`: 19 files passed (106 tests); 7 database-backed suites failed before tests ran because this worktree has no DATABASE_URL or local isolated PostgreSQL service. No staging or production database was used.
+- Full `npm.cmd test` with an isolated disposable PostgreSQL 16 container on loopback, after applying all 10 migrations and running the CI fixture seed: **26 files passed, 143 tests passed, 0 failed**. The first attempt exposed three integration fixtures missing showroom scope and one loopback guard that rejected `127.0.0.1`; fixtures/guard were corrected and the full suite rerun successfully. No staging or production database was used.
 - `npm.cmd run lint` — **passed**.
 - `npm.cmd run typecheck` — **passed after regenerating Prisma Client**.
 - `npm.cmd exec prisma validate` — **passed**.
+- `npm.cmd exec prisma migrate status` against the disposable local database — **10 migrations found; database schema is up to date**.
 - `npm.cmd run build`: exit 0 with ephemeral test-only auth values, including `/admin/access-matrix`. Static generation logged three database-unavailable `contentBlock.findFirst` messages against loopback `127.0.0.1:55432`; this verifies compilation/page generation, not database runtime.
 - Locked dependencies installed with `npm.cmd ci`; no lockfile changes. The install reported **15 dependency audit findings** (7 moderate, 7 high, 1 critical); no automatic dependency changes were applied.
 
