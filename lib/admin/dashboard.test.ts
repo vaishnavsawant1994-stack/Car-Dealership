@@ -56,6 +56,8 @@ describe('role and showroom scope for dashboard data', () => {
       _count: true,
     })
     expect(db.auditLog.findMany).not.toHaveBeenCalled()
+    expect(db.testimonial.count).not.toHaveBeenCalled()
+    expect(db.galleryItem.count).not.toHaveBeenCalled()
   })
 
   it('includes audit data for administrators with explicit audit permission', async () => {
@@ -69,5 +71,38 @@ describe('role and showroom scope for dashboard data', () => {
     })
 
     expect(db.auditLog.findMany).toHaveBeenCalledOnce()
+  })
+
+  it('loads each content alert only for roles with that content permission', async () => {
+    getScope.mockResolvedValue({ global: false, showroomIds: ['showroom-content'] })
+
+    await getAdminDashboard({
+      from: new Date('2026-01-01T00:00:00.000Z'),
+      to: new Date('2026-01-31T23:59:59.999Z'),
+      actorId: 'content-a',
+      actorRole: UserRole.CONTENT_MANAGER,
+    })
+
+    expect(db.testimonial.count).toHaveBeenCalledOnce()
+    expect(db.galleryItem.count).toHaveBeenCalledOnce()
+    expect(db.newsletterSubscriber.count).not.toHaveBeenCalled()
+  })
+
+  it('returns no canned rows when the database is unavailable', async () => {
+    getScope.mockResolvedValue({ global: false, showroomIds: ['showroom-a'] })
+    db.vehicle.count.mockRejectedValueOnce(new Error('database unavailable'))
+
+    const data = await getAdminDashboard({
+      from: new Date('2026-01-01T00:00:00.000Z'),
+      to: new Date('2026-01-31T23:59:59.999Z'),
+      actorId: 'sales-a',
+      actorRole: UserRole.SALES,
+    })
+
+    expect(data.sourceAvailable).toBe(false)
+    expect(data.inventory).toEqual({ available: 0, reserved: 0, sold: 0, drafts: 0, incompleteImages: 0 })
+    expect(data.recentEnquiries).toEqual([])
+    expect(data.drives).toEqual([])
+    expect(data.audit).toEqual([])
   })
 })

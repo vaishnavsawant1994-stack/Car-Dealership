@@ -39,6 +39,15 @@ The slice makes current role grants visible in the staff application and adds co
 - `npm.cmd run build`: exit 0 with ephemeral test-only auth values, including `/admin/access-matrix`. Static generation logged three database-unavailable `contentBlock.findFirst` messages against loopback `127.0.0.1:55432`; this verifies compilation/page generation, not database runtime.
 - Locked dependencies installed with `npm.cmd ci`; no lockfile changes. The install reported **15 dependency audit findings** (7 moderate, 7 high, 1 critical); no automatic dependency changes were applied.
 
+## Dashboard scope and outage behavior follow-up (2026-11-02)
+
+A final dashboard scope audit found that Sales and Operations roles could trigger and see global draft testimonial/gallery totals without the corresponding content permissions. The database-error fallback also returned hard-coded customer and staff rows without applying the actor's showroom or assignment scope. The dashboard now queries each content count only for roles with its matching permission, omits unauthorized counts in the UI, and returns an explicit unavailable state with empty data instead of fabricated rows. The unused global newsletter-subscriber count query was removed.
+
+- `npm.cmd test -- lib/admin/dashboard.test.ts` — **1 file, 4 tests passed**, including role-gated content queries and empty fallback on DB failure.
+- Full CI-style local PostgreSQL suite against an isolated PostgreSQL 16 container, after all 10 migrations and CI seed: `npm.cmd test -- --testTimeout=30000` — **29 files, 157 tests passed**.
+- `npm.cmd run lint`, `npm.cmd run typecheck`, `npm.cmd exec prisma validate`, and `npm.cmd run build` — **passed**. The build ran the isolation preflight with test-only environment values and generated 123 static pages. No hosted database or deployment was used.
+- The test container was local and disposable; no Vercel/Neon staging state was changed. These changes remain unpushed and unmerged pending Phase 1 dependency reconciliation and review.
+
 ## Acceptance still required
 
 Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
