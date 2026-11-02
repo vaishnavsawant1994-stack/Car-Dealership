@@ -58,6 +58,6 @@ Run the authenticated E2E matrix; finish the resource-query and derived-child da
 
 The remaining route audit found that the CSV endpoint gated non-newsletter exports on the general `export.create` permission without also checking the resource's view permission. Operations therefore could export enquiries even though its role does not grant `enquiry.view`. The endpoint now requires both export permission and matching resource-view permission before querying or exporting data. Newsletter export continues to require its distinct `newsletter.export` and `newsletter.view` permissions. Showroom/assignment predicates remain applied to records after authorization.
 
-- `npm.cmd test -- lib/auth/admin-export-policy.test.ts` — **1 file, 4 tests passed**, covering role/resource pairs and the Operations enquiry denial.
+- `npm.cmd test -- lib/auth/admin-export-policy.test.ts` — **1 file, 4 tests passed**, covering role/resource pairs and the Operations enquiry denial. The HTTP route regression confirms a denied enquiry export stops before showroom-scope and database queries.
 - `npm.cmd run lint` and `npm.cmd run typecheck` — **passed**.
 - `git diff --check` — **passed**. This fix remains on the local dependent P1-05 branch; it has not been pushed, reviewed, migrated to staging, or deployed.
