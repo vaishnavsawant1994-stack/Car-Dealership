@@ -4,7 +4,7 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { UserRole, VehicleStatus } from '@prisma/client'
-import { addLeadMessage, assignLead, requireAccessibleLead } from '@/lib/admin/lead-service'
+import { addLeadMessage, assignLead, requireAccessibleLead, updateLead } from '@/lib/admin/lead-service'
 import { createSellValuation, saveSellInspection, scheduleTestDrive } from '@/lib/admin/specialist-workflows'
 import { getPublicationReadiness } from '@/lib/admin/vehicle-workflow'
 import { prisma } from '@/lib/db/prisma'
@@ -84,6 +84,8 @@ describe('admin operations against PostgreSQL', () => {
     expect(scope.showroomIds).not.toContain(outside.id)
     for (const lead of [outsideLead, otherQueueLead]) {
       await expect(requireAccessibleLead('contact-inquiries', lead.id, sales)).resolves.toBeNull()
+      await expect(updateLead('contact-inquiries', lead.id, sales, { status: 'ASSIGNED', version: lead.version })).resolves.toMatchObject({ type: 'not-found' })
+      await expect(assignLead('contact-inquiries', lead.id, sales, null, lead.version)).resolves.toBeNull()
       const result = await prisma.contactMessage.updateMany({ where: { id: lead.id, ...accessibleResourceWhere(sales, scope) }, data: { message: 'Unauthorized write attempt.' } })
       expect(result.count).toBe(0)
     }
