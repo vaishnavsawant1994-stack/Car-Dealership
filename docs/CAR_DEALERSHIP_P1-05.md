@@ -1,4 +1,3 @@
-- Full `npm.cmd test`: 19 files passed (106 tests); 7 database-backed suites failed before tests ran because this worktree has no DATABASE_URL or local isolated PostgreSQL service. No staging or production database was used.
 # P1-05 — Roles & Access Matrix
 
 **Status: in progress on `codex/p1-05-role-access-matrix`, based on local Phase 1 integration commit `119b34623e2e045f9b8ca674ab37f32a018276f6`. Draft work only; no PR, merge, staging migration, or deployment.**
@@ -33,7 +32,7 @@ The slice makes current role grants visible in the staff application and adds co
 - `npm.cmd run lint` — **passed**.
 - `npm.cmd run typecheck` — **passed after regenerating Prisma Client**.
 - `npm.cmd exec prisma validate` — **passed**.
-- `npm.cmd run build` — **exit 0**, including `/admin/access-matrix`. Static generation emitted three database-unavailable messages for `contentBlock.findFirst` against the isolated loopback test URL; this confirms compilation only and leaves database-backed runtime smoke verification open.
+- `npm.cmd run build`: exit 0 with ephemeral test-only auth values, including `/admin/access-matrix`. Static generation logged three database-unavailable `contentBlock.findFirst` messages against loopback `127.0.0.1:55432`; this verifies compilation/page generation, not database runtime.
 - Locked dependencies installed with `npm.cmd ci`; no lockfile changes. The install reported **15 dependency audit findings** (7 moderate, 7 high, 1 critical); no automatic dependency changes were applied.
 
 ## Acceptance still required
