@@ -21,7 +21,7 @@ The slice makes current role grants visible in the staff application and adds co
 - This is showroom/branch scoping within one organization, not multi-tenant organization isolation. Admins intentionally have organization-wide access. Every remaining direct record access and derived child resource must be audited before acceptance.
 - The migration leaves the new showroom foreign keys nullable for migration-before-seed compatibility. It backfills existing data to the active primary showroom and aborts if operational records exist without one. It was applied and verified against a disposable local PostgreSQL 16 CI-style database; it has not been applied to staging.
 - This slice does not add runtime-editable permission grants. A later approved data model would need migration, privilege-boundary review, change audit, and rollback design before grants could be edited in the UI.
-- Full per-role browser journeys, isolated PostgreSQL migration/backfill tests, branch-scoped fixtures, and cross-organization denial tests remain required before this module can be accepted.
+- Full per-role browser journeys, explicit migration backfill/abort edge-case tests, and cross-organization denial tests remain required before this module can be accepted.
 - The branch is based on locally integrated P1-01–P1-04 preview commits whose upstream PRs remain unmerged. Rebase or reconcile only after those reviewed PRs are integrated; do not merge this branch into `main` or deploy it ahead of those gates.
 
 ## Current evidence
@@ -29,6 +29,7 @@ The slice makes current role grants visible in the staff application and adds co
 - No hosted resource was mutated. A local schema/migration change is now included; the migration has not been applied to staging.
 - `npm.cmd test -- lib/auth/admin-permissions.test.ts lib/auth/admin-resource-policy.test.ts lib/admin/scoped-query.test.ts` — **3 files, 24 tests passed**. Tests cover role grants, lead policy, user management, private-document policy and preserving separate OR filters.
 - Full `npm.cmd test` with an isolated disposable PostgreSQL 16 container on loopback, after applying all 10 migrations and running the CI fixture seed: **26 files passed, 143 tests passed, 0 failed**. The first attempt exposed three integration fixtures missing showroom scope and one loopback guard that rejected `127.0.0.1`; fixtures/guard were corrected and the full suite rerun successfully. No staging or production database was used.
+- Follow-up write-scope audit found specialist test-drive, inspection, and valuation writes checked scoped access before mutation but did not repeat showroom/assignment predicates in their database writes. Those writes now include the actor's showroom and assignment scope; test-drive conflict detection checks all records in the actor's showroom without disclosing details. The full PostgreSQL-backed suite passed after the scoped-write change (**26 files, 143 tests**); after the final conflict-query refinement, the PostgreSQL-backed admin operations suite passed (**1 file, 7 tests**). `npm.cmd run lint` and `npm.cmd run typecheck` passed on the final code. Both disposable containers were stopped and removed.
 - `npm.cmd run lint` — **passed**.
 - `npm.cmd run typecheck` — **passed after regenerating Prisma Client**.
 - `npm.cmd exec prisma validate` — **passed**.

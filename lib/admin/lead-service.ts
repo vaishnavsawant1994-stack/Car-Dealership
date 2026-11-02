@@ -10,6 +10,14 @@ import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 export type LeadKind = 'enquiries' | 'test-drives' | 'sell-requests' | 'contact-inquiries'
 export const leadResource: Record<LeadKind, string> = { enquiries: 'Inquiry', 'test-drives': 'TestDrive', 'sell-requests': 'SellRequest', 'contact-inquiries': 'ContactMessage' }
 
+/** Database-side predicate matching the same showroom and assignment checks as requireAccessibleLead. */
+export function accessibleLeadWhere(actor: AdminActor, scope: ShowroomScope) {
+  return {
+    ...showroomScopeWhere(scope),
+    ...(!scope.global ? { OR: [{ assignedToId: null }, { assignedToId: actor.id }] } : {}),
+  }
+}
+
 const safeCustomer = { id: true, name: true, email: true, phone: true, role: true, status: true } as const
 const safeAssignee = { id: true, name: true, email: true, role: true, status: true } as const
 const safeVehicle = {
