@@ -29,6 +29,7 @@ The slice makes current role grants visible in the staff application and adds co
 
 - No hosted resource was mutated. A local schema/migration change is now included; the migration has not been applied to staging.
 - `npm.cmd test -- lib/auth/admin-permissions.test.ts lib/auth/admin-resource-policy.test.ts lib/admin/scoped-query.test.ts` — **3 files, 24 tests passed**. Tests cover role grants, lead policy, user management, private-document policy and preserving separate OR filters.
+- Full `npm.cmd test`: 19 files passed (106 tests); 7 database-backed suites failed before tests ran because this worktree has no DATABASE_URL or local isolated PostgreSQL service. No staging or production database was used.
 - `npm.cmd run lint` — **passed**.
 - `npm.cmd run typecheck` — **passed after regenerating Prisma Client**.
 - `npm.cmd exec prisma validate` — **passed**.
