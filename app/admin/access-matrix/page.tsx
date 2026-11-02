@@ -28,7 +28,7 @@ export default async function AccessMatrixPage() {
     <section className="admin-panel access-matrix-notice" aria-label="Permission model limits">
       <h2>How access is managed</h2>
       <p>This matrix reflects the permission policy currently deployed in the codebase. It is read-only; changing grants requires a reviewed code change. Staff role assignment is available only to authorized administrators in the staff directory.</p>
-      <p><strong>Branch scope:</strong> showroom assignments currently describe operational membership. They do not yet provide row-level isolation for vehicles or customer records; those resources use their existing assignment rules.</p>
+      <p><strong>Branch scope:</strong> SALES, OPERATIONS, and CONTENT_MANAGER access to scoped administrative records is limited to active showroom assignments; operational leads also follow assigned/unassigned queue rules. ADMIN and SUPER_ADMIN remain organization-wide across showrooms. This application models one organization, not organization-level tenancy, and the remaining direct record paths still require audit.</p>
     </section>
     <section className="admin-panel access-matrix-section" aria-label="Role descriptions">
       <h2>Role definitions</h2>
