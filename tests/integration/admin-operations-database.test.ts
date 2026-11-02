@@ -4,14 +4,16 @@ import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { UserRole, VehicleStatus } from '@prisma/client'
-import { addLeadMessage, assignLead } from '@/lib/admin/lead-service'
+import { addLeadMessage, assignLead, requireAccessibleLead } from '@/lib/admin/lead-service'
 import { createSellValuation, saveSellInspection, scheduleTestDrive } from '@/lib/admin/specialist-workflows'
 import { getPublicationReadiness } from '@/lib/admin/vehicle-workflow'
 import { prisma } from '@/lib/db/prisma'
 import { createReferenceNumber } from '@/lib/references'
 import { resolvePublicVehicleSlug } from '@/lib/repositories/vehicle-repository'
+import { accessibleResourceWhere } from '@/lib/auth/admin-resource-policy'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 
-const ids = { inquiries: [] as string[], drives: [] as string[], sells: [] as string[], vehicles: [] as string[], contacts: [] as string[] }
+const ids = { inquiries: [] as string[], drives: [] as string[], sells: [] as string[], vehicles: [] as string[], contacts: [] as string[], showrooms: [] as string[] }
 let originalContactCounter: number | null = null
 const ref = (kind: string) => `OA-${kind}-TEST-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
@@ -26,6 +28,7 @@ afterEach(async () => {
   await prisma.sellRequest.deleteMany({ where: { id: { in: ids.sells.splice(0) } } })
   await prisma.vehicle.deleteMany({ where: { id: { in: ids.vehicles.splice(0) } } })
   await prisma.contactMessage.deleteMany({ where: { id: { in: ids.contacts.splice(0) } } })
+  await prisma.showroom.deleteMany({ where: { id: { in: ids.showrooms.splice(0) } } })
   if (originalContactCounter !== null) {
     await prisma.referenceCounter.update({ where: { key: 'CON' }, data: { value: originalContactCounter } })
     originalContactCounter = null
@@ -62,6 +65,28 @@ describe('admin operations against PostgreSQL', () => {
     await addLeadMessage('enquiries', inquiry.id, sales, { body: 'Visible customer update.', customerVisible: true, type: 'CUSTOMER_MESSAGE' })
     const customerMessages = await prisma.customerEngagementMessage.findMany({ where: { inquiryId: inquiry.id } })
     expect(customerMessages.map((item) => item.body)).toEqual(['Visible customer update.'])
+  })
+
+  it('denies lead reads and writes outside showroom and assignment scope', async () => {
+    const [sales, operations, primary] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { email: 'sales@deccanwheels.local' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'operations@deccanwheels.local' } }),
+      prisma.showroom.findFirstOrThrow({ where: { active: true, isPrimary: true }, select: { id: true } }),
+    ])
+    const outside = await prisma.showroom.create({ data: { name: `Scope test ${Date.now()}`, address: 'Test address', city: 'Pune', state: 'Maharashtra', postalCode: '411001', phone: '02000000000', email: `scope-${Date.now()}@example.test`, hours: 'Test only' } })
+    ids.showrooms.push(outside.id)
+    const outsideLead = await prisma.contactMessage.create({ data: { showroomId: outside.id, referenceNumber: ref('CON'), name: 'Outside showroom', phone: '9876543210', email: 'outside@example.test', message: 'Temporary branch-scope fixture.' } })
+    const otherQueueLead = await prisma.contactMessage.create({ data: { showroomId: primary.id, referenceNumber: ref('CON'), name: 'Other staff queue', phone: '9876543210', email: 'other-queue@example.test', message: 'Temporary assignment-scope fixture.', assignedToId: operations.id } })
+    ids.contacts.push(outsideLead.id, otherQueueLead.id)
+
+    const scope = await getActorShowroomScope(sales)
+    expect(scope.showroomIds).toContain(primary.id)
+    expect(scope.showroomIds).not.toContain(outside.id)
+    for (const lead of [outsideLead, otherQueueLead]) {
+      await expect(requireAccessibleLead('contact-inquiries', lead.id, sales)).resolves.toBeNull()
+      const result = await prisma.contactMessage.updateMany({ where: { id: lead.id, ...accessibleResourceWhere(sales, scope) }, data: { message: 'Unauthorized write attempt.' } })
+      expect(result.count).toBe(0)
+    }
   })
 
   it('confirms a test drive and blocks a conflicting slot for the same vehicle', async () => {
