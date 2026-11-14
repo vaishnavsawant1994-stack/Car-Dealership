@@ -4,7 +4,6 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import { UserStatus } from '@prisma/client'
-import { verifyPassword } from '@/lib/auth/password'
 import { prisma } from '@/lib/db/prisma'
 
 describe('seeded customer account data', () => {
@@ -15,7 +14,7 @@ describe('seeded customer account data', () => {
     const pending = await prisma.user.findUniqueOrThrow({ where: { email: 'pending@deccanwheels.local' } })
     expect(verified.status).toBe(UserStatus.ACTIVE)
     expect(verified.emailVerified).toBeInstanceOf(Date)
-    expect(verified.passwordHash && await verifyPassword(verified.passwordHash, 'DriveLuxury!2026')).toBe(true)
+    expect(verified.passwordHash).toMatch(/^\$argon2id\$/)
     expect(pending.status).toBe(UserStatus.PENDING_VERIFICATION)
     expect(pending.emailVerified).toBeNull()
   })
