@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { Pool } from 'pg'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
+import { logSafeError } from '../lib/observability/safe-log'
 
 async function seed() {
   const env = getCarDealershipEnvironment()
@@ -36,4 +37,4 @@ async function seed() {
     await pool.end()
   }
 }
-seed().catch(error => { console.error(error instanceof Error ? error.message : 'Demo seed failed'); process.exitCode = 1 })
+seed().catch(error => { logSafeError('hosted_demo_seed_failed', error); process.exitCode = 1 })

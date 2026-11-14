@@ -3,6 +3,7 @@ import 'dotenv/config'
 import { mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { chromium, type Page } from '@playwright/test'
+import { logSafeError } from '../lib/observability/safe-log'
 
 const baseURL = process.env.ADMIN_VISUAL_BASE_URL ?? 'http://localhost:3001'
 const outputDir = resolve(process.cwd(), 'docs', 'screenshots', 'admin')
@@ -71,6 +72,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error)
+  logSafeError('admin_visual_capture_failed', error)
   process.exitCode = 1
 })
