@@ -26,6 +26,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Newsletter', href: '/admin/newsletter', icon: 'newsletter', permission: 'newsletter.view' },
   ] },
   { label: 'Management', items: [
+    { label: 'Organisation', href: '/admin/organisation', icon: 'organisation', permission: 'settings.view' },
     { label: 'Showrooms', href: '/admin/showrooms', icon: 'showrooms', permission: 'showroom.manage' },
     { label: 'Users & Roles', href: '/admin/users', icon: 'users', permission: 'user.view' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permission: 'settings.view' },
