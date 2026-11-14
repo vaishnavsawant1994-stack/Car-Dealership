@@ -14,6 +14,7 @@ export default async function Page({
   const actor = await requirePermission('sellRequest.view')
   const filters = parseProcurementFilters(await searchParams)
   const data = await getProcurementBoard(actor, filters)
+  const canConvert = hasPermission(actor.role, 'vehicle.create') && hasPermission(actor.role, 'sellRequest.complete') && hasPermission(actor.role, 'sellRequest.inspect')
   return <>
     <AdminPageHeader
       title="Procurement Intake"
@@ -55,7 +56,10 @@ export default async function Page({
             {data.items.map((item) => <tr key={item.id}>
               <td><Link href={`/admin/sell-requests/${item.id}`}><strong>{item.referenceNumber}</strong></Link></td>
               <td>{item.name ?? 'Customer'}</td>
-              <td>{[item.year, item.make, item.model].filter(Boolean).join(' ') || 'Vehicle information pending'}</td>
+              <td>
+                <p>{[item.year, item.make, item.model].filter(Boolean).join(' ') || 'Vehicle information pending'}</p>
+                {canConvert && item.status === 'COMPLETED' ? <Link href={`/admin/procurement/${item.id}/convert`}>Create inventory draft</Link> : null}
+              </td>
               <td><AdminStatus value={item.status} /></td>
               <td><AdminStatus value={item.priority} /></td>
               <td>{item.assignedTo?.name ?? 'Unassigned'}</td>
@@ -68,7 +72,11 @@ export default async function Page({
         {data.items.map((item) => <article className="admin-mobile-card" key={item.id}>
           <header><h2>{item.referenceNumber}</h2><AdminStatus value={item.status} /></header>
           <p>{[item.year, item.make, item.model].filter(Boolean).join(' ') || 'Vehicle information pending'}</p>
-          <footer><span>{item.assignedTo?.name ?? 'Unassigned'}</span><Link href={`/admin/sell-requests/${item.id}`}>Open intake</Link></footer>
+          <footer>
+            <span>{item.assignedTo?.name ?? 'Unassigned'}</span>
+            <Link href={`/admin/sell-requests/${item.id}`}>Open intake</Link>
+            {canConvert && item.status === 'COMPLETED' ? <Link href={`/admin/procurement/${item.id}/convert`}>Create draft</Link> : null}
+          </footer>
         </article>)}
       </div>
       <AdminPagination
