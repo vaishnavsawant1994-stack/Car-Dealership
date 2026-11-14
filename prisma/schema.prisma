@@ -322,6 +322,8 @@ model BodyType {
 
 model Vehicle {
   id                       String                 @id @default(cuid())
+  procurementRequestId     String?                @unique
+  procurementRequest       SellRequest?           @relation("ProcurementVehicle", fields: [procurementRequestId], references: [id], onDelete: Restrict)
   slug                     String                 @unique
   stockNumber              String                 @unique
   brandId                  String
@@ -576,6 +578,7 @@ model TestDrive {
 
 model SellRequest {
   id              String                  @id @default(cuid())
+  procuredVehicle Vehicle?                @relation("ProcurementVehicle")
   referenceNumber String                  @unique
   userId          String?
   assignedToId    String?
