@@ -2,6 +2,7 @@ import { ClipboardCheck } from 'lucide-react'
 import Link from 'next/link'
 import { AdminEmpty, AdminMetric, AdminPageHeader, AdminPagination, AdminStatus } from '@/components/admin/AdminPrimitives'
 import { requirePermission } from '@/lib/auth/require-permission'
+import { hasPermission } from '@/lib/auth/admin-permissions'
 import { parseProcurementFilters, procurementStages } from '@/lib/procurement/intake'
 import { getProcurementBoard } from '@/lib/procurement/intake-service'
 
@@ -18,7 +19,7 @@ export default async function Page({
       title="Procurement Intake"
       text="Track incoming seller vehicles from initial enquiry through inspection, valuation and acquisition using existing Sell Requests."
       breadcrumb="Procurement Intake"
-      actions={<Link className="admin-button admin-button--secondary" href="/admin/sell-requests">All sell requests</Link>}
+      actions={<><Link className="admin-button admin-button--secondary" href="/admin/sell-requests">All sell requests</Link>{hasPermission(actor.role, "sellRequest.inspect") ? <Link className="admin-button admin-button--secondary" href="/admin/procurement/inspections">Inspection readiness</Link> : null}</>}
     />
     <section className="admin-metrics" aria-label="Visible procurement pipeline totals">
       {procurementStages.map((stage) => <AdminMetric
