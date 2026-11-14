@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { adminError, validationError } from '@/lib/admin/api'
+import { validationError } from '@/lib/admin/api'
+import { catalogError } from '@/lib/admin/catalog-error'
 import { writeAuditLog } from '@/lib/admin/audit'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
@@ -14,7 +15,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ resou
     const data = resource === 'brands' ? await prisma.brand.update({ where: { id }, data: parsed.data }) : resource === 'body-types' ? await prisma.bodyType.update({ where: { id }, data: parsed.data }) : await prisma.feature.update({ where: { id }, data: parsed.data })
     await writeAuditLog({ actorId: actor.id, action: `${resource.toUpperCase()}_UPDATED`, resourceType: resource, resourceId: id, summary: `Updated ${parsed.data.name}.`, request })
     return NextResponse.json({ data, message: 'Catalog record updated.' })
-  } catch (error) { return adminError(error) }
+  } catch (error) { return catalogError(error) }
 }
 
 export async function DELETE(request: Request, context: { params: Promise<{ resource: string; id: string }> }) {
@@ -28,5 +29,5 @@ export async function DELETE(request: Request, context: { params: Promise<{ reso
     if (resource === 'brands') await prisma.brand.delete({ where: { id } }); else if (resource === 'body-types') await prisma.bodyType.delete({ where: { id } }); else await prisma.feature.delete({ where: { id } })
     await writeAuditLog({ actorId: actor.id, action: `${resource.toUpperCase()}_DELETED`, resourceType: resource, resourceId: id, summary: 'Unused catalog record deleted.', request })
     return NextResponse.json({ message: 'Catalog record deleted.' })
-  } catch (error) { return adminError(error) }
+  } catch (error) { return catalogError(error) }
 }
