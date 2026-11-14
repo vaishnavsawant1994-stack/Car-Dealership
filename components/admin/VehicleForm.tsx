@@ -16,7 +16,7 @@ type FeatureOption = Option & { category: string }
 
 const emptyVehicle: FormInput = { brandId: '', bodyTypeId: '', model: '', variant: '', stockNumber: '', slug: '', shortTitle: '', year: new Date().getFullYear(), price: 0, currency: 'INR', mileage: 0, fuelType: 'Diesel', transmission: 'Automatic', shortDescription: '', description: '', status: 'DRAFT', featured: false, newArrival: false, certified: false, featureIds: [], version: 1 }
 
-export function VehicleForm({ vehicle, brands, bodyTypes, features, procurement }: { vehicle?: Partial<FormInput> & { id: string }; brands: Option[]; bodyTypes: Option[]; features: FeatureOption[]; procurement?: { id: string; version: number } }) {
+export function VehicleForm({ vehicle, brands, bodyTypes, features, procurement, initialValues }: { vehicle?: Partial<FormInput> & { id: string }; brands: Option[]; bodyTypes: Option[]; features: FeatureOption[]; procurement?: { id: string; version: number }; initialValues?: Partial<FormInput> }) {
   const router = useRouter()
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
@@ -25,7 +25,7 @@ export function VehicleForm({ vehicle, brands, bodyTypes, features, procurement 
   const [newBrandName, setNewBrandName] = useState('')
   const [brandBusy, setBrandBusy] = useState(false)
   const [brandMessage, setBrandMessage] = useState('')
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(vehicleAdminSchema), defaultValues: { ...emptyVehicle, ...vehicle } })
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(vehicleAdminSchema), defaultValues: { ...emptyVehicle, ...initialValues, ...vehicle } })
   const brandId = watch('brandId'); const year = watch('year'); const model = watch('model'); const variant = watch('variant')
   function createSlug() { const brand = brandOptions.find((item) => item.id === brandId)?.name ?? ''; setValue('slug', generateVehicleSlug({ year: Number(year), brand, model, variant }), { shouldValidate: true }) }
   async function addBrand() {
