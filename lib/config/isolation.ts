@@ -45,6 +45,11 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
     }
   } else {
     if (local) throw new Error(`Remote ${env} environment cannot use a loopback database for ${purpose}.`)
+    // P0-07: a changed EXPECTED_DATABASE_NAME must not permit staging/demo swaps.
+    const dedicatedDatabase = env === 'staging' ? 'car_dealership_staging' : env === 'demo' ? 'car_dealership_demo' : null
+    if (dedicatedDatabase && (database !== dedicatedDatabase || process.env.EXPECTED_DATABASE_NAME !== dedicatedDatabase)) {
+      throw new Error('Car-Dealership environment/database isolation mismatch for ' + purpose + '.')
+    }
     if (!process.env.EXPECTED_DATABASE_HOST || !process.env.EXPECTED_DATABASE_NAME || !process.env.APP_PROJECT_ID) {
       throw new Error(`Explicit Car-Dealership remote database approval is required for ${purpose}.`)
     }
@@ -55,5 +60,37 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
   }
   if (process.env.EXPECTED_DATABASE_NAME && process.env.EXPECTED_DATABASE_NAME !== database) {
     throw new Error(`Database name does not match approved Car-Dealership target for ${purpose}.`)
+  }
+}
+
+
+/**
+ * Enforce the exact hosted application login and an encrypted connection.
+ * This is intentionally separate from assertAllowedDatabaseUrl: migration
+ * maintenance uses a different approved role and is never a runtime query.
+ *
+ * pg 8 currently interprets sslmode=require as verify-full. It remains
+ * temporarily accepted for the existing staging deployment, but operators
+ * should migrate to explicit sslmode=verify-full before the pg 9 upgrade.
+ */
+export function assertRuntimeDatabaseUrl(connectionString: string): void {
+  assertAllowedDatabaseUrl(connectionString, 'application runtime')
+  const env = getCarDealershipEnvironment()
+  if (env !== 'staging' && env !== 'demo') return
+
+  const address = new URL(connectionString)
+  const expectedRole = env === 'staging' ? 'cd_staging_app' : 'cd_demo_app'
+  if (decodeURIComponent(address.username) !== expectedRole) {
+    throw new Error('Hosted application must use its restricted environment-specific database role.')
+  }
+
+  const sslmode = address.searchParams.get('sslmode')?.toLowerCase()
+  if (sslmode !== 'verify-full' && sslmode !== 'require') {
+    throw new Error('Hosted database connections require TLS and certificate verification.')
+  }
+  // Deny ambiguous or weakening driver configuration overrides. In
+  // particular, uselibpqcompat=true changes sslmode=require semantics.
+  if (address.searchParams.has('ssl') || address.searchParams.has('uselibpqcompat')) {
+    throw new Error('Hosted database TLS settings cannot be overridden.')
   }
 }
