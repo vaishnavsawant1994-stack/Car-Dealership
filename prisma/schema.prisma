@@ -195,6 +195,7 @@ model User {
   updatedVehicles         Vehicle[]                     @relation("VehicleUpdatedBy")
   performedInspections    VehicleInspection[]           @relation("VehicleInspectionInspector")
   reviewedInspections     VehicleInspection[]           @relation("VehicleInspectionReviewer")
+  uploadedInspectionEvidence VehicleInspectionEvidence[] @relation("InspectionEvidenceUploader")
   vehicleStatusChanges    VehicleStatusHistory[]
   operationalMessages     OperationalMessage[]
   operationalActivities   OperationalActivity[]
@@ -1035,6 +1036,7 @@ model VehicleInspection {
   submittedAt    DateTime?
   reviewedAt     DateTime?
   checks         VehicleInspectionCheck[]
+  evidence       VehicleInspectionEvidence[]
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
@@ -1055,4 +1057,23 @@ model VehicleInspectionCheck {
 
   @@unique([inspectionId, code])
   @@index([category])
+}
+
+
+model VehicleInspectionEvidence {
+  id           String            @id @default(cuid())
+  inspectionId String
+  inspection   VehicleInspection @relation(fields: [inspectionId], references: [id], onDelete: Restrict)
+  checkCode    String
+  storageKey   String            @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  checksum     String
+  uploadedById String
+  uploadedBy   User              @relation("InspectionEvidenceUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime          @default(now())
+
+  @@unique([inspectionId, checksum])
+  @@index([inspectionId, checkCode, createdAt])
 }
