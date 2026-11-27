@@ -1,4 +1,4 @@
-import { VehicleInspectionStatus } from '@prisma/client'
+import { UserRole, VehicleInspectionStatus } from '@prisma/client'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { adminError, validationError } from '@/lib/admin/api'
@@ -10,14 +10,14 @@ const startSchema = z.object({ vehicleId: z.string().cuid() }).strict()
 
 export async function GET(request: Request) {
   try {
-    await authorizeAdminRequest('vehicle.view')
+    const actor = await authorizeAdminRequest('vehicle.update')
     const q = new URL(request.url).searchParams
     const status = z.enum(VehicleInspectionStatus).optional().safeParse(q.get('status') ?? undefined)
     if (!status.success) {
       return NextResponse.json({ error: { code: 'INVALID_STATUS', message: 'Unknown inspection status.' } }, { status: 400 })
     }
     const data = await prisma.vehicleInspection.findMany({
-      where: status.data ? { status: status.data } : {},
+      where: { ...(status.data ? { status: status.data } : {}), ...((actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN) ? {} : { inspectorId: actor.id }) },
       take: 100,
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       select: {
@@ -41,6 +41,9 @@ export async function POST(request: Request) {
     const result = await startVehicleInspection(parsed.data.vehicleId, actor)
     if (result.type === 'not-found') {
       return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Vehicle not found.' } }, { status: 404 })
+    }
+    if (result.type === 'busy') {
+      return NextResponse.json({ error: { code: 'INSPECTION_IN_USE', message: 'A different inspector is working on this vehicle.' } }, { status: 409 })
     }
     if (result.type === 'existing') {
       return NextResponse.json({ data: { id: result.id }, message: 'An active inspection already exists for this vehicle.' }, { status: 200 })
