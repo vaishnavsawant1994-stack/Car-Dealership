@@ -1,6 +1,7 @@
 import 'dotenv/config'
 
 import { randomBytes } from 'node:crypto'
+import { appendFile } from 'node:fs/promises'
 import { spawnSync } from 'node:child_process'
 import { resolve } from 'node:path'
 import { passwordSchema } from '../lib/auth/password'
@@ -22,6 +23,13 @@ let password = ''
 do {
   password = randomBytes(48).toString('base64')
 } while (!passwordSchema.safeParse(password).success)
+
+// GitHub Actions needs this short-lived fixture password for its browser suite.
+// Keep it masked in logs and out of the repository; local seed runs expose nothing.
+if (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_ENV) {
+  process.stdout.write(`::add-mask::${password}\n`)
+  await appendFile(process.env.GITHUB_ENV, `SEED_ADMIN_PASSWORD=${password}\n`, { encoding: 'utf8', mode: 0o600 })
+}
 
 const prismaCli = resolve(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js')
 const result = spawnSync(process.execPath, [prismaCli, 'db', 'seed'], {
