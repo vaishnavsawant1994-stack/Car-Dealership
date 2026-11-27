@@ -22,6 +22,10 @@
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; CI #202 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
 | P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; P20 CI #204 and ledger-update CI #205 passed, including all 55 browser tests. Documentation only; owner acceptance remains outstanding. |
 
+## Follow-up hardening beyond P20
+
+- P21 vehicle inspection showroom scoping is tracked in draft [PR #53](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/53), stacked on PR #38. Exact-head CI #218 passed lint, type-check, isolated PostgreSQL-backed tests, and production build. The public PR summary is intentionally concise. No hosted migration or deployment was performed.
+
 ## Data and deployment boundaries
 
 - Migrations are exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
