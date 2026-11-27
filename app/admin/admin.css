@@ -248,3 +248,16 @@
   font: inherit;
   cursor: pointer;
 }
+
+/* Printable, staff-only final condition reports. Navigation and controls stay out of exports. */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  .admin-sidebar, .admin-topbar, .admin-page-header, .admin-mobile-layer, .admin-sidebar-toggle { display: none !important; }
+  .admin-workspace { margin-left: 0 !important; background: white !important; }
+  .admin-main { padding: 0 !important; background: white !important; }
+  .inspection-print-report { color: #151515 !important; background: white !important; border: 0 !important; box-shadow: none !important; }
+  .inspection-print-report h2, .inspection-print-report p, .inspection-print-report strong { color: #151515 !important; }
+  .inspection-print-report .admin-table { color: #151515 !important; width: 100%; font-size: 10pt; }
+  .inspection-print-report .admin-table th, .inspection-print-report .admin-table td { color: #151515 !important; border: 1px solid #aaa !important; padding: 6px; }
+  .inspection-print-report tr { break-inside: avoid; }
+}

@@ -34,7 +34,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     <AdminPageHeader title={`Inspection: ${inspection.vehicle.stockNumber}`}
       text={inspection.vehicle.shortTitle}
       breadcrumb="Vehicle Inspections / Details"
-      actions={<><AdminStatus value={inspection.status}/><Link href="/admin/inspections" className="admin-button admin-button--secondary">All inspections</Link></>} />
+      actions={<><AdminStatus value={inspection.status}/><Link href="/admin/inspections" className="admin-button admin-button--secondary">All inspections</Link>{inspection.status === 'APPROVED' || inspection.status === 'REJECTED' ? <Link href={`/admin/inspections/${inspection.id}/report`} className="admin-button">Final report</Link> : null}</>} />
     <InspectionWorkspace
       key={inspection.version}
       inspectionId={inspection.id}
