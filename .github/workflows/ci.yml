@@ -58,4 +58,7 @@ jobs:
       - name: Test
         run: npm test
       - name: Production build (isolated CI environment)
-        run: npm run build
+        run: |
+          # This is a randomly generated, ephemeral JWT signing secret for CI builds.
+          # It is not the staging Super Admin password or a persistent deployment secret.
+          AUTH_SECRET="$(openssl rand -hex 48)" npm run build
