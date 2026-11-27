@@ -209,6 +209,8 @@ model User {
   publishedRevisions      ContentRevision[]             @relation("ContentRevisionPublisher")
   auditLogs               AuditLog[]
   showroomAssignments     ShowroomStaffAssignment[]
+  dataRightsRequests      CustomerDataRightsRequest[] @relation("DataRightsCustomer")
+  createdDataRightsRequests CustomerDataRightsRequest[] @relation("DataRightsStaffCreator")
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   notificationSettings    CustomerNotificationSettings?
@@ -1092,4 +1094,32 @@ model ShowroomStaffAssignment {
 
   @@unique([showroomId, userId])
   @@index([userId])
+}
+
+enum CustomerDataRightsKind {
+  ACCESS
+  RECTIFICATION
+  ERASURE
+}
+
+enum CustomerDataRightsStatus {
+  PENDING_ID_VERIFICATION
+  UNDER_MANUAL_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model CustomerDataRightsRequest {
+  id          String                   @id @default(cuid())
+  customerId  String
+  customer    User                     @relation("DataRightsCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  createdById String
+  createdBy   User                     @relation("DataRightsStaffCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  kind        CustomerDataRightsKind
+  status      CustomerDataRightsStatus @default(PENDING_ID_VERIFICATION)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
 }
