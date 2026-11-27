@@ -15,6 +15,7 @@ import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updat
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
 import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
 import { listCustomerPurchases } from '@/lib/portal/customer-purchase-service'
+import { getShowroomAnalytics } from '@/lib/analytics/analytics-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -92,7 +93,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and customer purchase lifecycle', () => {
+describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, customer purchase, and analytics lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -300,5 +301,23 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     const beforeComplete = await prisma.workshopOrder.findUniqueOrThrow({ where: { id: openedWorkshop.data.id }, select: { version: true } })
     expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: beforeComplete.version, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'updated' })
     expect((await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId }, select: { status: true } })).status).toBe(VehicleStatus.SOLD)
+
+    const analytics = await getShowroomAnalytics(operations)
+    expect(analytics.periodDays).toBe(30)
+    expect(analytics.salesDeals.find((entry) => entry.status === SalesDealStatus.WON)?.count).toBe(1)
+    expect(analytics.deliveries.find((entry) => entry.status === DeliveryCaseStatus.HANDED_OVER)?.count).toBe(1)
+    expect(analytics.workshopOrders.find((entry) => entry.status === WorkshopOrderStatus.COMPLETED)?.count).toBe(1)
+    expect(analytics.afterSalesTasks.find((entry) => entry.status === 'COMPLETED')?.count).toBe(1)
+    expect(JSON.stringify(analytics)).not.toContain(customer.email)
+    const unassignedOperations = await prisma.user.create({ data: {
+      email: `p17-no-showroom-${suffix}@car-dealership.test`, name: 'Fictional Unassigned Operations',
+      role: UserRole.OPERATIONS, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(unassignedOperations.id)
+    const emptyAnalytics = await getShowroomAnalytics(unassignedOperations)
+    expect(emptyAnalytics.salesDeals).toEqual([])
+    expect(emptyAnalytics.deliveries).toEqual([])
+    expect(emptyAnalytics.workshopOrders).toEqual([])
+    expect(emptyAnalytics.afterSalesTasks).toEqual([])
   })
 })

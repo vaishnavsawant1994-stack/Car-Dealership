@@ -8,6 +8,7 @@ import './admin.css'
 const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: AdminPermission }> }> = [
   { label: 'Overview', items: [
     { label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' },
+    { label: 'Analytics', href: '/admin/analytics', icon: 'dashboard', permission: 'analytics.view' },
     { label: 'My Showrooms', href: '/admin/my-showrooms', icon: 'showrooms', permission: 'dashboard.view' },
       { label: 'Roles & Access', href: '/admin/access-matrix', icon: 'access', permission: 'dashboard.view' },
   ] },
