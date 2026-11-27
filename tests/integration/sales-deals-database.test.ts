@@ -221,13 +221,13 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
     if (openedWorkshop.type !== 'created') return
     workshopOrderIds.push(openedWorkshop.data.id)
     expect((await createWorkshopOrder(vehicleId, workshop, WorkshopJobType.REPAIR)).type).toBe('already-active')
-    const foreignShowroom = await prisma.showroom.create({ data: {
+    const foreignP11Showroom = await prisma.showroom.create({ data: {
       name: `Fictional Foreign P11 ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
       state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
       email: `p11-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
     } })
     try {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP11Showroom.id } })
       expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(false)
       const item = openedWorkshop.data.checklist[0]
       expect(await updateWorkshopChecklist(openedWorkshop.data.id, workshop, {
@@ -235,7 +235,7 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
       })).toMatchObject({ type: 'not-available' })
     } finally {
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
-      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+      await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
