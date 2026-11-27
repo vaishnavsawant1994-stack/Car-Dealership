@@ -75,4 +75,52 @@ describe('P5-02 PostgreSQL internal pricing snapshots', () => {
       await prisma.vehicle.delete({ where: { id: vehicle.id } })
     }
   })
+  it('denies scoped staff quote access outside their active showroom', async () => {
+    if (process.env.APP_ENV !== 'test' || !process.env.DATABASE_URL?.includes('/car_dealership_test')) {
+      throw new Error('Sales quote tests must use isolated CI PostgreSQL.')
+    }
+    const assignment = await prisma.showroomStaffAssignment.findFirstOrThrow({
+      where: { user: { role: UserRole.OPERATIONS, status: 'ACTIVE' }, showroom: { active: true } },
+      select: { userId: true },
+    })
+    const actorUser = await prisma.user.findUniqueOrThrow({ where: { id: assignment.userId }, select: { id: true, role: true } })
+    const actor = { id: actorUser.id, role: actorUser.role }
+    const [brand, bodyType] = await Promise.all([
+      prisma.brand.findFirstOrThrow({ select: { id: true } }),
+      prisma.bodyType.findFirstOrThrow({ select: { id: true } }),
+    ])
+    const idSuffix = 'quote-scope-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
+    const vehicle = await prisma.vehicle.create({
+      data: {
+        slug: idSuffix, stockNumber: idSuffix.toUpperCase(), brandId: brand.id, bodyTypeId: bodyType.id,
+        model: 'Fictional Quote Sedan', variant: 'Synthetic', shortTitle: 'Out-of-scope Synthetic Vehicle',
+        year: 2024, price: 1_500_000, mileage: 10_000, fuelType: 'Petrol', transmission: 'Automatic',
+        shortDescription: 'Synthetic quote scope fixture.', description: 'Test-only vehicle outside assigned showroom scope.',
+        status: VehicleStatus.AVAILABLE, published: true, publishedAt: new Date(), currency: 'INR',
+      },
+    })
+    let inquiryId: string | null = null
+    try {
+      const inquiry = await prisma.inquiry.create({
+        data: {
+          referenceNumber: idSuffix, fullName: 'Synthetic Buyer',
+          phone: '9999999999', email: idSuffix + '@car-dealership.test',
+          message: 'Synthetic enquiry for showroom scope testing.',
+          vehicleId: vehicle.id, assignedToId: null,
+        },
+      })
+      inquiryId = inquiry.id
+      expect(await getSalesQuoteDrafts(inquiry.id, actor)).toBeNull()
+      expect((await createSalesQuoteDraft(inquiry.id, actor, {
+        discountAmount: 0, estimatedOtherFees: 0,
+      })).type).toBe('not-found')
+    } finally {
+      if (inquiryId) {
+        await prisma.salesQuoteDraft.deleteMany({ where: { inquiryId } })
+        await prisma.inquiry.delete({ where: { id: inquiryId } })
+      }
+      await prisma.vehicle.delete({ where: { id: vehicle.id } })
+    }
+  })
+
 })
