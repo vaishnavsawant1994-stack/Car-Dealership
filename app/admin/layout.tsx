@@ -18,6 +18,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Features', href: '/admin/features', icon: 'features', permission: 'feature.manage' },
   ] },
   { label: 'Customer Operations', items: [
+    { label: 'Customer 360', href: '/admin/customers', icon: 'customers', permission: 'user.view' },
     { label: 'Enquiries', href: '/admin/enquiries', icon: 'enquiries', permission: 'enquiry.view' },
     { label: 'Test Drives', href: '/admin/test-drives', icon: 'testDrives', permission: 'testDrive.view' },
     { label: 'Sell Requests', href: '/admin/sell-requests', icon: 'sellRequests', permission: 'sellRequest.view' },
