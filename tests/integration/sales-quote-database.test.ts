@@ -84,7 +84,7 @@ describe('P5-02 PostgreSQL internal pricing snapshots', () => {
       select: { userId: true },
     })
     const actorUser = await prisma.user.findUniqueOrThrow({ where: { id: assignment.userId } })
-    const actor = { id: actorUser.id, role: actorUser.role }
+    const actor = actorUser
     const [brand, bodyType] = await Promise.all([
       prisma.brand.findFirstOrThrow({ select: { id: true } }),
       prisma.bodyType.findFirstOrThrow({ select: { id: true } }),
