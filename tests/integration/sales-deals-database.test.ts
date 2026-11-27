@@ -257,18 +257,18 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     expect(requested.type).toBe('requested')
     if (requested.type !== 'requested') return
     partRequestIds.push(requested.data.id)
-    const foreignShowroom = await prisma.showroom.create({ data: {
+    const foreignP12Showroom = await prisma.showroom.create({ data: {
       name: `Fictional Foreign P12 ${suffix}`, address: 'Synthetic Test Road, 4', city: 'Test City',
       state: 'Test State', postalCode: '000004', phone: 'Synthetic only',
       email: `p12-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
     } })
     try {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP12Showroom.id } })
       expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(false)
       expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'not-available' })
     } finally {
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
-      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+      await prisma.showroom.delete({ where: { id: foreignP12Showroom.id } })
     }
     expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(true)
     expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'issued' })
