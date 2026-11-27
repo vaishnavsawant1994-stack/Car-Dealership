@@ -200,6 +200,7 @@ model User {
   operationalMessages     OperationalMessage[]
   operationalActivities   OperationalActivity[]
   createdFollowUps        OperationalFollowUp[]         @relation("FollowUpCreatedBy")
+  authoredSalesQuoteDrafts SalesQuoteDraft[] @relation("SalesQuoteDraftAuthor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -394,6 +395,7 @@ model Vehicle {
   features                 VehicleFeature[]
   favorites                Favorite[]
   inquiries                Inquiry[]
+  salesQuoteDrafts         SalesQuoteDraft[]
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
@@ -545,6 +547,7 @@ model Inquiry {
   assignedTo             User?                       @relation("AssignedInquiries", fields: [assignedToId], references: [id], onDelete: SetNull)
   vehicle                Vehicle?                    @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   messages               CustomerEngagementMessage[]
+  salesQuoteDrafts        SalesQuoteDraft[]
   createdAt              DateTime                    @default(now())
   updatedAt              DateTime                    @updatedAt
 
@@ -1092,4 +1095,25 @@ model ShowroomStaffAssignment {
 
   @@unique([showroomId, userId])
   @@index([userId])
+}
+
+/** Internal indicative price worksheet. Never a tax invoice or public offer. */
+model SalesQuoteDraft {
+  id                 String   @id @default(cuid())
+  inquiryId          String
+  inquiry            Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Restrict)
+  vehicleId          String
+  vehicle            Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdById        String
+  createdBy          User     @relation("SalesQuoteDraftAuthor", fields: [createdById], references: [id], onDelete: Restrict)
+  vehiclePrice       Int
+  discountAmount     Int      @default(0)
+  estimatedOtherFees Int      @default(0)
+  estimatedSubtotal  Int
+  currency           String   @default("INR")
+  note               String?
+  createdAt          DateTime @default(now())
+
+  @@index([inquiryId, createdAt])
+  @@index([vehicleId, createdAt])
 }
