@@ -263,8 +263,8 @@ test('staff invitation is single-use and protected super-admin access cannot be 
   expect((await page.request.post('/api/staff-invitation/accept', { data: { token, name: 'Replay User', phone: '9876501234', password: 'Workflow!Pass2026' } })).status()).toBe(410)
 
   await signIn(page, 'superadmin@deccanwheels.local')
-  const superAdmin = await prisma.user.findUniqueOrThrow({ where: { email: 'superadmin@deccanwheels.local' } })
-  const blocked = await page.request.patch(`/api/admin/users/${superAdmin.id}`, { data: { status: 'DISABLED' } })
+  const superAdmin = await prisma.user.findUniqueOrThrow({ where: { email: 'superadmin@deccanwheels.local' }, select: { id: true, sessionVersion: true } })
+  const blocked = await page.request.patch(`/api/admin/users/${superAdmin.id}`, { data: { status: 'DISABLED', version: superAdmin.sessionVersion } })
   expect(blocked.status()).toBe(403)
   await expect(blocked.json()).resolves.toMatchObject({ error: { code: 'FORBIDDEN' } })
   await page.goto('/admin/audit-logs')
