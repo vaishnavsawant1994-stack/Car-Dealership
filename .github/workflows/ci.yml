@@ -57,3 +57,5 @@ jobs:
         run: npm run typecheck
       - name: Test
         run: npm test
+      - name: Production build (isolated CI environment)
+        run: npm run build
