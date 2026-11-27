@@ -17,12 +17,14 @@ describe('P4-03 promotional consent and suppression', () => {
     expect(hasCurrentMarketingConsent(record, 'marketingEmails')).toBe(false)
     expect(hasCurrentMarketingConsent(record, 'whatsAppUpdates')).toBe(false)
     expect(consentDisplay(record)[0].everConsentedAt).toEqual(consentedAt)
+    expect(consentDisplay(record)[0].rawEnabled).toBe(false)
   })
   it('fails closed on flags set without a recorded opt-in date', () => {
     expect(hasCurrentMarketingConsent({
       marketingEmails: true, marketingConsentedAt: null,
       whatsAppUpdates: true, whatsAppConsentedAt: null,
     }, 'marketingEmails')).toBe(false)
+    expect(consentDisplay({ marketingEmails: true, marketingConsentedAt: null, whatsAppUpdates: false, whatsAppConsentedAt: null })[0].rawEnabled).toBe(true)
   })
   it('accepts only explicit withdrawal channels and rejects opt-in attempts', () => {
     expect(withdrawConsentSchema.safeParse({ channel: 'marketingEmails' }).success).toBe(true)
