@@ -8,11 +8,14 @@ import { getPublicationReadiness } from '@/lib/admin/vehicle-workflow'
 import { hasPermission } from '@/lib/auth/admin-permissions'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 
 export default async function AdminVehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const actor = await requirePermission('vehicle.view')
+  const showroom = showroomScopeWhere(await getActorShowroomScope(actor))
   const { id } = await params
-  const vehicle = await prisma.vehicle.findUnique({ where: { id }, include: { brand: true, bodyType: true, images: { orderBy: { sortOrder: 'asc' } }, features: { include: { feature: true } }, statusHistory: { orderBy: { createdAt: 'desc' }, include: { actor: { select: { name: true } } } }, inquiries: { take: 5, orderBy: { submittedAt: 'desc' } }, testDrives: { take: 5, orderBy: { submittedAt: 'desc' } } } })
+  const vehicle = await prisma.vehicle.findFirst({ where: { id, ...showroom }, include: { brand: true, bodyType: true, images: { orderBy: { sortOrder: 'asc' } }, features: { include: { feature: true } }, statusHistory: { orderBy: { createdAt: 'desc' }, include: { actor: { select: { name: true } } } } } })
   if (!vehicle) notFound()
   const readiness = getPublicationReadiness(vehicle)
   const vehicleLabel = `${vehicle.year} ${vehicle.brand.name} ${vehicle.model} ${vehicle.variant}`

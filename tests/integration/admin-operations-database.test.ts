@@ -2,20 +2,26 @@ import 'dotenv/config'
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('server-only', () => ({}))
+const permissionMocks = vi.hoisted(() => ({ authorizeAdminRequest: vi.fn() }))
+vi.mock('@/lib/auth/require-permission', () => permissionMocks)
 
 import { UserRole, VehicleStatus } from '@prisma/client'
-import { addLeadMessage, assignLead } from '@/lib/admin/lead-service'
+import { addLeadMessage, assignLead, requireAccessibleLead, updateLead } from '@/lib/admin/lead-service'
+import { leadCollectionHandlers, leadDetailHandlers } from '@/lib/admin/lead-api'
 import { createSellValuation, saveSellInspection, scheduleTestDrive } from '@/lib/admin/specialist-workflows'
 import { getPublicationReadiness } from '@/lib/admin/vehicle-workflow'
 import { prisma } from '@/lib/db/prisma'
 import { createReferenceNumber } from '@/lib/references'
 import { resolvePublicVehicleSlug } from '@/lib/repositories/vehicle-repository'
+import { accessibleResourceWhere } from '@/lib/auth/admin-resource-policy'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 
-const ids = { inquiries: [] as string[], drives: [] as string[], sells: [] as string[], vehicles: [] as string[], contacts: [] as string[] }
+const ids = { inquiries: [] as string[], drives: [] as string[], sells: [] as string[], vehicles: [] as string[], contacts: [] as string[], showrooms: [] as string[] }
 let originalContactCounter: number | null = null
 const ref = (kind: string) => `OA-${kind}-TEST-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
 afterEach(async () => {
+  permissionMocks.authorizeAdminRequest.mockReset()
   const resources = [...ids.inquiries.map((id) => ['Inquiry', id]), ...ids.drives.map((id) => ['TestDrive', id]), ...ids.sells.map((id) => ['SellRequest', id])] as Array<[string, string]>
   if (resources.length) {
     await prisma.operationalMessage.deleteMany({ where: { OR: resources.map(([resourceType, resourceId]) => ({ resourceType, resourceId })) } })
@@ -26,6 +32,7 @@ afterEach(async () => {
   await prisma.sellRequest.deleteMany({ where: { id: { in: ids.sells.splice(0) } } })
   await prisma.vehicle.deleteMany({ where: { id: { in: ids.vehicles.splice(0) } } })
   await prisma.contactMessage.deleteMany({ where: { id: { in: ids.contacts.splice(0) } } })
+  await prisma.showroom.deleteMany({ where: { id: { in: ids.showrooms.splice(0) } } })
   if (originalContactCounter !== null) {
     await prisma.referenceCounter.update({ where: { key: 'CON' }, data: { value: originalContactCounter } })
     originalContactCounter = null
@@ -43,7 +50,7 @@ describe('admin operations against PostgreSQL', () => {
   it('creates a complete draft, publishes it and preserves an old slug redirect', async () => {
     const source = await prisma.vehicle.findFirstOrThrow({ select: { brandId: true, bodyTypeId: true } })
     const slug = `admin-integration-${Date.now()}`
-    const vehicle = await prisma.vehicle.create({ data: { brandId: source.brandId, bodyTypeId: source.bodyTypeId, model: 'Integration', variant: 'Workflow', stockNumber: `TEST-${Date.now()}`, slug, shortTitle: 'Integration Workflow', year: 2024, price: 4_000_000, mileage: 5000, fuelType: 'Petrol', transmission: 'Automatic', shortDescription: 'A complete integration vehicle for workflow checks.', description: 'A complete integration vehicle used only while the automated admin workflow test is running.', status: VehicleStatus.AVAILABLE, images: { create: [0, 1, 2].map((sortOrder) => ({ url: `/test/${sortOrder}.webp`, altText: `Integration vehicle ${sortOrder}`, category: sortOrder === 2 ? 'INTERIOR' : 'EXTERIOR', isPrimary: sortOrder === 0, sortOrder })) } }, include: { images: true } })
+    const vehicle = await prisma.vehicle.create({ data: { showroomId: (await prisma.showroom.findFirstOrThrow({ where: { active: true, isPrimary: true }, select: { id: true } })).id, brandId: source.brandId, bodyTypeId: source.bodyTypeId, model: 'Integration', variant: 'Workflow', stockNumber: `TEST-${Date.now()}`, slug, shortTitle: 'Integration Workflow', year: 2024, price: 4_000_000, mileage: 5000, fuelType: 'Petrol', transmission: 'Automatic', shortDescription: 'A complete integration vehicle for workflow checks.', description: 'A complete integration vehicle used only while the automated admin workflow test is running.', status: VehicleStatus.AVAILABLE, images: { create: [0, 1, 2].map((sortOrder) => ({ url: `/test/${sortOrder}.webp`, altText: `Integration vehicle ${sortOrder}`, category: sortOrder === 2 ? 'INTERIOR' : 'EXTERIOR', isPrimary: sortOrder === 0, sortOrder })) } }, include: { images: true } })
     ids.vehicles.push(vehicle.id)
     expect(getPublicationReadiness(vehicle).ready).toBe(true)
     const nextSlug = `${slug}-renamed`
@@ -55,7 +62,7 @@ describe('admin operations against PostgreSQL', () => {
 
   it('assigns an enquiry and keeps internal notes out of the customer account', async () => {
     const [customer, sales, superAdmin, vehicle] = await Promise.all([prisma.user.findUniqueOrThrow({ where: { email: 'customer@deccanwheels.local' } }), prisma.user.findUniqueOrThrow({ where: { email: 'sales@deccanwheels.local' } }), prisma.user.findUniqueOrThrow({ where: { email: 'superadmin@deccanwheels.local' } }), prisma.vehicle.findFirstOrThrow()])
-    const inquiry = await prisma.inquiry.create({ data: { referenceNumber: ref('ENQ'), userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Integration admin assignment request.' } }); ids.inquiries.push(inquiry.id)
+    const inquiry = await prisma.inquiry.create({ data: { referenceNumber: ref('ENQ'), showroomId: vehicle.showroomId, userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Integration admin assignment request.' } }); ids.inquiries.push(inquiry.id)
     const assigned = await assignLead('enquiries', inquiry.id, superAdmin, sales.id, inquiry.version)
     expect(assigned?.assignedToId).toBe(sales.id)
     await addLeadMessage('enquiries', inquiry.id, sales, { body: 'Private operational note.', customerVisible: false, type: 'INTERNAL_NOTE' })
@@ -64,18 +71,55 @@ describe('admin operations against PostgreSQL', () => {
     expect(customerMessages.map((item) => item.body)).toEqual(['Visible customer update.'])
   })
 
+  it('denies lead reads and writes outside showroom and assignment scope', async () => {
+    const [sales, operations, primary] = await Promise.all([
+      prisma.user.findUniqueOrThrow({ where: { email: 'sales@deccanwheels.local' } }),
+      prisma.user.findUniqueOrThrow({ where: { email: 'operations@deccanwheels.local' } }),
+      prisma.showroom.findFirstOrThrow({ where: { active: true, isPrimary: true }, select: { id: true } }),
+    ])
+    const outside = await prisma.showroom.create({ data: { name: `Scope test ${Date.now()}`, address: 'Test address', city: 'Pune', state: 'Maharashtra', postalCode: '411001', phone: '02000000000', email: `scope-${Date.now()}@example.test`, hours: 'Test only' } })
+    ids.showrooms.push(outside.id)
+    const outsideLead = await prisma.contactMessage.create({ data: { showroomId: outside.id, referenceNumber: ref('CON'), name: 'Outside showroom', phone: '9876543210', email: 'outside@example.test', message: 'Temporary branch-scope fixture.' } })
+    const otherQueueLead = await prisma.contactMessage.create({ data: { showroomId: primary.id, referenceNumber: ref('CON'), name: 'Other staff queue', phone: '9876543210', email: 'other-queue@example.test', message: 'Temporary assignment-scope fixture.', assignedToId: operations.id } })
+    const ownQueueLead = await prisma.contactMessage.create({ data: { showroomId: primary.id, referenceNumber: ref('CON'), name: 'Sales queue', phone: '9876543210', email: 'own-queue@example.test', message: 'Temporary allowed-scope fixture.' } })
+    ids.contacts.push(outsideLead.id, otherQueueLead.id, ownQueueLead.id)
+
+    const scope = await getActorShowroomScope(sales)
+    expect(scope.showroomIds).toContain(primary.id)
+    expect(scope.showroomIds).not.toContain(outside.id)
+    permissionMocks.authorizeAdminRequest.mockImplementation(async () => sales)
+    const collection = await leadCollectionHandlers('contact-inquiries').GET(new Request('http://localhost/api/admin/contact-inquiries'))
+    const collectionPayload = await collection.json()
+    expect(collection.status).toBe(200)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).toContain(ownQueueLead.id)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).not.toContain(outsideLead.id)
+    expect(collectionPayload.data.map((lead: { id: string }) => lead.id)).not.toContain(otherQueueLead.id)
+    const detail = leadDetailHandlers('contact-inquiries')
+    for (const lead of [outsideLead, otherQueueLead]) {
+      const response = await detail.GET(new Request('http://localhost/api/admin/contact-inquiries'), { params: Promise.resolve({ id: lead.id }) })
+      expect(response.status).toBe(404)
+    }
+    for (const lead of [outsideLead, otherQueueLead]) {
+      await expect(requireAccessibleLead('contact-inquiries', lead.id, sales)).resolves.toBeNull()
+      await expect(updateLead('contact-inquiries', lead.id, sales, { status: 'ASSIGNED', version: lead.version })).resolves.toMatchObject({ type: 'not-found' })
+      await expect(assignLead('contact-inquiries', lead.id, sales, null, lead.version)).resolves.toBeNull()
+      const result = await prisma.contactMessage.updateMany({ where: { id: lead.id, ...accessibleResourceWhere(sales, scope) }, data: { message: 'Unauthorized write attempt.' } })
+      expect(result.count).toBe(0)
+    }
+  })
+
   it('confirms a test drive and blocks a conflicting slot for the same vehicle', async () => {
     const [customer, sales, vehicle] = await Promise.all([prisma.user.findUniqueOrThrow({ where: { email: 'customer@deccanwheels.local' } }), prisma.user.findUniqueOrThrow({ where: { email: 'sales@deccanwheels.local' } }), prisma.vehicle.findFirstOrThrow()])
     const preferredDate = new Date(Date.now() + 10 * 86_400_000)
-    const create = () => prisma.testDrive.create({ data: { referenceNumber: ref('TD'), userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Customer', phone: customer.phone ?? '9876543210', email: customer.email, preferredDate, preferredTime: '14:30', assignedToId: sales.id } })
+    const create = () => prisma.testDrive.create({ data: { referenceNumber: ref('TD'), showroomId: vehicle.showroomId, userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Customer', phone: customer.phone ?? '9876543210', email: customer.email, preferredDate, preferredTime: '14:30', assignedToId: sales.id } })
     const first = await create(); const second = await create(); ids.drives.push(first.id, second.id)
     expect((await scheduleTestDrive(first.id, sales, { confirmedDate: preferredDate, confirmedTime: '14:30', version: first.version }, 'confirm')).type).toBe('success')
     expect((await scheduleTestDrive(second.id, sales, { confirmedDate: preferredDate, confirmedTime: '14:30', version: second.version }, 'confirm')).type).toBe('slot-conflict')
   })
 
   it('moves a sell request through inspection, valuation and offer creation', async () => {
-    const operations = await prisma.user.findUniqueOrThrow({ where: { email: 'operations@deccanwheels.local' } })
-    const sell = await prisma.sellRequest.create({ data: { referenceNumber: ref('SELL'), name: 'Integration Seller', email: 'integration-seller@example.com', phone: '9876543210', make: 'BMW', model: 'X5', year: 2021, mileage: 25000, city: 'Pune', status: 'SUBMITTED', assignedToId: operations.id } }); ids.sells.push(sell.id)
+    const [operations, showroom] = await Promise.all([prisma.user.findUniqueOrThrow({ where: { email: 'operations@deccanwheels.local' } }), prisma.showroom.findFirstOrThrow({ where: { active: true, isPrimary: true }, select: { id: true } })])
+    const sell = await prisma.sellRequest.create({ data: { referenceNumber: ref('SELL'), showroomId: showroom.id, name: 'Integration Seller', email: 'integration-seller@example.com', phone: '9876543210', make: 'BMW', model: 'X5', year: 2021, mileage: 25000, city: 'Pune', status: 'SUBMITTED', assignedToId: operations.id } }); ids.sells.push(sell.id)
     const inspection = await saveSellInspection(sell.id, operations, { documentsVerified: true, serviceHistoryVerified: true, exteriorScore: 8, interiorScore: 8, mechanicalScore: 9, overallConditionScore: 8, customerSummary: 'Well maintained.' })
     expect(inspection?.completedAt).toBeInstanceOf(Date)
     const valuation = await createSellValuation(sell.id, operations, { marketMinimum: 4_000_000, marketMaximum: 4_800_000, recommendedOffer: 4_400_000, finalOffer: 4_350_000, validUntil: new Date(Date.now() + 7 * 86_400_000) })

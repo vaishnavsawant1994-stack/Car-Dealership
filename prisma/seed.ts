@@ -819,6 +819,22 @@ async function main() {
     },
   })
 
+  // The sample dataset has one branch; attach its legacy/demo records and
+  // active branch-capable staff after the canonical showroom exists.
+  await Promise.all([
+    prisma.vehicle.updateMany({ where: { showroomId: null }, data: { showroomId: 'main-showroom' } }),
+    prisma.inquiry.updateMany({ where: { showroomId: null }, data: { showroomId: 'main-showroom' } }),
+    prisma.testDrive.updateMany({ where: { showroomId: null }, data: { showroomId: 'main-showroom' } }),
+    prisma.sellRequest.updateMany({ where: { showroomId: null }, data: { showroomId: 'main-showroom' } }),
+    prisma.contactMessage.updateMany({ where: { showroomId: null }, data: { showroomId: 'main-showroom' } }),
+    prisma.showroomStaffAssignment.createMany({
+      data: [...staff.values()]
+        .filter((member) => [UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN].includes(member.role))
+        .map((member) => ({ showroomId: 'main-showroom', userId: member.id })),
+      skipDuplicates: true,
+    }),
+  ])
+
   const settings = {
     site_name: 'Car Dealership Demo',
     legal_company_name: 'Car Dealership Demo',

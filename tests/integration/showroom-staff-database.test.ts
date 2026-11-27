@@ -27,7 +27,7 @@ const showroomData = (name: string) => ({
 
 beforeAll(async () => {
   const target = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
-  if (process.env.APP_ENV !== 'test' || target.hostname !== 'localhost' ||
+  if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(target.hostname) ||
     target.pathname !== '/car_dealership_test') {
     throw new Error('P1-03 integration tests only run against the isolated local CI PostgreSQL database.')
   }
