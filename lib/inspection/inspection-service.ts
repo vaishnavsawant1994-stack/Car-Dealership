@@ -24,8 +24,9 @@ export async function startVehicleInspection(vehicleId: string, actor: AdminActo
     if (!vehicle) return { type: 'not-found' as const }
     const existing = await tx.vehicleInspection.findFirst({
       where: { vehicleId, status: { in: active } },
-      select: { id: true },
+      select: { id: true, inspectorId: true },
     })
+    if (existing && !canEditVehicleInspection(actor, existing.inspectorId)) return { type: 'busy' as const }
     if (existing) return { type: 'existing' as const, id: existing.id }
 
     const inspection = await tx.vehicleInspection.create({
