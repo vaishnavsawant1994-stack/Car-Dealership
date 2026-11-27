@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 type Channel = 'marketingEmails' | 'whatsAppUpdates'
-type Consent = { channel: Channel; consented: boolean; everConsentedAt: string | null }
+type Consent = { channel: Channel; consented: boolean; rawEnabled: boolean; everConsentedAt: string | null }
 const titles: Record<Channel, string> = {
   marketingEmails: 'Marketing emails',
   whatsAppUpdates: 'WhatsApp promotional updates',
@@ -31,7 +31,7 @@ export function CustomerConsentControls({
       const body = await response.json().catch(() => null)
       if (!response.ok) throw new Error(body?.error?.message ?? 'Could not save preference.')
       setItems((current) => current.map((item) => item.channel === channel ?
-        { ...item, consented: false } : item))
+        { ...item, consented: false, rawEnabled: false } : item))
       setMessage(body?.message ?? 'Marketing consent withdrawn.')
       router.refresh()
     } catch (cause) {
@@ -48,10 +48,10 @@ export function CustomerConsentControls({
       {items.map((item) => <div key={item.channel}
         style={{ paddingBlock: 12, borderBottom: '1px solid var(--admin-border)' }}>
         <strong>{titles[item.channel]}</strong>
-        <p>Current status: {item.consented ? 'Consented' : 'Not consented / suppressed'}</p>
+        <p>Current status: {item.consented ? 'Consented' : item.rawEnabled ? 'Unverified legacy flag — must be suppressed' : 'Not consented / suppressed'}</p>
         <p>Historical opt-in date: {item.everConsentedAt ?
           new Date(item.everConsentedAt).toLocaleString('en-IN') : 'No verified opt-in recorded'}</p>
-        {canWithdraw && item.consented ? <button type="button"
+        {canWithdraw && item.rawEnabled ? <button type="button"
           className="admin-button admin-button--secondary" disabled={Boolean(busy)}
           onClick={() => withdraw(item.channel)}>
           {busy === item.channel ? 'Disabling…' : 'Withdraw consent'}
