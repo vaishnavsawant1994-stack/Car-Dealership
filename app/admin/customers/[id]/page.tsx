@@ -1,4 +1,8 @@
+import { UserRole, UserStatus } from '@prisma/client'
 import Link from 'next/link'
+import { CustomerFollowUps } from '@/components/admin/CustomerFollowUps'
+import { listCustomerFollowUps } from '@/lib/crm/customer-followup-service'
+import { prisma } from '@/lib/db/prisma'
 import { notFound } from 'next/navigation'
 import { AdminEmpty, AdminPageHeader, AdminStatus } from '@/components/admin/AdminPrimitives'
 import { requirePermission } from '@/lib/auth/require-permission'
@@ -10,6 +14,15 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const result = await getCustomer360(id)
   if (!result) notFound()
   const { customer, inquiries, testDrives, sellRequests, favorites, messages } = result
+  const [followUps, administrators] = await Promise.all([
+    listCustomerFollowUps(customer.id),
+    prisma.user.findMany({
+      where: { role: { in: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+        status: UserStatus.ACTIVE, deletedAt: null, emailVerified: { not: null } },
+      select: { id: true, name: true, email: true },
+      orderBy: [{ name: 'asc' }, { id: 'asc' }],
+    }),
+  ])
 
   return <>
     <AdminPageHeader title={customer.name ?? 'Customer Profile'}
@@ -74,6 +87,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <AdminStatus value={item.vehicle.status}/></Link>)}</div> :
           <AdminEmpty title="No saved vehicles" text="No vehicles have been saved by this account."/>}
       </section>
+      <CustomerFollowUps
+        customerId={customer.id}
+        assignees={administrators}
+        tasks={followUps.map((task) => ({
+          ...task,
+          dueAt: task.dueAt.toISOString(),
+          completedAt: task.completedAt?.toISOString() ?? null,
+          createdAt: task.createdAt.toISOString(),
+        }))}
+      />
       <section className="admin-panel admin-panel--full">
         <header><h2>Customer-visible conversation history</h2></header>
         <div className="admin-panel__body admin-timeline">
