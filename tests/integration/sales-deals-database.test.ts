@@ -309,6 +309,22 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     expect(analytics.workshopOrders.find((entry) => entry.status === WorkshopOrderStatus.COMPLETED)?.count).toBe(1)
     expect(analytics.afterSalesTasks.find((entry) => entry.status === 'COMPLETED')?.count).toBe(1)
     expect(JSON.stringify(analytics)).not.toContain(customer.email)
+    const foreignShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P17 ${suffix}`, address: 'Synthetic Test Road, 6', city: 'Test City',
+      state: 'Test State', postalCode: '000006', phone: 'Synthetic only',
+      email: `p17-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      const mismatchedAnalytics = await getShowroomAnalytics(operations)
+      expect(mismatchedAnalytics.salesDeals).toEqual([])
+      expect(mismatchedAnalytics.deliveries).toEqual([])
+      expect(mismatchedAnalytics.workshopOrders).toEqual([])
+      expect(mismatchedAnalytics.afterSalesTasks).toEqual([])
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+    }
     const unassignedOperations = await prisma.user.create({ data: {
       email: `p17-no-showroom-${suffix}@car-dealership.test`, name: 'Fictional Unassigned Operations',
       role: UserRole.OPERATIONS, status: UserStatus.ACTIVE, emailVerified: new Date(),
