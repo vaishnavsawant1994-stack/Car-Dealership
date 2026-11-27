@@ -1,4 +1,5 @@
 import { UserRole } from '@prisma/client'
+import type { Prisma } from '@prisma/client'
 import type { AdminActor } from '@/lib/auth/require-admin'
 
 type AssignableResource = { assignedToId: string | null }
@@ -17,6 +18,11 @@ export function canAccessScopedResource(
 
 export function showroomScopeWhere(scope: ShowroomScope): { showroomId?: { in: string[] } } {
   return scope.global ? {} : { showroomId: { in: [...scope.showroomIds] } }
+}
+
+/** Scopes inspection rows through their parent vehicle before any child data is read. */
+export function inspectionShowroomWhere(scope: ShowroomScope): Prisma.VehicleInspectionWhereInput {
+  return scope.global ? {} : { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } }
 }
 
 /** Database predicate for mutations that must retain both branch and queue access. */
@@ -46,3 +52,4 @@ export function canManageUser(actor: Pick<AdminActor, 'id' | 'role'>, target: { 
 export function mayViewPrivateDocuments(role: UserRole): boolean {
   return role === UserRole.OPERATIONS || role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN
 }
+
