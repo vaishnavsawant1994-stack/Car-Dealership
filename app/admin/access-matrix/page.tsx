@@ -9,6 +9,7 @@ const roleDescriptions: Record<UserRole, string> = {
   CUSTOMER: 'Customer account; no staff application access.',
   SALES: 'Customer enquiries, test drives, and assigned sales follow-up, including delivery visibility.',
   FINANCE: 'Finance review and internal worksheets, plus cleared funds verification for delivery.',
+  WORKSHOP: 'Workshop job cards and service checklist work within assigned branches.',
   OPERATIONS: 'Inventory operations, test drives, inspections, valuations, sell requests, and vehicle handover.',
   CONTENT_MANAGER: 'Published testimonials, gallery, website content, newsletter, and non-secret settings visibility.',
   ADMIN: 'Dealership administration; protected Super Admin controls remain restricted.',
