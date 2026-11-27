@@ -24,7 +24,7 @@
 
 ## Follow-up hardening beyond P20
 
-- P21 vehicle inspection showroom scoping is tracked in draft [PR #53](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/53), stacked on PR #38. Exact-head CI #218 passed lint, type-check, isolated PostgreSQL-backed tests, and production build. The public PR summary is intentionally concise. No hosted migration or deployment was performed.
+- P21 active-showroom scoping for inspection and sales quote workflows is tracked in draft [PR #53](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/53), stacked on PR #38. Exact-head CI #227 passed lint, type-check, isolated PostgreSQL-backed tests, and production build. The public PR summary is intentionally concise. No hosted migration or deployment was performed.
 
 ## Data and deployment boundaries
 
