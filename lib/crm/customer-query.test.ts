@@ -29,7 +29,7 @@ describe('P4-01 customer 360 privacy and search policy', () => {
       expect(Object.hasOwn(customerProfileSelect, key)).toBe(false)
     }
     expect(customerProfileSelect.notificationSettings.select).toEqual({
-      marketingEmails: true, marketingConsentedAt: true,
+      marketingEmails: true, marketingConsentedAt: true, whatsAppUpdates: true, whatsAppConsentedAt: true,
     })
   })
 })
