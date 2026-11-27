@@ -3,9 +3,9 @@ import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 type VehicleOption = { id: string; stockNumber: string; shortTitle: string }
-export function InspectionStart({ vehicles }: { vehicles: VehicleOption[] }) {
+export function InspectionStart({ vehicles, initialVehicleId }: { vehicles: VehicleOption[]; initialVehicleId?: string }) {
   const router = useRouter()
-  const [vehicleId, setVehicleId] = useState(vehicles[0]?.id ?? '')
+  const [vehicleId, setVehicleId] = useState(vehicles.find((v) => v.id === initialVehicleId)?.id ?? vehicles[0]?.id ?? '')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   async function start() {
