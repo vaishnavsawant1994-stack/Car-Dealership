@@ -16,7 +16,7 @@ type FeatureOption = Option & { category: string }
 
 const emptyVehicle: FormInput = { brandId: '', bodyTypeId: '', model: '', variant: '', stockNumber: '', slug: '', shortTitle: '', year: new Date().getFullYear(), price: 0, currency: 'INR', mileage: 0, fuelType: 'Diesel', transmission: 'Automatic', shortDescription: '', description: '', status: 'DRAFT', featured: false, newArrival: false, certified: false, featureIds: [], version: 1 }
 
-export function VehicleForm({ vehicle, brands, bodyTypes, features }: { vehicle?: Partial<FormInput> & { id: string }; brands: Option[]; bodyTypes: Option[]; features: FeatureOption[] }) {
+export function VehicleForm({ vehicle, brands, bodyTypes, features, procurement, initialValues }: { vehicle?: Partial<FormInput> & { id: string }; brands: Option[]; bodyTypes: Option[]; features: FeatureOption[]; procurement?: { id: string; version: number }; initialValues?: Partial<FormInput> }) {
   const router = useRouter()
   const [message, setMessage] = useState('')
   const [isError, setIsError] = useState(false)
@@ -25,7 +25,7 @@ export function VehicleForm({ vehicle, brands, bodyTypes, features }: { vehicle?
   const [newBrandName, setNewBrandName] = useState('')
   const [brandBusy, setBrandBusy] = useState(false)
   const [brandMessage, setBrandMessage] = useState('')
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(vehicleAdminSchema), defaultValues: { ...emptyVehicle, ...vehicle } })
+  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormInput, unknown, FormValues>({ resolver: zodResolver(vehicleAdminSchema), defaultValues: { ...emptyVehicle, ...initialValues, ...vehicle } })
   const brandId = watch('brandId'); const year = watch('year'); const model = watch('model'); const variant = watch('variant')
   function createSlug() { const brand = brandOptions.find((item) => item.id === brandId)?.name ?? ''; setValue('slug', generateVehicleSlug({ year: Number(year), brand, model, variant }), { shouldValidate: true }) }
   async function addBrand() {
@@ -50,14 +50,35 @@ export function VehicleForm({ vehicle, brands, bodyTypes, features }: { vehicle?
   }
   async function submit(values: FormValues) {
     setMessage(''); setIsError(false)
-    const response = await fetch(vehicle ? `/api/admin/vehicles/${vehicle.id}` : '/api/admin/vehicles', { method: vehicle ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values) })
-    const payload = await response.json()
-    if (!response.ok) { setIsError(true); setMessage(payload.error?.message ?? 'Vehicle could not be saved.'); return }
-    setMessage(payload.message ?? 'Vehicle saved.')
-    router.push(`/admin/vehicles/${payload.data.id}`); router.refresh()
+    const converting = !vehicle && Boolean(procurement)
+    const endpoint = vehicle ? `/api/admin/vehicles/${vehicle.id}` :
+      converting ? `/api/admin/procurement/${procurement!.id}/convert` : '/api/admin/vehicles'
+    const body = converting ? { vehicle: values, version: procurement!.version } : values
+    try {
+      const response = await fetch(endpoint, {
+        method: vehicle ? 'PATCH' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const payload = await response.json().catch(() => null)
+      if (!response.ok) {
+        setIsError(true)
+        setMessage(payload?.error?.message ?? 'Vehicle could not be saved.')
+        return
+      }
+      setMessage(payload?.message ?? 'Vehicle saved.')
+      router.push(`/admin/vehicles/${payload.data.id}`)
+      router.refresh()
+    } catch {
+      setIsError(true)
+      setMessage('Vehicle service is unavailable. Please try again.')
+    }
   }
   const error = (key: keyof FormInput) => errors[key]?.message ? <small style={{ color: '#f29a93' }}>{String(errors[key]?.message)}</small> : null
   return <form className="admin-form" onSubmit={handleSubmit(submit)}>
+    {procurement && !vehicle ? <p className="admin-form-message" role="status">
+      Creating an unpublished draft from a completed procurement intake. Enter vehicle specifications accurately; private seller data and attachments are never copied into public inventory.
+    </p> : null}
     <section className="admin-form-section"><header><h2>1. Basic Information</h2><p>Identity, classification and operational state.</p></header><div className="admin-form-grid">
       <div><label>Brand<select {...register('brandId')}><option value="">Choose brand</option>{brandOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>{error('brandId')}</label><button className="admin-button admin-button--secondary" type="button" onClick={() => { setAddingBrand((value) => !value); setBrandMessage('') }}><Plus />Add custom brand</button>{addingBrand ? <div><label>New brand name<input value={newBrandName} onChange={(event) => setNewBrandName(event.target.value)} maxLength={100} placeholder="e.g. Ford" /></label><button className="admin-button" type="button" onClick={addBrand} disabled={brandBusy}>{brandBusy ? <LoaderCircle /> : <Plus />}{brandBusy ? 'Saving...' : 'Save & select brand'}</button></div> : null}{brandMessage ? <p className="admin-form-message" role="status">{brandMessage}</p> : null}</div>
       <label>Model<input {...register('model')} />{error('model')}</label><label>Variant<input {...register('variant')} />{error('variant')}</label>
@@ -78,6 +99,6 @@ export function VehicleForm({ vehicle, brands, bodyTypes, features }: { vehicle?
     <section className="admin-form-section"><header><h2>6. Features</h2><p>Select reusable, active vehicle features.</p></header><div className="admin-form-grid">{features.map((feature) => <label className="admin-checkbox" key={feature.id}><input type="checkbox" value={feature.id} {...register('featureIds')} /><span>{feature.name}<small>{feature.category}</small></span></label>)}</div></section>
     <section className="admin-form-section"><header><h2>7. Publication Flags</h2><p>Publishing is a separate permission-protected action after image review.</p></header><div className="admin-form-grid"><label className="admin-checkbox"><input type="checkbox" {...register('featured')} /><span>Featured vehicle</span></label><label className="admin-checkbox"><input type="checkbox" {...register('newArrival')} /><span>New arrival</span></label><label className="admin-checkbox"><input type="checkbox" {...register('certified')} /><span>Certified</span></label></div></section>
     {message ? <p className={`admin-form-message${isError ? ' is-error' : ''}`} role="status">{message}</p> : null}
-    <footer className="admin-form-footer"><button className="admin-button admin-button--secondary" type="button" onClick={() => router.back()}>Cancel</button><button className="admin-button" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle /> : <Save />}{vehicle ? 'Save changes' : 'Create draft'}<ArrowRight /></button></footer>
+    <footer className="admin-form-footer"><button className="admin-button admin-button--secondary" type="button" onClick={() => router.back()}>Cancel</button><button className="admin-button" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle /> : <Save />}{vehicle ? 'Save changes' : procurement ? 'Create procurement draft' : 'Create draft'}<ArrowRight /></button></footer>
   </form>
 }
