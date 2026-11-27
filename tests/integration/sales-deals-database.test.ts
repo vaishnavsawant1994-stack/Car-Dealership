@@ -142,6 +142,21 @@ describe('P7 internal sales deal lifecycle', () => {
     expect(worksheets.map((draft) => draft.id)).toContain(invoice.data.id)
     expect((await createSalesInvoiceDraft(opened.data.id, finance)).type).toBe('already-created')
     process.env.PAYMENT_MODE = 'sandbox'
+    const foreignShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P9 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p9-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      expect((await listSalesInvoiceDrafts(finance)).some((draft) => draft.id === invoice.data.id)).toBe(false)
+      expect((await runPaymentSandboxSimulation(invoice.data.id, finance, {
+        idempotencyKey: `p9-sandbox-${suffix}-foreign`, outcome: 'APPROVED',
+      })).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+    }
     const simulationKey = `p9-sandbox-${suffix}-idempotency`
     const simulation = await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'APPROVED' })
     expect(simulation.type).toBe('simulated')
