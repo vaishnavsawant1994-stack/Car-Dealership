@@ -12,10 +12,20 @@ const eligibleInquiryStates: InquiryStatus[] = [
   InquiryStatus.IN_PROGRESS, InquiryStatus.WAITING_FOR_CUSTOMER,
 ]
 
+function accessibleQuoteInquiryWhere(
+  actor: AdminActor,
+  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
+): Prisma.InquiryWhereInput {
+  return {
+    ...accessibleResourceWhere(actor, scope),
+    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+  }
+}
+
 export async function getSalesQuoteDrafts(inquiryId: string, actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   const inquiry = await prisma.inquiry.findFirst({
-    where: { id: inquiryId, ...accessibleResourceWhere(actor, scope) }, select: {
+    where: { id: inquiryId, ...accessibleQuoteInquiryWhere(actor, scope) }, select: {
       id: true, referenceNumber: true, status: true, assignedToId: true,
       vehicle: { select: { id: true, shortTitle: true, price: true, currency: true, status: true, published: true } },
     },
@@ -36,7 +46,7 @@ export async function createSalesQuoteDraft(inquiryId: string, actor: AdminActor
   const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
     const inquiry = await tx.inquiry.findFirst({
-      where: { id: inquiryId, ...accessibleResourceWhere(actor, scope) }, select: {
+      where: { id: inquiryId, ...accessibleQuoteInquiryWhere(actor, scope) }, select: {
         id: true, status: true, assignedToId: true, vehicleId: true,
         vehicle: { select: { id: true, price: true, currency: true, status: true, published: true } },
       },
