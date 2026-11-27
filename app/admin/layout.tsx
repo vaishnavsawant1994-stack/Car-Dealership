@@ -9,6 +9,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
   { label: 'Overview', items: [{ label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' }] },
   { label: 'Inventory', items: [
     { label: 'Vehicles', href: '/admin/vehicles', icon: 'vehicles', permission: 'vehicle.view' },
+    { label: 'Condition Inspections', href: '/admin/inspections', icon: 'inspection', permission: 'vehicle.update' },
     { label: 'Brands', href: '/admin/brands', icon: 'brands', permission: 'brand.manage' },
     { label: 'Body Types', href: '/admin/body-types', icon: 'bodyTypes', permission: 'bodyType.manage' },
     { label: 'Features', href: '/admin/features', icon: 'features', permission: 'feature.manage' },
