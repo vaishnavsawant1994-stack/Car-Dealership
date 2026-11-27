@@ -182,7 +182,7 @@ test('enquiry assignment keeps internal notes private and publishes customer upd
   expect(messages.map((item) => item.body)).toEqual(['Your requested vehicle is ready for a showroom viewing.'])
 
   const account = await customerPage(browser, `/account/enquiries/${referenceNumber}`)
-  await expect(account.page.getByText('Your requested vehicle is ready for a showroom viewing.')).toBeVisible()
+  await expect(account.page.locator('.message-timeline').getByText('Your requested vehicle is ready for a showroom viewing.')).toBeVisible()
   await expect(account.page.getByText('Private stock and pricing note.')).toHaveCount(0)
   await account.context.close()
 })
