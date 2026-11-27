@@ -11,10 +11,17 @@ function invoiceDraftReference() {
   return `DRAFT-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`
 }
 
+function dealShowroomWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
+  return {
+    ...showroomScopeWhere(scope),
+    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+  }
+}
+
 export async function listSalesInvoiceDrafts(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesInvoiceDraft.findMany({
-    where: { deal: showroomScopeWhere(scope) },
+    where: { deal: dealShowroomWhere(scope) },
     select: {
       id: true, referenceNumber: true, status: true, version: true, vehicleTitle: true,
       stockNumber: true, vehiclePrice: true, discountAmount: true, estimatedOtherFees: true,
@@ -29,7 +36,7 @@ export async function listSalesInvoiceDrafts(actor: AdminActor) {
 export async function listWonSalesDealsForFinance(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findMany({
-    where: { status: SalesDealStatus.WON, ...showroomScopeWhere(scope), invoiceDraft: null },
+    where: { status: SalesDealStatus.WON, ...dealShowroomWhere(scope), invoiceDraft: null },
     select: { id: true, referenceNumber: true, updatedAt: true,
       vehicle: { select: { shortTitle: true, stockNumber: true } },
       quoteDraft: { select: { estimatedSubtotal: true, currency: true } } },
@@ -43,7 +50,7 @@ export async function createSalesInvoiceDraft(dealId: string, actor: AdminActor)
   try {
     return await prisma.$transaction(async (tx) => {
       const deal = await tx.salesDeal.findFirst({
-        where: { id: dealId, status: SalesDealStatus.WON, ...showroomScopeWhere(scope) },
+        where: { id: dealId, status: SalesDealStatus.WON, ...dealShowroomWhere(scope) },
         select: {
           id: true, referenceNumber: true, status: true,
           quoteDraft: { select: { vehiclePrice: true, discountAmount: true, estimatedOtherFees: true, estimatedSubtotal: true, currency: true } },
