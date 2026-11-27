@@ -14,8 +14,8 @@ import { useFocusTrap } from '@/lib/hooks/use-focus-trap'
 export type AdminNavItem = { label: string; href: string; icon: string }
 
 const icons: Record<string, typeof LayoutDashboard> = {
-  dashboard: LayoutDashboard, vehicles: CarFront, brands: Tags, bodyTypes: Boxes, features: Wrench,
-  enquiries: MessageSquareText, testDrives: ClipboardCheck, sellRequests: CarFront, contacts: ContactRound,
+  dashboard: LayoutDashboard, vehicles: CarFront, inspection: ClipboardCheck, brands: Tags, bodyTypes: Boxes, features: Wrench,
+  enquiries: MessageSquareText, testDrives: ClipboardCheck, sellRequests: CarFront, procurement: ClipboardCheck, contacts: ContactRound,
   testimonials: Star, gallery: GalleryHorizontal, content: Files, newsletter: FileImage, showrooms: Building2,
   users: UsersRound, settings: Settings, audit: ShieldCheck,
 }

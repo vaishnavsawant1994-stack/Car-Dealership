@@ -9,6 +9,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
   { label: 'Overview', items: [{ label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' }] },
   { label: 'Inventory', items: [
     { label: 'Vehicles', href: '/admin/vehicles', icon: 'vehicles', permission: 'vehicle.view' },
+    { label: 'Condition Inspections', href: '/admin/inspections', icon: 'inspection', permission: 'vehicle.update' },
     { label: 'Brands', href: '/admin/brands', icon: 'brands', permission: 'brand.manage' },
     { label: 'Body Types', href: '/admin/body-types', icon: 'bodyTypes', permission: 'bodyType.manage' },
     { label: 'Features', href: '/admin/features', icon: 'features', permission: 'feature.manage' },
@@ -17,6 +18,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Enquiries', href: '/admin/enquiries', icon: 'enquiries', permission: 'enquiry.view' },
     { label: 'Test Drives', href: '/admin/test-drives', icon: 'testDrives', permission: 'testDrive.view' },
     { label: 'Sell Requests', href: '/admin/sell-requests', icon: 'sellRequests', permission: 'sellRequest.view' },
+    { label: 'Procurement Intake', href: '/admin/procurement', icon: 'procurement', permission: 'sellRequest.view' },
     { label: 'Contact Messages', href: '/admin/contact-inquiries', icon: 'contacts', permission: 'contactInquiry.view' },
   ] },
   { label: 'Content', items: [
