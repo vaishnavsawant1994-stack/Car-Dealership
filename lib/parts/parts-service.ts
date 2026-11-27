@@ -10,6 +10,10 @@ function validQuantity(value: string) {
   return /^\d{1,10}(?:\.\d{1,2})?$/.test(value) && Number(value) > 0
 }
 
+function showroomRecordWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
+  return scope.global ? {} : { id: { in: scope.showroomIds } }
+}
+
 export async function listParts(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   const [parts, movements] = await Promise.all([
@@ -30,7 +34,7 @@ export async function createPartAndReceive(input: { sku: string; name: string; u
   if (!scope.global && !scope.showroomIds.includes(input.showroomId)) return { type: 'not-available' as const }
   try {
     return await prisma.$transaction(async (tx) => {
-      const showroom = await tx.showroom.findFirst({ where: { id: input.showroomId, active: true, ...showroomScopeWhere(scope) }, select: { id: true } })
+      const showroom = await tx.showroom.findFirst({ where: { id: input.showroomId, active: true, ...showroomRecordWhere(scope) }, select: { id: true } })
       if (!showroom) return { type: 'not-available' as const }
       const part = await tx.inventoryPart.create({ data: { sku: input.sku, name: input.name, unit: input.unit } })
       const movement = await tx.partInventoryMovement.create({ data: { partId: part.id, showroomId: input.showroomId,
@@ -51,7 +55,7 @@ export async function receivePartStock(input: { partId: string; showroomId: stri
   const scope = await getActorShowroomScope(actor)
   if (!scope.global && !scope.showroomIds.includes(input.showroomId)) return { type: 'not-available' as const }
   return prisma.$transaction(async (tx) => {
-    const showroom = await tx.showroom.findFirst({ where: { id: input.showroomId, active: true, ...showroomScopeWhere(scope) }, select: { id: true } })
+    const showroom = await tx.showroom.findFirst({ where: { id: input.showroomId, active: true, ...showroomRecordWhere(scope) }, select: { id: true } })
     if (!showroom) return { type: 'not-available' as const }
     const part = await tx.inventoryPart.findFirst({ where: { id: input.partId, active: true }, select: { id: true, sku: true } })
     if (!part) return { type: 'not-available' as const }
