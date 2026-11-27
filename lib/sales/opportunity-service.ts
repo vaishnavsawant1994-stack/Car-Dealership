@@ -35,8 +35,8 @@ export async function getSalesOpportunityBoard(actor: AdminActor, filters: Sales
     prisma.testDrive.groupBy({ by: ['status'], where: scope, _count: { _all: true } }),
   ])
   const stageCounts = emptySalesStageCounts()
-  for (const row of inquiryGroups) stageCounts[inquiryStage[row.status]] += row._count._all
-  for (const row of driveGroups) stageCounts[testDriveStage[row.status]] += row._count._all
+  for (const row of inquiryGroups) stageCounts[inquiryStage[row.status]] += (row._count as { _all?: number } | undefined)?._all ?? 0
+  for (const row of driveGroups) stageCounts[testDriveStage[row.status]] += (row._count as { _all?: number } | undefined)?._all ?? 0
 
   // Each source is independently bounded to 100, so the combined newest 100
   // cannot omit a more recent item from an individual source.
