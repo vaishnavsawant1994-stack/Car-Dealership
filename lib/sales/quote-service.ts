@@ -2,7 +2,8 @@ import 'server-only'
 
 import { InquiryStatus, Prisma, VehicleStatus } from '@prisma/client'
 import type { AdminActor } from '@/lib/auth/require-admin'
-import { canAccessAssignedResource } from '@/lib/auth/admin-resource-policy'
+import { accessibleResourceWhere } from '@/lib/auth/admin-resource-policy'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 import { prisma } from '@/lib/db/prisma'
 import { estimateVehicleQuote, type IndicativeQuoteInput } from './quote-policy'
 
@@ -12,13 +13,14 @@ const eligibleInquiryStates: InquiryStatus[] = [
 ]
 
 export async function getSalesQuoteDrafts(inquiryId: string, actor: AdminActor) {
-  const inquiry = await prisma.inquiry.findUnique({
-    where: { id: inquiryId }, select: {
+  const scope = await getActorShowroomScope(actor)
+  const inquiry = await prisma.inquiry.findFirst({
+    where: { id: inquiryId, ...accessibleResourceWhere(actor, scope) }, select: {
       id: true, referenceNumber: true, status: true, assignedToId: true,
       vehicle: { select: { id: true, shortTitle: true, price: true, currency: true, status: true, published: true } },
     },
   })
-  if (!inquiry || !canAccessAssignedResource(actor, inquiry)) return null
+  if (!inquiry) return null
   const drafts = await prisma.salesQuoteDraft.findMany({
     where: { inquiryId }, take: 50, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: { id: true, vehiclePrice: true, discountAmount: true,
@@ -31,14 +33,15 @@ export async function getSalesQuoteDrafts(inquiryId: string, actor: AdminActor) 
 }
 
 export async function createSalesQuoteDraft(inquiryId: string, actor: AdminActor, input: IndicativeQuoteInput) {
+  const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
-    const inquiry = await tx.inquiry.findUnique({
-      where: { id: inquiryId }, select: {
+    const inquiry = await tx.inquiry.findFirst({
+      where: { id: inquiryId, ...accessibleResourceWhere(actor, scope) }, select: {
         id: true, status: true, assignedToId: true, vehicleId: true,
         vehicle: { select: { id: true, price: true, currency: true, status: true, published: true } },
       },
     })
-    if (!inquiry || !canAccessAssignedResource(actor, inquiry)) return { type: 'not-found' as const }
+    if (!inquiry) return { type: 'not-found' as const }
     const vehicle = inquiry.vehicle
     if (!eligibleInquiryStates.includes(inquiry.status) || !vehicle ||
       vehicle.status !== VehicleStatus.AVAILABLE || !vehicle.published || vehicle.currency !== 'INR') {
