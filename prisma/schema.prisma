@@ -1120,19 +1120,6 @@ model VehicleInspectionEvidence {
   @@index([inspectionId, checkCode, createdAt])
 }
 
-/** Explicit staff-to-showroom associations; not a parallel user/branch table. */
-model ShowroomStaffAssignment {
-  id         String   @id @default(cuid())
-  showroomId String
-  userId     String
-  createdAt  DateTime @default(now())
-  showroom   Showroom @relation(fields: [showroomId], references: [id], onDelete: Restrict)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
-
-  @@unique([showroomId, userId])
-  @@index([userId])
-}
-
 /** Internal indicative price worksheet. Never a tax invoice or public offer. */
 model SalesQuoteDraft {
   id                 String   @id @default(cuid())
