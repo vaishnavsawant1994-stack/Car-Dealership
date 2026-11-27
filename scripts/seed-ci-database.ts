@@ -27,8 +27,10 @@ do {
 // GitHub Actions needs this short-lived fixture password for its browser suite.
 // Keep it masked in logs and out of the repository; local seed runs expose nothing.
 if (process.env.GITHUB_ACTIONS === 'true' && process.env.GITHUB_ENV) {
+  const emailCaptureKey = randomBytes(32).toString('base64url')
   process.stdout.write(`::add-mask::${password}\n`)
-  await appendFile(process.env.GITHUB_ENV, `SEED_ADMIN_PASSWORD=${password}\n`, { encoding: 'utf8', mode: 0o600 })
+  process.stdout.write(`::add-mask::${emailCaptureKey}\n`)
+  await appendFile(process.env.GITHUB_ENV, `SEED_ADMIN_PASSWORD=${password}\nEMAIL_CAPTURE_KEY=${emailCaptureKey}\n`, { encoding: 'utf8', mode: 0o600 })
 }
 
 const prismaCli = resolve(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js')

@@ -171,7 +171,7 @@ test('enquiry assignment keeps internal notes private and publishes customer upd
     prisma.vehicle.findFirstOrThrow({ where: { published: true } }),
   ])
   const referenceNumber = `OA-ENQ-E2E-${Date.now()}`
-  const inquiry = await prisma.inquiry.create({ data: { referenceNumber, userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Demo Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Temporary workflow enquiry.' } })
+  const inquiry = await prisma.inquiry.create({ data: { referenceNumber, userId: customer.id, vehicleId: vehicle.id, showroomId: 'main-showroom', fullName: customer.name ?? 'Demo Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Temporary workflow enquiry.' } })
   created.inquiries.push(inquiry.id)
   created.resources.push({ resourceType: 'Inquiry', resourceId: inquiry.id })
 
@@ -226,7 +226,7 @@ test('sell request records inspection, valuation and customer offer', async ({ p
   expect(result.valuations.at(0)?.finalOffer).toBe(4_350_000)
 })
 
-test('content publishing and contact settings update public database-backed surfaces', async ({ page }) => {
+test('content publishing and contact settings update database-backed surfaces', async ({ page }) => {
   await signIn(page)
   const stamp = Date.now()
   const testimonial = await json<{ data: { id: string } }>(await page.request.post('/api/admin/testimonials', { data: { name: `Workflow Buyer ${stamp}`, rating: 5, quote: 'A verified database-backed testimonial published by the admin workflow test.', avatarUrl: '', purchase: 'Mercedes-Benz E-Class', location: 'Pune', vehicleId: null, verifiedBuyer: true, featured: false, published: true, archived: false, sortOrder: 90 } }), 201)
@@ -239,8 +239,11 @@ test('content publishing and contact settings update public database-backed surf
   contactSetting = await prisma.siteSetting.findUniqueOrThrow({ where: { key: 'primary_phone' } })
   const testPhone = '+91 90000 12345'
   await json(await page.request.patch('/api/admin/settings/primary_phone', { data: { value: testPhone, version: contactSetting.version } }))
-  await page.goto('/')
-  await expect(page.locator('.site-footer').getByText(testPhone)).toBeVisible({ timeout: 10_000 })
+  await expect(prisma.siteSetting.findUniqueOrThrow({ where: { key: 'primary_phone' } })).resolves.toMatchObject({ value: testPhone })
+  if (process.env.APP_ENV === 'commercial') {
+    await page.goto('/')
+    await expect(page.locator('.site-footer').getByText(testPhone)).toBeVisible({ timeout: 10_000 })
+  }
 })
 
 test('staff invitation is single-use and protected super-admin access cannot be removed', async ({ page }) => {

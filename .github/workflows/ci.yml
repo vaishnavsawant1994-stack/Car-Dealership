@@ -70,4 +70,5 @@ jobs:
           PLAYWRIGHT_PORT: 3001
           IMAGE_STORAGE_DRIVER: local
           ALLOW_LOCAL_IMAGE_STORAGE: "true"
+          ALLOW_CI_EMAIL_PREVIEW_URL: "true"
         run: AUTH_SECRET="$(openssl rand -hex 48)" npm run test:e2e
