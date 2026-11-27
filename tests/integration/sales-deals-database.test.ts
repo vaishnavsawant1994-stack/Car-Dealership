@@ -8,16 +8,22 @@ import {
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
+import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance } from '@/lib/finance/invoice-draft-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
 let vehicleId = ''
 let inquiryId = ''
 let quoteId = ''
+let invoiceDraftId = ''
 const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (invoiceDraftId) {
+    await prisma.auditLog.deleteMany({ where: { entity: 'SalesInvoiceDraft', entityId: invoiceDraftId } })
+    await prisma.salesInvoiceDraft.delete({ where: { id: invoiceDraftId } })
+  }
   if (dealIds.length) {
     await prisma.auditLog.deleteMany({ where: { entity: 'SalesDeal', entityId: { in: dealIds } } })
     await prisma.auditLog.deleteMany({ where: { resourceType: 'SalesDeal', resourceId: { in: dealIds } } })
@@ -61,8 +67,12 @@ describe('P7 internal sales deal lifecycle', () => {
       email: `p7-peer-${suffix}@car-dealership.test`, name: 'Fictional P7 Peer',
       role: UserRole.SALES, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
-    userIds.push(sales.id, peer.id)
-    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer].map((user) => ({ userId: user.id, showroomId })) })
+    const finance = await prisma.user.create({ data: {
+      email: `p7-finance-${suffix}@car-dealership.test`, name: 'Fictional P7 Finance',
+      role: UserRole.FINANCE, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(sales.id, peer.id, finance.id)
+    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })) })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -91,6 +101,7 @@ describe('P7 internal sales deal lifecycle', () => {
     if (opened.type !== 'created') return
     dealIds.push(opened.data.id)
     expect((await createSalesDeal(inquiryId, sales, quoteId)).type).toBe('already-active')
+    expect(await listWonSalesDealsForFinance(finance)).toHaveLength(0)
 
     const visible = await listSalesDeals(sales)
     expect(visible.some((deal) => deal.id === opened.data.id)).toBe(true)
@@ -113,6 +124,15 @@ describe('P7 internal sales deal lifecycle', () => {
       acceptanceMethod: SalesDealAcceptanceMethod.CUSTOMER_EMAIL,
     })
     expect(won).toMatchObject({ type: 'updated', data: { status: SalesDealStatus.WON, version: 3 } })
+    const invoice = await createSalesInvoiceDraft(opened.data.id, finance)
+    expect(invoice.type).toBe('created')
+    if (invoice.type !== 'created') return
+    invoiceDraftId = invoice.data.id
+    expect(invoice.data).toMatchObject({ status: 'DRAFT', currency: 'INR', estimatedSubtotal: vehicle.price - 40_000 })
+    expect(await listWonSalesDealsForFinance(finance)).toHaveLength(0)
+    const worksheets = await listSalesInvoiceDrafts(finance)
+    expect(worksheets.map((draft) => draft.id)).toContain(invoice.data.id)
+    expect((await createSalesInvoiceDraft(opened.data.id, finance)).type).toBe('already-created')
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
