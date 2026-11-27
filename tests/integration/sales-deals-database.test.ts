@@ -9,7 +9,7 @@ import {
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
-import { createDeliveryCase, listDeliveryCases, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
+import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -164,6 +164,19 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
     expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
     const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
     expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
+    const foreignShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P10 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p10-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      expect((await listEligibleDealsForDelivery(operations)).some((deal) => deal.id === opened.data.id)).toBe(false)
+      expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+    }
     const openedDelivery = await createDeliveryCase(opened.data.id, operations)
     expect(openedDelivery.type).toBe('created')
     if (openedDelivery.type !== 'created') return
