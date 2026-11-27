@@ -12,6 +12,10 @@ export function canEditVehicleInspection(actor: Pick<AdminActor, 'id' | 'role'>,
   return actor.id === inspectorId || actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN
 }
 
+export function canReviewVehicleInspection(actor: Pick<AdminActor, 'id' | 'role'>, inspectorId: string): boolean {
+  return actor.id !== inspectorId && (actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN)
+}
+
 export async function startVehicleInspection(vehicleId: string, actor: AdminActor) {
   return prisma.$transaction(async (tx) => {
     const vehicle = await tx.vehicle.findUnique({
@@ -146,7 +150,9 @@ export async function reviewVehicleInspection(
       },
     })
     if (!inspection) return { type: 'not-found' as const }
-    if (actor.id === inspection.inspectorId) return { type: 'separation-of-duties' as const }
+    if (!canReviewVehicleInspection(actor, inspection.inspectorId)) {
+      return { type: 'separation-of-duties' as const }
+    }
     if (inspection.status !== VehicleInspectionStatus.READY_FOR_REVIEW) return { type: 'not-reviewable' as const }
     if (inspection.version !== input.version) return { type: 'conflict' as const }
     const assessment = assessVehicleInspection(inspection.checks)
