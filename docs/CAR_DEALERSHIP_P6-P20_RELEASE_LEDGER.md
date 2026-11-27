@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; CI #190 passed (lint, type-check, isolated PostgreSQL tests, production build). |
 | P18 | S3 original and variant object cleanup, retryable deletion after storage failure | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; exact-head CI #232 passed lint, type-check, 73 test files (300 tests), and production build. Includes isolated retry coverage; no live bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; exact-head CI #235 passed lint, type-check, 73 test files (300 tests), production build, Chromium install, and all 55 browser tests with the latest P18 cleanup included. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; integrated exact-head CI #237 passed lint, type-check, 73 test files (300 tests), production build, and all 55 browser tests. Includes P18 retry-safe image cleanup; documentation-only ledger change is being revalidated. Owner acceptance remains outstanding. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; exact-head CI #239 passed lint, type-check, all 300 tests across 73 files, production build, and all 55 browser tests. Includes P18 retry-safe image cleanup and removes independent review from the production gate wording. This ledger refresh is being revalidated; owner acceptance remains outstanding. |
 
 ## Follow-up hardening beyond P20
 
@@ -31,8 +31,9 @@
 - Migrations are exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
 - No migration was applied to Neon, production, or existing staging. No production deployment or staging deployment was performed.
 - Vercel staging SSO/protection remains in place.
+- No isolated Vercel preview was created: GitHub repository linking requires a Vercel GitHub Login Connection that is not configured. No preview project or deployment was created; existing protected projects were left unchanged.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
-- The F: checkouts were inspected and preserved; no local database or application code was changed. The main checkout and P0-06, P0-07, P0-08, P1 Preview, and P1-05 worktrees are clean. P1 Preview is 17 commits ahead of `origin/main` and does not contain P1-05. The P1-05 source commit `223220110243bb7415dc22d5bd1634cdead5b7e0` remains included in PR #38; local commit `719a111` changes only the F: P1-05 progress document and is not pushed.
+- The F: main, P1 Preview, and P1-05 checkouts were read-only inspected and are clean. No local database or application code was changed. P1 Preview is 17 commits ahead of `origin/main` and does not contain P1-05. P1-05 source commit `223220110243bb7415dc22d5bd1634cdead5b7e0` remains included in PR #38; local commit `719a111` changes only the P1-05 progress document.
 
 ## Unresolved release gates
 
