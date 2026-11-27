@@ -10,6 +10,7 @@ export const adminPermissions = [
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
   'finance.view', 'finance.update',
   'delivery.view', 'delivery.update', 'delivery.settlementVerify',
+  'workshop.view', 'workshop.update',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
   'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
@@ -30,6 +31,7 @@ const operations: AdminPermission[] = [
   'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
   'brand.manage', 'bodyType.manage', 'feature.manage',
   'delivery.view', 'delivery.update',
+  'workshop.view', 'workshop.update',
   'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'notification.view', 'export.create',
@@ -41,6 +43,7 @@ const content: AdminPermission[] = [
 ]
 
 const finance: AdminPermission[] = ['dashboard.view', 'finance.view', 'finance.update', 'delivery.view', 'delivery.settlementVerify', 'auditLog.view', 'notification.view']
+const workshop: AdminPermission[] = ['dashboard.view', 'workshop.view', 'workshop.update', 'notification.view']
 
 const admin: AdminPermission[] = adminPermissions.filter((permission) => !['vehicle.delete', 'user.role.manage', 'emailCapture.view'].includes(permission))
 
@@ -48,6 +51,7 @@ const matrix: Record<UserRole, ReadonlySet<AdminPermission>> = {
   [UserRole.CUSTOMER]: new Set(),
   [UserRole.SALES]: new Set(sales),
   [UserRole.FINANCE]: new Set(finance),
+  [UserRole.WORKSHOP]: new Set(workshop),
   [UserRole.OPERATIONS]: new Set(operations),
   [UserRole.CONTENT_MANAGER]: new Set(content),
   [UserRole.ADMIN]: new Set(admin),

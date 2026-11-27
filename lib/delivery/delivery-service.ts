@@ -23,13 +23,9 @@ function deliveryReference() {
 class DeliveryTransactionConflict extends Error {}
 
 function deliveryWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  const base = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
+  return actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
     ? showroomScopeWhere(scope)
     : accessibleResourceWhere(actor, scope)
-  return {
-    ...base,
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
-  }
 }
 
 export async function listDeliveryCases(actor: AdminActor) {

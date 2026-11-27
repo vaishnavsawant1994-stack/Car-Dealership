@@ -10,6 +10,7 @@ enum UserRole {
   CUSTOMER
   SALES
   FINANCE
+  WORKSHOP
   OPERATIONS
   CONTENT_MANAGER
   ADMIN
@@ -234,6 +235,9 @@ model User {
   deliveryCasesCreated     DeliveryCase[] @relation("DeliveryCaseCreator")
   assignedDeliveryCases    DeliveryCase[] @relation("DeliveryCaseAssignee")
   deliveryChecklistActions DeliveryChecklistEntry[] @relation("DeliveryChecklistActor")
+  workshopOrdersCreated  WorkshopOrder[] @relation("WorkshopOrderCreator")
+  assignedWorkshopOrders WorkshopOrder[] @relation("WorkshopOrderAssignee")
+  workshopChecklistActions WorkshopChecklistEntry[] @relation("WorkshopChecklistActor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -435,6 +439,7 @@ model Vehicle {
   salesQuoteDrafts         SalesQuoteDraft[]
   salesDeals               SalesDeal[]
   deliveryCases            DeliveryCase[]
+  workshopOrders           WorkshopOrder[]
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
@@ -944,6 +949,7 @@ model Showroom {
   contactMessages ContactMessage[]
   salesDeals SalesDeal[]
   deliveryCases DeliveryCase[]
+  workshopOrders WorkshopOrder[]
 
   @@index([active])
   @@index([isPrimary])
@@ -1331,6 +1337,64 @@ model DeliveryChecklistEntry {
   version        Int                    @default(1)
 
   @@unique([deliveryCaseId, code])
+  @@index([code, completedAt])
+}
+
+enum WorkshopJobType {
+  SERVICE
+  REPAIR
+  DIAGNOSTIC
+}
+
+enum WorkshopOrderStatus {
+  OPEN
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkshopChecklistCode {
+  INTAKE_INSPECTION_COMPLETE
+  DIAGNOSIS_RECORDED
+  SERVICE_WORK_COMPLETE
+  SAFETY_REVIEW_COMPLETE
+}
+
+/** Internal workshop job card; excludes customer contact, inventory and billing data. */
+model WorkshopOrder {
+  id             String                   @id @default(cuid())
+  referenceNumber String                  @unique
+  vehicleId      String
+  vehicle        Vehicle                  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  showroomId     String?
+  showroom       Showroom?                @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  assignedToId   String?
+  assignedTo     User?                    @relation("WorkshopOrderAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdBy      User                     @relation("WorkshopOrderCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  jobType        WorkshopJobType
+  status         WorkshopOrderStatus      @default(OPEN)
+  version        Int                      @default(1)
+  checklist      WorkshopChecklistEntry[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([showroomId, assignedToId, status, updatedAt])
+  @@index([vehicleId, status])
+}
+
+model WorkshopChecklistEntry {
+  id              String               @id @default(cuid())
+  workshopOrderId String
+  workshopOrder   WorkshopOrder        @relation(fields: [workshopOrderId], references: [id], onDelete: Cascade)
+  code            WorkshopChecklistCode
+  completedAt     DateTime?
+  completedById   String?
+  completedBy     User?                @relation("WorkshopChecklistActor", fields: [completedById], references: [id], onDelete: SetNull)
+  version         Int                  @default(1)
+
+  @@unique([workshopOrderId, code])
   @@index([code, completedAt])
 }
 
