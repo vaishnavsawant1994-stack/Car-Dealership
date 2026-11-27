@@ -18,7 +18,7 @@
 | P15 | Audited notification consent and withdrawal controls | [#47](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/47) | Draft; CI #187 passed. |
 | P16 | Marketing signup/campaign delivery hard-disabled | [#48](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/48) | Draft; CI #189 passed after correcting a narrowed newsletter status check. |
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; CI #190 passed (lint, type-check, isolated PostgreSQL tests, production build). |
-| P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; CI #191 passed (lint, type-check, tests, production build). No real bucket was used. |
+| P18 | S3 original and variant object cleanup, retryable deletion after storage failure | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; exact-head CI #232 passed lint, type-check, 73 test files (300 tests), and production build. Includes isolated retry coverage; no live bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; CI #202 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
 | P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; P20 CI #204/#205 passed, including all 55 browser tests. Latest release-ledger commit `5ba00c1145de2d1b6e845ce70dc6fbeb0936b60d` passed CI #228, including browser acceptance. Documentation only; owner acceptance remains outstanding. |
 
@@ -38,7 +38,7 @@
 
 - The repository is public by owner choice for now. Private-source release readiness and historical credential exposure response remain open; no deployment should occur while this gate is unmet.
 - P1-05 source ancestry into PR #38 is verified. The F: state is now verified; follow-up inspection and quote-access fixes are on PR #53, while the broader showroom/assignment audit remains open.
-- P0-06 issue #3 was rewritten as a non-sensitive acceptance checklist and no longer requires independent security review. Secure staging administrator recovery still requires the owner to enter credentials privately through masked input.
+- P0-06 issue #3 now has a concise non-sensitive acceptance checklist. Staging administrator recovery still requires the owner to enter credentials privately through a masked prompt.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
 - Protected browser, responsive visual, and role acceptance must run on protected staging after the above gates and approved isolated preview configuration.
