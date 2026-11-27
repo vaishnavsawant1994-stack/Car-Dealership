@@ -3,7 +3,7 @@ import 'server-only'
 import { randomUUID } from 'node:crypto'
 import { Prisma, SalesDealStatus } from '@prisma/client'
 import type { AdminActor } from '@/lib/auth/require-admin'
-import { accessibleResourceWhere } from '@/lib/auth/admin-resource-policy'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
 import { prisma } from '@/lib/db/prisma'
 
@@ -14,7 +14,7 @@ function invoiceDraftReference() {
 export async function listSalesInvoiceDrafts(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesInvoiceDraft.findMany({
-    where: { deal: accessibleResourceWhere(actor, scope) },
+    where: { deal: showroomScopeWhere(scope) },
     select: {
       id: true, referenceNumber: true, status: true, version: true, vehicleTitle: true,
       stockNumber: true, vehiclePrice: true, discountAmount: true, estimatedOtherFees: true,
@@ -29,7 +29,7 @@ export async function listSalesInvoiceDrafts(actor: AdminActor) {
 export async function listWonSalesDealsForFinance(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findMany({
-    where: { status: SalesDealStatus.WON, ...accessibleResourceWhere(actor, scope), invoiceDraft: null },
+    where: { status: SalesDealStatus.WON, ...showroomScopeWhere(scope), invoiceDraft: null },
     select: { id: true, referenceNumber: true, updatedAt: true,
       vehicle: { select: { shortTitle: true, stockNumber: true } },
       quoteDraft: { select: { estimatedSubtotal: true, currency: true } } },
@@ -43,7 +43,7 @@ export async function createSalesInvoiceDraft(dealId: string, actor: AdminActor)
   try {
     return await prisma.$transaction(async (tx) => {
       const deal = await tx.salesDeal.findFirst({
-        where: { id: dealId, status: SalesDealStatus.WON, ...accessibleResourceWhere(actor, scope) },
+        where: { id: dealId, status: SalesDealStatus.WON, ...showroomScopeWhere(scope) },
         select: {
           id: true, referenceNumber: true, status: true,
           quoteDraft: { select: { vehiclePrice: true, discountAmount: true, estimatedOtherFees: true, estimatedSubtotal: true, currency: true } },
