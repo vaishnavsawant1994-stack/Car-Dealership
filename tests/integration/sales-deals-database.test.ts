@@ -16,6 +16,10 @@ let inquiryId = ''
 let quoteId = ''
 const userIds: string[] = []
 const dealIds: string[] = []
+const extraShowroomIds: string[] = []
+const extraVehicleIds: string[] = []
+const extraInquiryIds: string[] = []
+const extraQuoteIds: string[] = []
 
 afterAll(async () => {
   if (dealIds.length) {
@@ -24,14 +28,14 @@ afterAll(async () => {
     await prisma.salesDealEvent.deleteMany({ where: { dealId: { in: dealIds } } })
     await prisma.salesDeal.deleteMany({ where: { id: { in: dealIds } } })
   }
-  if (quoteId) await prisma.salesQuoteDraft.deleteMany({ where: { id: quoteId } })
-  if (inquiryId) await prisma.inquiry.deleteMany({ where: { id: inquiryId } })
-  if (vehicleId) await prisma.vehicle.deleteMany({ where: { id: vehicleId } })
+  if (quoteId || extraQuoteIds.length) await prisma.salesQuoteDraft.deleteMany({ where: { id: { in: [quoteId, ...extraQuoteIds].filter(Boolean) } } })
+  if (inquiryId || extraInquiryIds.length) await prisma.inquiry.deleteMany({ where: { id: { in: [inquiryId, ...extraInquiryIds].filter(Boolean) } } })
+  if (vehicleId || extraVehicleIds.length) await prisma.vehicle.deleteMany({ where: { id: { in: [vehicleId, ...extraVehicleIds].filter(Boolean) } } })
   if (userIds.length) {
     await prisma.showroomStaffAssignment.deleteMany({ where: { userId: { in: userIds } } })
     await prisma.user.deleteMany({ where: { id: { in: userIds } } })
   }
-  if (showroomId) await prisma.showroom.delete({ where: { id: showroomId } })
+  if (showroomId || extraShowroomIds.length) await prisma.showroom.deleteMany({ where: { id: { in: [showroomId, ...extraShowroomIds].filter(Boolean) } } })
   await prisma.$disconnect()
 })
 
@@ -121,5 +125,48 @@ describe('P7 internal sales deal lifecycle', () => {
     expect(savedVehicle.status).toBe(VehicleStatus.AVAILABLE)
     expect(savedVehicle.published).toBe(true)
     expect(await prisma.auditLog.count({ where: { entity: 'SalesDeal', entityId: opened.data.id } })).toBe(3)
+
+    const crossSuffix = `${suffix}-cross-room`
+    const foreignShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional P7 out-of-scope ${suffix}`, address: 'Synthetic Test Road, 2',
+      city: 'Test City', state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p7-cross-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    extraShowroomIds.push(foreignShowroom.id)
+    const foreignVehicle = await prisma.vehicle.create({ data: {
+      ...referenceVehicle, slug: crossSuffix, stockNumber: crossSuffix.toUpperCase(),
+      model: 'Fictional Sedan', variant: 'P7 Cross-Showroom', shortTitle: 'Out-of-scope synthetic vehicle',
+      year: 2024, price: 2_500_000, mileage: 8000, fuelType: 'Petrol', transmission: 'Automatic',
+      shortDescription: 'Synthetic cross-showroom vehicle.',
+      description: 'Fictional data used only in the isolated test database.',
+      status: VehicleStatus.AVAILABLE, published: true, showroomId: foreignShowroom.id,
+    } })
+    extraVehicleIds.push(foreignVehicle.id)
+    const foreignInquiry = await prisma.inquiry.create({ data: {
+      referenceNumber: `${crossSuffix.toUpperCase()}-INQ`, showroomId, assignedToId: sales.id,
+      vehicleId: foreignVehicle.id, fullName: 'Fictional Cross-Showroom Customer',
+      phone: '0000000001', email: `cross-customer-${suffix}@car-dealership.test`,
+      message: 'Synthetic mismatched showroom relation.', status: InquiryStatus.IN_PROGRESS,
+    } })
+    extraInquiryIds.push(foreignInquiry.id)
+    const foreignQuote = await prisma.salesQuoteDraft.create({ data: {
+      inquiryId: foreignInquiry.id, vehicleId: foreignVehicle.id, createdById: sales.id,
+      vehiclePrice: foreignVehicle.price, discountAmount: 0, estimatedOtherFees: 0,
+      estimatedSubtotal: foreignVehicle.price, currency: 'INR',
+    } })
+    extraQuoteIds.push(foreignQuote.id)
+
+    expect((await createSalesDeal(foreignInquiry.id, sales, foreignQuote.id)).type).toBe('not-found')
+    const inconsistentDeal = await prisma.salesDeal.create({ data: {
+      referenceNumber: `DEAL-${crossSuffix.toUpperCase()}`, inquiryId: foreignInquiry.id,
+      quoteDraftId: foreignQuote.id, vehicleId: foreignVehicle.id, showroomId,
+      assignedToId: sales.id, createdById: sales.id,
+    } })
+    dealIds.push(inconsistentDeal.id)
+    expect(await getSalesDeal(inconsistentDeal.id, sales)).toBeNull()
+    expect((await listSalesDeals(sales)).some((deal) => deal.id === inconsistentDeal.id)).toBe(false)
+    expect((await transitionSalesDeal(inconsistentDeal.id, sales, {
+      version: 1, status: SalesDealStatus.NEGOTIATION,
+    })).type).toBe('not-found')
   })
 })
