@@ -44,7 +44,7 @@ export async function withdrawCustomerMarketingConsent(
         actorId,
         action: 'CUSTOMER_MARKETING_CONSENT_WITHDRAWN',
         entity: 'CustomerNotificationSettings',
-        entityId: settings?.marketingConsentedAt ? customerId : customerId,
+        entityId: customerId,
         resourceType: 'User',
         resourceId: customerId,
         summary: 'Disabled customer promotional communication through a restricted staff action.',
