@@ -34,6 +34,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Organisation', href: '/admin/organisation', icon: 'organisation', permission: 'settings.view' },
     { label: 'Showrooms', href: '/admin/showrooms', icon: 'showrooms', permission: 'showroom.manage' },
     { label: 'Users & Roles', href: '/admin/users', icon: 'users', permission: 'user.view' },
+    { label: 'Access Matrix', href: '/admin/roles', icon: 'roles', permission: 'user.view' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permission: 'settings.view' },
     { label: 'Audit Logs', href: '/admin/audit-logs', icon: 'audit', permission: 'auditLog.view' },
   ] },
