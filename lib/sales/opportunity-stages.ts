@@ -1,4 +1,4 @@
-import { InquiryStatus, TestDriveStatus, UserRole, type Prisma } from '@prisma/client'
+import { InquiryStatus, TestDriveStatus, UserRole } from '@prisma/client'
 
 export const salesStages = ['new', 'engaged', 'scheduled', 'completed', 'closed', 'lost'] as const
 export type SalesStage = (typeof salesStages)[number]
@@ -37,7 +37,7 @@ export function parseSalesFilters(input: { stage?: string | null; assignment?: s
 /** An individual contributor cannot browse another employee's assigned opportunities. */
 export function salesAssignmentScope(
   actor: { id: string; role: UserRole }, assignment: SalesFilters['assignment'],
-): Prisma.InquiryWhereInput {
+): { assignedToId?: string | null; OR?: Array<{ assignedToId: string | null }> } {
   if (actor.role === UserRole.SUPER_ADMIN || actor.role === UserRole.ADMIN) {
     if (assignment === 'mine') return { assignedToId: actor.id }
     if (assignment === 'unassigned') return { assignedToId: null }
