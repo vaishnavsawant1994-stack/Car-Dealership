@@ -33,7 +33,7 @@ export const customerListSelect = {
 export const customerProfileSelect = {
   id: true, name: true, email: true, phone: true, city: true,
   preferredContactMethod: true, status: true, emailVerified: true, createdAt: true, lastLoginAt: true,
-  notificationSettings: { select: { marketingEmails: true, marketingConsentedAt: true } },
+  notificationSettings: { select: { marketingEmails: true, marketingConsentedAt: true, whatsAppUpdates: true, whatsAppConsentedAt: true } },
   _count: { select: { inquiries: true, testDrives: true, sellRequests: true, favorites: true } },
 } as const satisfies Prisma.UserSelect
 
