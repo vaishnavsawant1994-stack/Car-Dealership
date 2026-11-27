@@ -1,6 +1,6 @@
 # P1-05 — Roles & Access Matrix
 
-**Status: P1-05 local implementation has been merged into an isolated review branch based on PR #38 head `d7b7919aab5e56f1fa1858de89bb93eeb748cd2b`. The branch has not been pushed; exact-head CI, full integration validation, staging migration, and deployment remain pending.**
+**Status as of 2026-11-28:** P1-05 HEAD `223220110243bb7415dc22d5bd1634cdead5b7e0` is an ancestor of PR #38 HEAD `253a32b2e295663b8f18f1ed1a41335a99686405`; PR #38's exact-head CI #167 passed. The F: working-tree changes could not be checked in this session, so its current clean/dirty state is unknown. The broader query and derived-child scope audit and protected acceptance remain open; no staging migration or deployment was performed.
 
 ## Scope and source of truth
 
@@ -22,7 +22,7 @@ The slice makes current role grants visible in the staff application and adds co
 - The migration leaves the new showroom foreign keys nullable for migration-before-seed compatibility. It backfills existing data to the active primary showroom and aborts if operational records exist without one. It was applied and verified against a disposable local PostgreSQL 16 CI-style database; it has not been applied to staging.
 - This slice does not add runtime-editable permission grants. A later approved data model would need migration, privilege-boundary review, change audit, and rollback design before grants could be edited in the UI.
 - Full per-role browser journeys, explicit migration backfill/abort edge-case tests, and cross-organization denial tests remain required before this module can be accepted.
-- This implementation now coexists locally with PR #38's P1–P5 modules. Resolve and verify schema, API-policy, navigation, and migration interactions in the integration branch before updating the draft PR. Do not merge this branch into `main` or deploy it ahead of those gates.
+- The source-branch commit is integrated into PR #38, confirmed by GitHub commit ancestry. Continue auditing resource queries and derived child records against showroom scope; the F: working-tree diff remains unverified. Do not merge or deploy before the remaining review and validation gates.
 
 ## Current evidence
 
@@ -52,7 +52,7 @@ Dashboard permission follow-up (2026-11-02): operational metrics and panels for 
 
 ## Acceptance still required
 
-Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before the code review and validation gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
+PR #38 contains the P1-05 source-branch commits and passes exact-head CI. Remaining acceptance: run the authenticated role E2E matrix on protected staging; finish the resource-query and derived-child scope audit beyond the route guard contract; inspect the F: working-tree diff when access is available; and complete the normal code and migration review. Do not apply the migration to hosted databases or deploy before those gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
 
 ## Export permission audit follow-up (2026-11-02)
 
@@ -68,3 +68,4 @@ The remaining route audit found that the CSV endpoint gated non-newsletter expor
 The newsletter subscriber PATCH endpoint previously used `newsletter.view` for a status mutation. The endpoint now requires the existing `content.manage` permission, consistent with the approved role model in which newsletter operations belong to the Content Manager function; GET remains `newsletter.view`, and export remains `newsletter.export`. Regression tests verify the mutation guard and that denial happens before the database write or audit insertion.
 
 - Newsletter route authorization regression — **1 file, 2 tests passed**. The full non-integration suite passed **26 files, 131 tests** with the synthetic loopback `car_dealership_test` URL; no database connection was made. Lint, typecheck, and `git diff --check` passed.
+
