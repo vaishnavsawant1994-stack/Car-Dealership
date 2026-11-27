@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { adminError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { canEditVehicleInspection } from '@/lib/inspection/inspection-service'
 
@@ -9,8 +11,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   try {
     const actor = await authorizeAdminRequest('vehicle.update')
     const { id } = await params
-    const inspection = await prisma.vehicleInspection.findUnique({
-      where: { id },
+    const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
+    const inspection = await prisma.vehicleInspection.findFirst({
+      where: { id, ...scopeWhere },
       select: {
         id: true, vehicleId: true, inspectorId: true, reviewerId: true,
         status: true, version: true, reviewNote: true,
@@ -31,3 +34,4 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     return adminError(error)
   }
 }
+
