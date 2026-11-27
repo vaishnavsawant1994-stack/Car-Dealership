@@ -1,8 +1,36 @@
 import { NextResponse } from 'next/server'
-import { adminError, validationError } from '@/lib/admin/api'
-import { writeAuditLog } from '@/lib/admin/audit'
+import { z } from 'zod'
+import { branchError } from '@/lib/admin/branch-api'
+import { editShowroom } from '@/lib/admin/showroom-service'
+import { validationError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
 import { showroomSchema } from '@/lib/validation/admin'
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) { try { await authorizeAdminRequest('showroom.manage'); const { id } = await params; const data = await prisma.showroom.findUnique({ where: { id } }); return data ? NextResponse.json({ data }) : NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 }) } catch (error) { return adminError(error) } }
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) { try { const actor = await authorizeAdminRequest('showroom.manage'); const parsed = showroomSchema.safeParse(await request.json().catch(() => null)); if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors); const { id } = await params; const current = await prisma.showroom.findUnique({ where: { id } }); if (!current) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 }); if (current.isPrimary && !parsed.data.isPrimary && !(await prisma.showroom.findFirst({ where: { id: { not: id }, active: true, isPrimary: true } }))) return NextResponse.json({ error: { code: 'PRIMARY_REQUIRED', message: 'Assign another active primary showroom first.' } }, { status: 409 }); const data = await prisma.$transaction(async (tx) => { if (parsed.data.isPrimary) await tx.showroom.updateMany({ where: { id: { not: id } }, data: { isPrimary: false } }); return tx.showroom.update({ where: { id }, data: parsed.data }) }); await writeAuditLog({ actorId: actor.id, action: 'SHOWROOM_UPDATED', resourceType: 'Showroom', resourceId: id, summary: `Updated ${data.name}.`, request }); return NextResponse.json({ data, message: 'Showroom updated.' }) } catch (error) { return adminError(error) } }
+
+const updateSchema = showroomSchema.extend({ version: z.number().int().positive() }).strict()
+
+type Params = { params: Promise<{ id: string }> }
+
+export async function GET(_: Request, { params }: Params) {
+  try {
+    await authorizeAdminRequest('showroom.manage')
+    const { id } = await params
+    const data = await prisma.showroom.findUnique({
+      where: { id }, include: { _count: { select: { staffAssignments: true } } },
+    })
+    return data
+      ? NextResponse.json({ data }, { headers: { 'Cache-Control': 'private, no-store' } })
+      : NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
+  } catch (error) { return branchError(error) }
+}
+
+export async function PATCH(request: Request, { params }: Params) {
+  try {
+    const actor = await authorizeAdminRequest('showroom.manage')
+    const parsed = updateSchema.safeParse(await request.json().catch(() => null))
+    if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors)
+    const { id } = await params
+    const data = await editShowroom(actor.id, id, parsed.data)
+    return NextResponse.json({ data, message: 'Showroom updated.' })
+  } catch (error) { return branchError(error) }
+}
