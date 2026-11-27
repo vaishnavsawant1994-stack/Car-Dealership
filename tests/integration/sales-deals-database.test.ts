@@ -201,10 +201,38 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
     const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
     expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
+    const foreignP10Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P10 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p10-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP10Showroom.id } })
+      expect((await listEligibleDealsForDelivery(operations)).some((deal) => deal.id === opened.data.id)).toBe(false)
+      expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP10Showroom.id } })
+    }
     const openedDelivery = await createDeliveryCase(opened.data.id, operations)
     expect(openedDelivery.type).toBe('created')
     if (openedDelivery.type !== 'created') return
     deliveryCaseId = openedDelivery.data.id
+    const foreignDeliveryShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign Delivery Case ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
+      state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
+      email: `delivery-case-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignDeliveryShowroom.id } })
+      expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(false)
+      expect(await transitionDeliveryCase(deliveryCaseId, operations, {
+        version: openedDelivery.data.version, status: DeliveryCaseStatus.CANCELLED,
+      })).toEqual({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignDeliveryShowroom.id } })
+    }
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
     expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
@@ -249,6 +277,23 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
     expect(started.type).toBe('updated')
     expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
+    const foreignP11Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P11 ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
+      state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
+      email: `p11-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP11Showroom.id } })
+      expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(false)
+      const item = openedWorkshop.data.checklist[0]
+      expect(await updateWorkshopChecklist(openedWorkshop.data.id, workshop, {
+        code: item.code, completed: true, version: item.version,
+      })).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
+    }
+    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     const part = await createPartAndReceive({ sku: `P12-${suffix}`, name: 'Fictional filter', unit: 'each', showroomId, quantity: '2', reason: 'Synthetic integration test opening stock' }, partsManager)
     expect(part.type).toBe('created')
     if (part.type !== 'created') return
