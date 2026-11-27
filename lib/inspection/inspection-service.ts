@@ -147,11 +147,9 @@ export async function reviewVehicleInspection(
   input: { approved: boolean; version: number; reviewNote: string },
 ) {
   if (!input.approved && input.reviewNote.trim().length < 10) return { type: 'reason-required' as const }
-  const showroomScope = await getActorShowroomScope(actor)
-  const showroomWhere = inspectionShowroomWhere(showroomScope)
   return prisma.$transaction(async (tx) => {
-    const inspection = await tx.vehicleInspection.findFirst({
-      where: { id: inspectionId, ...showroomWhere },
+    const inspection = await tx.vehicleInspection.findUnique({
+      where: { id: inspectionId },
       select: {
         vehicleId: true, inspectorId: true, version: true, status: true,
         checks: { select: { code: true, result: true, remarks: true } },
@@ -169,7 +167,7 @@ export async function reviewVehicleInspection(
     }
     const nextStatus = input.approved ? VehicleInspectionStatus.APPROVED : VehicleInspectionStatus.REJECTED
     const claim = await tx.vehicleInspection.updateMany({
-      where: { id: inspectionId, status: VehicleInspectionStatus.READY_FOR_REVIEW, version: input.version, ...showroomWhere },
+      where: { id: inspectionId, status: VehicleInspectionStatus.READY_FOR_REVIEW, version: input.version },
       data: {
         status: nextStatus,
         version: { increment: 1 },
