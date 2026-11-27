@@ -6,6 +6,7 @@
 - Added an internal worksheet created only from a won deal. It snapshots the indicative INR quote and vehicle reference and permits one draft per deal.
 - Added server-side amount consistency checks and database constraints, optimistic version field, private no-store read APIs, and audit logging.
 - Added the finance review page for eligible deals and existing draft worksheets.
+- Finance reads and invoice creation require the deal and its linked vehicle to belong to the staff member's active showroom; isolated database coverage includes a mismatched legacy deal with an existing invoice.
 
 ## Explicit limits
 
