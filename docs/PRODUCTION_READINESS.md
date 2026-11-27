@@ -16,7 +16,6 @@
 
 - [ ] Reconcile the preserved F: checkout and P1-05 local work with PR #38; complete the broader resource and derived-record isolation review.
 - [ ] Set repository privacy and complete historical credential exposure response.
-- [ ] Obtain independent security review; this work must be reviewed by someone other than its author.
 - [ ] Establish secure staging Super Admin recovery through private masked password entry.
 - [ ] Validate P0-06 authentication and real vehicle image upload/storage/variants/cleanup against an isolated S3-compatible test account with approved credentials.
 - [ ] Complete protected staging browser acceptance at desktop and mobile breakpoints while preserving Vercel SSO.

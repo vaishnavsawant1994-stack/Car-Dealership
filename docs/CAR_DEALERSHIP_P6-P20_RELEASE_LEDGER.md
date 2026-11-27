@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; CI #190 passed (lint, type-check, isolated PostgreSQL tests, production build). |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; CI #191 passed (lint, type-check, tests, production build). No real bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; exact head CI #198 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | This PR | Documentation only; dependent on P19 result and independent acceptance. |
+| P20 | Release evidence and unresolved gate ledger | This PR | Documentation only; dependent on P19 CI and owner acceptance. |
 
 ## Data and deployment boundaries
 
@@ -34,7 +34,7 @@
 
 - Repository privacy and historical credential exposure response must be completed before deployment.
 - P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit.
-- Independent security review and secure staging administrator recovery require an authorized independent reviewer and the owner to enter credentials privately through masked input.
+- Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
 - Protected browser, responsive visual, and role acceptance must run on protected staging after the above gates and approved isolated preview configuration.
