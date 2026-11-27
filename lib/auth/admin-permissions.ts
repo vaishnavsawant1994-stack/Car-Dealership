@@ -10,7 +10,7 @@ export const adminPermissions = [
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
   'finance.view', 'finance.update',
   'delivery.view', 'delivery.update', 'delivery.settlementVerify',
-  'workshop.view', 'workshop.update',
+  'workshop.view', 'workshop.update', 'parts.view', 'parts.update',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
   'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
@@ -43,7 +43,8 @@ const content: AdminPermission[] = [
 ]
 
 const finance: AdminPermission[] = ['dashboard.view', 'finance.view', 'finance.update', 'delivery.view', 'delivery.settlementVerify', 'auditLog.view', 'notification.view']
-const workshop: AdminPermission[] = ['dashboard.view', 'workshop.view', 'workshop.update', 'notification.view']
+const workshop: AdminPermission[] = ['dashboard.view', 'workshop.view', 'workshop.update', 'parts.view', 'notification.view']
+const partsManager: AdminPermission[] = ['dashboard.view', 'parts.view', 'parts.update', 'notification.view']
 
 const admin: AdminPermission[] = adminPermissions.filter((permission) => !['vehicle.delete', 'user.role.manage', 'emailCapture.view'].includes(permission))
 
@@ -52,6 +53,7 @@ const matrix: Record<UserRole, ReadonlySet<AdminPermission>> = {
   [UserRole.SALES]: new Set(sales),
   [UserRole.FINANCE]: new Set(finance),
   [UserRole.WORKSHOP]: new Set(workshop),
+  [UserRole.PARTS_MANAGER]: new Set(partsManager),
   [UserRole.OPERATIONS]: new Set(operations),
   [UserRole.CONTENT_MANAGER]: new Set(content),
   [UserRole.ADMIN]: new Set(admin),

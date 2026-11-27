@@ -122,7 +122,7 @@ export async function getShowroomStaff(showroomId: string) {
     }),
     prisma.user.findMany({
       where: { deletedAt: null, status: UserStatus.ACTIVE,
-        role: { in: [UserRole.SALES, UserRole.FINANCE, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN] } },
+        role: { in: [UserRole.SALES, UserRole.FINANCE, UserRole.WORKSHOP, UserRole.PARTS_MANAGER, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN] } },
       orderBy: [{ role: 'asc' }, { name: 'asc' }],
       take: 100,
       select: { id: true, name: true, email: true, role: true },
