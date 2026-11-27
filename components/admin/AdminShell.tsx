@@ -15,7 +15,7 @@ export type AdminNavItem = { label: string; href: string; icon: string }
 
 const icons: Record<string, typeof LayoutDashboard> = {
   dashboard: LayoutDashboard, vehicles: CarFront, inspection: ClipboardCheck, brands: Tags, bodyTypes: Boxes, features: Wrench,
-  enquiries: MessageSquareText, testDrives: ClipboardCheck, sellRequests: CarFront, procurement: ClipboardCheck, contacts: ContactRound,
+  enquiries: MessageSquareText, testDrives: ClipboardCheck, sellRequests: CarFront, procurement: ClipboardCheck, contacts: ContactRound, customers: ContactRound,
   testimonials: Star, gallery: GalleryHorizontal, content: Files, newsletter: FileImage, showrooms: Building2,
   users: UsersRound, organisation: Building2, settings: Settings, audit: ShieldCheck,
 }
