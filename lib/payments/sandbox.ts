@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 
 export type SandboxOutcome = 'APPROVED' | 'DECLINED'
 export type PaymentMode = 'disabled' | 'sandbox'
-type PaymentEnvironment = { APP_ENV?: string; PAYMENT_MODE?: string }
+type PaymentEnvironment = Record<string, string | undefined>
 
 export function paymentMode(environment: PaymentEnvironment = process.env): PaymentMode {
   if (environment.PAYMENT_MODE === 'sandbox' && ['test', 'preview'].includes(environment.APP_ENV ?? '')) return 'sandbox'
