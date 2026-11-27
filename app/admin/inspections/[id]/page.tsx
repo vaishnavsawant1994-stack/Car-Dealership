@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { AdminPageHeader, AdminStatus } from '@/components/admin/AdminPrimitives'
 import { InspectionWorkspace } from '@/components/admin/InspectionWorkspace'
+import { InspectionEvidenceManager } from '@/components/admin/InspectionEvidenceManager'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
 import { vehicleConditionChecks, assessVehicleInspection } from '@/lib/inspection/checklist'
@@ -19,6 +20,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       vehicle: { select: { id: true, shortTitle: true, stockNumber: true } },
       inspector: { select: { name: true } }, reviewer: { select: { name: true } },
       checks: { select: { code: true, category: true, result: true, remarks: true } },
+      evidence: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: { id: true, checkCode: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true } },
     },
   })
   if (!inspection || !canEditVehicleInspection(actor, inspection.inspectorId)) notFound()
@@ -47,6 +49,14 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       inspectorName={inspection.inspector.name ?? 'Staff member'}
       reviewerName={inspection.reviewer?.name ?? null}
       reviewNote={inspection.reviewNote ?? ''}
+    />
+    <InspectionEvidenceManager
+      key={'evidence-' + inspection.version}
+      inspectionId={inspection.id}
+      version={inspection.version}
+      status={inspection.status}
+      checks={vehicleConditionChecks.map((item) => ({ code: item.code, category: item.category, label: item.label }))}
+      initialEvidence={inspection.evidence.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
     />
   </>
 }
