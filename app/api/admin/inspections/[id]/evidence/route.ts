@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { adminError, conflictError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { getConditionCheck } from '@/lib/inspection/checklist'
 import { canEditVehicleInspection } from '@/lib/inspection/inspection-service'
@@ -11,8 +13,9 @@ import { deleteInspectionEvidenceObject, storeInspectionEvidence } from '@/lib/s
 const editable: VehicleInspectionStatus[] = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
 
 async function accessibleInspection(id: string, actor: { id: string; role: import('@prisma/client').UserRole }) {
-  const inspection = await prisma.vehicleInspection.findUnique({
-    where: { id },
+  const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
+  const inspection = await prisma.vehicleInspection.findFirst({
+    where: { id, ...scopeWhere },
     select: { id: true, inspectorId: true, status: true, vehicleId: true, version: true,
       _count: { select: { evidence: true } } },
   })
@@ -100,3 +103,4 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return adminError(error)
   }
 }
+
