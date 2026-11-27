@@ -23,7 +23,7 @@ function deliveryReference() {
 class DeliveryTransactionConflict extends Error {}
 
 function deliveryWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  return actor.role === UserRole.FINANCE
+  return actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
     ? showroomScopeWhere(scope)
     : accessibleResourceWhere(actor, scope)
 }
