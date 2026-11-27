@@ -21,8 +21,8 @@ export async function updateCustomerNotificationSettings(userId: string, input: 
     const previous = user.notificationSettings
     const settings = await tx.customerNotificationSettings.upsert({ where: { userId }, update: {
       ...input,
-      marketingConsentedAt: input.marketingEmails ? previous?.marketingConsentedAt ?? new Date() : previous?.marketingConsentedAt ?? null,
-      whatsAppConsentedAt: input.whatsAppUpdates ? previous?.whatsAppConsentedAt ?? new Date() : previous?.whatsAppConsentedAt ?? null,
+      marketingConsentedAt: input.marketingEmails ? previous?.marketingConsentedAt ?? new Date() : null,
+      whatsAppConsentedAt: input.whatsAppUpdates ? previous?.whatsAppConsentedAt ?? new Date() : null,
     }, create: { userId, ...input,
       marketingConsentedAt: input.marketingEmails ? new Date() : null,
       whatsAppConsentedAt: input.whatsAppUpdates ? new Date() : null,
