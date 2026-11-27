@@ -1,6 +1,11 @@
 import { UserRole, UserStatus } from '@prisma/client'
 import Link from 'next/link'
 import { CustomerFollowUps } from '@/components/admin/CustomerFollowUps'
+import { CustomerConsentControls } from '@/components/admin/CustomerConsentControls'
+import { CustomerDataRightsIntake } from '@/components/admin/CustomerDataRightsIntake'
+import { listCustomerDataRightsRequests } from '@/lib/crm/data-rights-service'
+import { consentDisplay } from '@/lib/crm/customer-consent'
+import { hasPermission } from '@/lib/auth/admin-permissions'
 import { listCustomerFollowUps } from '@/lib/crm/customer-followup-service'
 import { prisma } from '@/lib/db/prisma'
 import { notFound } from 'next/navigation'
@@ -9,11 +14,12 @@ import { requirePermission } from '@/lib/auth/require-permission'
 import { getCustomer360 } from '@/lib/crm/customer-service'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  await requirePermission('user.view')
+  const actor = await requirePermission('user.view')
   const { id } = await params
   const result = await getCustomer360(id)
   if (!result) notFound()
   const { customer, inquiries, testDrives, sellRequests, favorites, messages } = result
+  const dataRightsRequests = hasPermission(actor.role, 'user.update') ? await listCustomerDataRightsRequests(customer.id) : null
   const [followUps, administrators] = await Promise.all([
     listCustomerFollowUps(customer.id),
     prisma.user.findMany({
@@ -87,6 +93,17 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             <AdminStatus value={item.vehicle.status}/></Link>)}</div> :
           <AdminEmpty title="No saved vehicles" text="No vehicles have been saved by this account."/>}
       </section>
+      {dataRightsRequests ? <CustomerDataRightsIntake
+        customerId={customer.id}
+        initial={dataRightsRequests.map((item) => ({
+          ...item, createdAt: item.createdAt.toISOString(),
+        }))}
+      /> : null}
+      <CustomerConsentControls
+        customerId={customer.id}
+        canWithdraw={hasPermission(actor.role, 'user.update')}
+        initial={consentDisplay(customer.notificationSettings).map((item) => ({ ...item, everConsentedAt: item.everConsentedAt?.toISOString() ?? null }))}
+      />
       <CustomerFollowUps
         customerId={customer.id}
         assignees={administrators}
