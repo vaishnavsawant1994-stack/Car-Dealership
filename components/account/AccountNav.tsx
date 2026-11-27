@@ -8,7 +8,7 @@ import { useState } from 'react'
 
 const links = [
   ['/account', 'Overview', LayoutDashboard], ['/account/favourites', 'Saved vehicles', Heart], ['/account/enquiries', 'Enquiries', ClipboardList],
-  ['/account/test-drives', 'Test drives', Gauge], ['/account/sell-requests', 'Sell requests', CarFront], ['/account/profile', 'Profile', UserRound],
+  ['/account/test-drives', 'Test drives', Gauge], ['/account/sell-requests', 'Sell requests', CarFront], ['/account/purchases', 'Purchases', CarFront], ['/account/profile', 'Profile', UserRound],
   ['/account/settings', 'Notifications', Bell], ['/account/security', 'Security', ShieldCheck],
 ] as const
 
