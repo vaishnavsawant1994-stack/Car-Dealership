@@ -196,6 +196,21 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
     expect(openedDelivery.type).toBe('created')
     if (openedDelivery.type !== 'created') return
     deliveryCaseId = openedDelivery.data.id
+    const foreignDeliveryShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign Delivery Case ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
+      state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
+      email: `delivery-case-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignDeliveryShowroom.id } })
+      expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(false)
+      expect(await transitionDeliveryCase(deliveryCaseId, operations, {
+        version: openedDelivery.data.version, status: DeliveryCaseStatus.CANCELLED,
+      })).toEqual({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignDeliveryShowroom.id } })
+    }
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
     expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
