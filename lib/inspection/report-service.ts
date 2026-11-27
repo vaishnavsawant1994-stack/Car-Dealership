@@ -16,6 +16,9 @@ export async function getStaffInspectionReport(id: string, actor: AdminActor) {
       inspector: { select: { name: true } },
       reviewer: { select: { name: true } },
       checks: { select: { code: true, result: true, remarks: true } },
+      evidence: { orderBy: [{ createdAt: 'asc' }, { id: 'asc' }], select: {
+        id: true, checkCode: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true,
+      } },
     },
   })
   if (!inspection || !canEditVehicleInspection(actor, inspection.inspectorId)) return null
