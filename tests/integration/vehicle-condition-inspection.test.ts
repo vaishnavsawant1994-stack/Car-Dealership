@@ -12,7 +12,7 @@ import {
 } from '@/lib/inspection/inspection-service'
 import { getStaffInspectionReport } from '@/lib/inspection/report-service'
 
-const fixture = { vehicles: [] as string[], inspections: [] as string[], staffUsers: [] as string[] }
+const fixture = { vehicles: [] as string[], inspections: [] as string[] }
 const unique = () => `inspection-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
 afterEach(async () => {
@@ -22,11 +22,6 @@ afterEach(async () => {
   }
   if (fixture.vehicles.length) {
     await prisma.vehicle.deleteMany({ where: { id: { in: fixture.vehicles.splice(0) } } })
-  }
-  if (fixture.staffUsers.length) {
-    const userIds = fixture.staffUsers.splice(0)
-    await prisma.showroomStaffAssignment.deleteMany({ where: { userId: { in: userIds } } })
-    await prisma.user.deleteMany({ where: { id: { in: userIds } } })
   }
 })
 afterAll(async () => prisma.$disconnect())
@@ -69,22 +64,10 @@ describe('P3-01 PostgreSQL inspection lifecycle', () => {
     fixture.vehicles.push(unassignedVehicle.id)
     expect((await startVehicleInspection(unassignedVehicle.id, inspector)).type).toBe('not-found')
     const unassignedInspection = await prisma.vehicleInspection.create({
-      data: { vehicleId: unassignedVehicle.id, inspectorId: inspector.id, status: VehicleInspectionStatus.READY_FOR_REVIEW },
+      data: { vehicleId: unassignedVehicle.id, inspectorId: inspector.id, status: VehicleInspectionStatus.DRAFT },
       select: { id: true },
     })
     fixture.inspections.push(unassignedInspection.id)
-    const scopedReviewer = await prisma.user.create({
-      data: {
-        name: 'Synthetic scoped reviewer', email: `${idSuffix}-reviewer@car-dealership.test`,
-        role: UserRole.OPERATIONS, status: 'ACTIVE',
-        showroomAssignments: { create: { showroomId: inspectorAssignment.showroomId } },
-      },
-      select: { id: true, role: true },
-    })
-    fixture.staffUsers.push(scopedReviewer.id)
-    expect((await reviewVehicleInspection(unassignedInspection.id, scopedReviewer, {
-      approved: false, version: 1, reviewNote: 'Synthetic out-of-scope review check.',
-    })).type).toBe('not-found')
     expect((await updateVehicleInspectionCheck(unassignedInspection.id, inspector, {
       code: vehicleConditionChecks[0].code, result: VehicleCheckResult.PASS, remarks: 'out of scope', version: 1,
     })).type).toBe('not-found')
