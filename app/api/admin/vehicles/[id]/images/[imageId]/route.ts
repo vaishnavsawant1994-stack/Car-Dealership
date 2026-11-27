@@ -16,10 +16,13 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     if (!scopedVehicle) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Vehicle not found.' } }, { status: 404 })
     const image = await prisma.vehicleImage.findFirst({ where: { id: imageId, vehicleId: id } })
     if (!image) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Image not found.' } }, { status: 404 })
-    await prisma.vehicleImage.delete({ where: { id: imageId } })
     if (image.storageKey) await getImageStorage().deleteObject(image.storageKey)
+    // Keep the row as a retry handle if S3/local cleanup fails partway through.
+    // Deleting missing objects is idempotent, so a later retry can finish cleanup.
+    await prisma.vehicleImage.delete({ where: { id: imageId } })
     if (image.isPrimary) { const next = await prisma.vehicleImage.findFirst({ where: { vehicleId: id }, orderBy: { sortOrder: 'asc' } }); if (next) await prisma.vehicleImage.update({ where: { id: next.id }, data: { isPrimary: true } }) }
     await writeAuditLog({ actorId: actor.id, action: 'VEHICLE_IMAGE_DELETED', resourceType: 'Vehicle', resourceId: id, summary: 'Vehicle image deleted.', metadata: { imageId }, request })
     return NextResponse.json({ message: 'Image removed.' })
   } catch (error) { return adminError(error) }
 }
+
