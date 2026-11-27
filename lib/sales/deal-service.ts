@@ -109,7 +109,7 @@ export async function transitionSalesDeal(id: string, actor: AdminActor, input: 
     const assessment = assessSalesDealTransition(current.status, input)
     if (!assessment.allowed) return { type: 'invalid-transition' as const, code: assessment.code }
 
-    const closed = [SalesDealStatus.WON, SalesDealStatus.LOST, SalesDealStatus.CANCELLED].includes(input.status)
+    const closed = input.status !== SalesDealStatus.OPEN && input.status !== SalesDealStatus.NEGOTIATION
     const changed = await tx.salesDeal.updateMany({
       where: { ...where, version: input.version },
       data: {

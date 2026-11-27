@@ -23,7 +23,7 @@ export function assessSalesDealTransition(
     : current === SalesDealStatus.NEGOTIATION
       ? [SalesDealStatus.OPEN, SalesDealStatus.WON, SalesDealStatus.LOST, SalesDealStatus.CANCELLED]
       : []
-  if (!allowed.includes(input.status)) return { allowed: false as const, code: 'INVALID_TRANSITION' as const }
+  if (!allowed.some((status) => status === input.status)) return { allowed: false as const, code: 'INVALID_TRANSITION' as const }
   if (input.status === SalesDealStatus.WON) {
     if (!input.acceptanceMethod || input.lossReason) return { allowed: false as const, code: 'ACCEPTANCE_REQUIRED' as const }
   } else if (input.status === SalesDealStatus.LOST) {
