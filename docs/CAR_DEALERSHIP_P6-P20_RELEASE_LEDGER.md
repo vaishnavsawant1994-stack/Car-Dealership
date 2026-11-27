@@ -6,7 +6,7 @@
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; CI run #167 passed. The preserved F: P1-05 checkout still needs an explicit reconciliation and broader scope audit. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; CI #167 passed. P1-05 HEAD `223220110243bb7415dc22d5bd1634cdead5b7e0` is an ancestor of PR #38 HEAD `253a32b2e295663b8f18f1ed1a41335a99686405`. Current F: working-tree edits cannot be inspected in this session; broader query and derived-child scope audit remains open. |
 | P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Draft; CI #171 passed. |
 | P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Draft; CI #173 passed. |
 | P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Draft; CI #176 passed. No payment processor or capture. |
@@ -19,8 +19,8 @@
 | P16 | Marketing signup/campaign delivery hard-disabled | [#48](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/48) | Draft; CI #189 passed after correcting a narrowed newsletter status check. |
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; CI #190 passed (lint, type-check, isolated PostgreSQL tests, production build). |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; CI #191 passed (lint, type-check, tests, production build). No real bucket was used. |
-| P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; exact head CI #198 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; exact head CI #204 passed. Documentation only; owner acceptance remains outstanding. |
+| P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; CI #202 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; P20 CI #204 and ledger-update CI #205 passed, including all 55 browser tests. Documentation only; owner acceptance remains outstanding. |
 
 ## Data and deployment boundaries
 
@@ -28,12 +28,12 @@
 - No migration was applied to Neon, production, or existing staging. No production deployment or staging deployment was performed.
 - Vercel staging SSO/protection remains in place.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
-- The F: drive worktree and local databases were preserved; they were inspected read-only and were not overwritten.
+- The F: drive worktree and local databases were not modified. The current F: working-tree status is unverified because access was denied in this session.
 
 ## Unresolved release gates
 
-- Repository privacy and historical credential exposure response must be completed before deployment.
-- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit.
+- The repository is public by owner choice for now. Private-source release readiness and historical credential exposure response remain open; no deployment should occur while this gate is unmet.
+- P1-05 commit ancestry into PR #38 is verified. The F: checkout's current edits remain unverified, and the broader query and derived-child showroom/assignment audit remains open.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
