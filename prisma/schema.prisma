@@ -208,6 +208,7 @@ model User {
   contentRevisions        ContentRevision[]             @relation("ContentRevisionAuthor")
   publishedRevisions      ContentRevision[]             @relation("ContentRevisionPublisher")
   auditLogs               AuditLog[]
+  showroomAssignments     ShowroomStaffAssignment[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   notificationSettings    CustomerNotificationSettings?
@@ -878,6 +879,8 @@ model Showroom {
   isPrimary    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  version      Int      @default(1)
+  staffAssignments ShowroomStaffAssignment[]
 
   @@index([active])
   @@index([isPrimary])
@@ -1076,4 +1079,17 @@ model VehicleInspectionEvidence {
 
   @@unique([inspectionId, checksum])
   @@index([inspectionId, checkCode, createdAt])
+}
+
+/** Explicit staff-to-showroom associations; not a parallel user/branch table. */
+model ShowroomStaffAssignment {
+  id         String   @id @default(cuid())
+  showroomId String
+  userId     String
+  createdAt  DateTime @default(now())
+  showroom   Showroom @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([showroomId, userId])
+  @@index([userId])
 }

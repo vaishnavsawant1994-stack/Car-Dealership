@@ -6,7 +6,10 @@ import { AdminShell, type AdminNavItem } from '@/components/admin/AdminShell'
 import './admin.css'
 
 const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: AdminPermission }> }> = [
-  { label: 'Overview', items: [{ label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' }] },
+  { label: 'Overview', items: [
+    { label: 'Dashboard', href: '/admin', icon: 'dashboard', permission: 'dashboard.view' },
+    { label: 'My Showrooms', href: '/admin/my-showrooms', icon: 'showrooms', permission: 'dashboard.view' },
+  ] },
   { label: 'Inventory', items: [
     { label: 'Vehicles', href: '/admin/vehicles', icon: 'vehicles', permission: 'vehicle.view' },
     { label: 'Condition Inspections', href: '/admin/inspections', icon: 'inspection', permission: 'vehicle.update' },
@@ -28,6 +31,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Newsletter', href: '/admin/newsletter', icon: 'newsletter', permission: 'newsletter.view' },
   ] },
   { label: 'Management', items: [
+    { label: 'Organisation', href: '/admin/organisation', icon: 'organisation', permission: 'settings.view' },
     { label: 'Showrooms', href: '/admin/showrooms', icon: 'showrooms', permission: 'showroom.manage' },
     { label: 'Users & Roles', href: '/admin/users', icon: 'users', permission: 'user.view' },
     { label: 'Settings', href: '/admin/settings', icon: 'settings', permission: 'settings.view' },
