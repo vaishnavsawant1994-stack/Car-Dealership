@@ -40,6 +40,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               <td>{check.remarks ?? '—'}</td>
             </tr>)}</tbody>
           </table>
+          <h3>Private evidence manifest ({report.evidence.length})</h3>
+          <p>Evidence files require an authorized staff session and are not embedded in public-facing documents.</p>
+          {report.evidence.length ? <ul>{report.evidence.map((item) => <li key={item.id}>
+            {item.checkCode}: <Link href={`/api/admin/inspections/${encodeURIComponent(report.id)}/evidence/${encodeURIComponent(item.id)}`}>{item.originalName}</Link>
+          </li>)}</ul> : <p>No private evidence attached.</p>}
           <p><small>Report reference: {report.id}. Generated from the recorded review; historical records are not modified by printing.</small></p>
         </div>
       </article>}
