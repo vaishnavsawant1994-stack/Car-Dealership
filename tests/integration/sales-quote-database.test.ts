@@ -122,5 +122,76 @@ describe('P5-02 PostgreSQL internal pricing snapshots', () => {
       await prisma.vehicle.delete({ where: { id: vehicle.id } })
     }
   })
+  it('denies quote access when an in-scope inquiry points to an out-of-scope vehicle', async () => {
+    if (process.env.APP_ENV !== 'test' || !process.env.DATABASE_URL?.includes('/car_dealership_test')) {
+      throw new Error('Sales quote tests must use isolated CI PostgreSQL.')
+    }
+    const assignment = await prisma.showroomStaffAssignment.findFirstOrThrow({
+      where: { user: { role: UserRole.OPERATIONS, status: 'ACTIVE' }, showroom: { active: true } },
+      select: { userId: true, showroomId: true },
+    })
+    const actor = await prisma.user.findUniqueOrThrow({ where: { id: assignment.userId } })
+    const [brand, bodyType] = await Promise.all([
+      prisma.brand.findFirstOrThrow({ select: { id: true } }),
+      prisma.bodyType.findFirstOrThrow({ select: { id: true } }),
+    ])
+    const idSuffix = 'quote-derived-scope-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)
+    const foreignShowroom = await prisma.showroom.create({
+      data: {
+        name: 'Synthetic out-of-scope showroom ' + idSuffix,
+        address: '1 Test Road', city: 'Test City', state: 'Test State', postalCode: '000000',
+        phone: '+910000000001', email: idSuffix + '@car-dealership.test', hours: 'Test only',
+      },
+      select: { id: true },
+    })
+    let vehicleId: string | null = null
+    let inquiryId: string | null = null
+    try {
+      const vehicle = await prisma.vehicle.create({
+        data: {
+          showroomId: foreignShowroom.id, slug: idSuffix, stockNumber: idSuffix.toUpperCase(),
+          brandId: brand.id, bodyTypeId: bodyType.id, model: 'Fictional Quote Sedan',
+          variant: 'Synthetic', shortTitle: 'Out-of-scope synthetic vehicle', year: 2024,
+          price: 1_500_000, mileage: 10_000, fuelType: 'Petrol', transmission: 'Automatic',
+          shortDescription: 'Synthetic derived-scope fixture.',
+          description: 'Test-only vehicle in another showroom.', status: VehicleStatus.AVAILABLE,
+          published: true, publishedAt: new Date(), currency: 'INR',
+        },
+        select: { id: true },
+      })
+      vehicleId = vehicle.id
+      const inquiry = await prisma.inquiry.create({
+        data: {
+          showroomId: assignment.showroomId, referenceNumber: idSuffix,
+          fullName: 'Synthetic Buyer', phone: '9999999999',
+          email: idSuffix + '@car-dealership.test',
+          message: 'Synthetic inquiry links to another showroom vehicle.',
+          vehicleId: vehicle.id, assignedToId: actor.id,
+        },
+        select: { id: true },
+      })
+      inquiryId = inquiry.id
+      await prisma.salesQuoteDraft.create({
+        data: {
+          inquiryId: inquiry.id, vehicleId: vehicle.id, createdById: actor.id,
+          vehiclePrice: 1_500_000, discountAmount: 0, estimatedOtherFees: 0,
+          estimatedSubtotal: 1_500_000, currency: 'INR',
+        },
+      })
+
+      expect(await getSalesQuoteDrafts(inquiry.id, actor)).toBeNull()
+      expect((await createSalesQuoteDraft(inquiry.id, actor, {
+        discountAmount: 0, estimatedOtherFees: 0,
+      })).type).toBe('not-found')
+    } finally {
+      if (inquiryId) {
+        await prisma.salesQuoteDraft.deleteMany({ where: { inquiryId } })
+        await prisma.inquiry.delete({ where: { id: inquiryId } })
+      }
+      if (vehicleId) await prisma.vehicle.delete({ where: { id: vehicleId } })
+      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+    }
+  })
+
 
 })
