@@ -35,7 +35,7 @@ describe('P4-04 isolated database privacy requests', () => {
       expect(JSON.stringify(audits[0].metadata)).not.toContain(syntheticEmail)
       expect((await createCustomerDataRightsRequest(staff.id, staff.id, CustomerDataRightsKind.ACCESS)).type).toBe('not-found')
     } finally {
-      await prisma.auditLog.deleteMany({ where: { entity: 'CustomerDataRightsRequest', entityId: requestId ?? undefined } })
+      if (requestId) await prisma.auditLog.deleteMany({ where: { entity: 'CustomerDataRightsRequest', entityId: requestId } })
       await prisma.customerDataRightsRequest.deleteMany({ where: { customerId: customer.id } })
       await prisma.user.delete({ where: { id: customer.id } })
     }
