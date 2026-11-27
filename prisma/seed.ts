@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { logSafeError } from '../lib/observability/safe-log'
 
 import {
   ContentStatus,
@@ -859,7 +860,7 @@ async function main() {
 
 main()
   .catch((error) => {
-    console.error(error)
+    logSafeError('database_seed_failed', error)
     process.exitCode = 1
   })
   .finally(async () => {

@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { Pool } from 'pg'
 import { assertAllowedDatabaseUrl, getCarDealershipEnvironment } from '../lib/config/isolation'
+import { logSafeError } from '../lib/observability/safe-log'
 
 /** Explicitly scheduled by deployment operations; never runs in a web build. */
 async function main() {
@@ -36,6 +37,6 @@ async function main() {
 }
 
 main().catch(error => {
-  console.error(error instanceof Error ? error.message : 'Retention cleanup failed.')
+  logSafeError('captured_email_retention_cleanup_failed', error)
   process.exitCode = 1
 })

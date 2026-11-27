@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/prisma'
 import { sendVerificationEmail } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { assertDemoEmail, isHostedDemoEnvironment } from '@/lib/security/demo-access'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 const responseMessage = 'If that account still needs verification, a new link has been sent.'
 
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
   try {
     await sendVerificationEmail(user.email, user.name ?? 'Customer', token)
   } catch (error) {
-    console.error('verification_resend_failed', { userId: user.id, error })
+    logSafeError('verification_resend_failed', error, { userId: user.id })
   }
   return NextResponse.json({ message: responseMessage })
 }

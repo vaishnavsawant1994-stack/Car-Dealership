@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { prisma } from '@/lib/db/prisma'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 export type DatabaseHealth = {
   healthy: boolean
@@ -18,7 +19,7 @@ export async function checkDatabaseHealth(): Promise<DatabaseHealth> {
       latencyMs: Math.round(performance.now() - startedAt),
     }
   } catch (error) {
-    console.error('[database-health] PostgreSQL connectivity check failed.', error)
+    logSafeError('database_health_check_failed', error)
     return {
       healthy: false,
       checkedAt: new Date().toISOString(),

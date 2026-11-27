@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/prisma'
 import { sendPasswordResetEmail } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { assertDemoEmail, isHostedDemoEnvironment } from '@/lib/security/demo-access'
+import { logSafeError } from '@/lib/observability/safe-log'
 
 const responseMessage = 'If an active account matches that email, password-reset instructions have been sent.'
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   try {
     await sendPasswordResetEmail(user.email, user.name ?? 'Customer', token)
   } catch (error) {
-    console.error('password_reset_email_failed', { userId: user.id, error })
+    logSafeError('password_reset_email_failed', error, { userId: user.id })
   }
   return NextResponse.json({ message: responseMessage })
 }
