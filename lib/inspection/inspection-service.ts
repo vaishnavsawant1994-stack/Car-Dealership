@@ -5,8 +5,8 @@ import type { AdminActor } from '@/lib/auth/require-admin'
 import { prisma } from '@/lib/db/prisma'
 import { assessVehicleInspection, getConditionCheck, vehicleConditionChecks } from './checklist'
 
-const editable = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
-const active = [...editable, VehicleInspectionStatus.READY_FOR_REVIEW]
+const editable: VehicleInspectionStatus[] = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
+const active: VehicleInspectionStatus[] = [...editable, VehicleInspectionStatus.READY_FOR_REVIEW]
 
 export function canEditVehicleInspection(actor: Pick<AdminActor, 'id' | 'role'>, inspectorId: string) {
   return actor.id === inspectorId || actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN
