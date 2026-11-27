@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import {
-  DeliveryCaseStatus, DeliveryChecklistCode, InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
+  AfterSalesTaskType, DeliveryCaseStatus, DeliveryChecklistCode, InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
   WorkshopChecklistCode, WorkshopJobType, WorkshopOrderStatus,
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
@@ -13,6 +13,7 @@ import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFi
 import { createDeliveryCase, listDeliveryCases, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
+import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -21,6 +22,7 @@ let inquiryId = ''
 let quoteId = ''
 let invoiceDraftId = ''
 let deliveryCaseId = ''
+const afterSalesTaskIds: string[] = []
 const sandboxAttemptIds: string[] = []
 const workshopOrderIds: string[] = []
 const partIds: string[] = []
@@ -30,6 +32,10 @@ const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (afterSalesTaskIds.length) {
+    await prisma.auditLog.deleteMany({ where: { entity: 'AfterSalesTask', entityId: { in: afterSalesTaskIds } } })
+    await prisma.afterSalesTask.deleteMany({ where: { id: { in: afterSalesTaskIds } } })
+  }
   if (partRequestIds.length) {
     await prisma.auditLog.deleteMany({ where: { entity: 'WorkshopPartRequest', entityId: { in: partRequestIds } } })
     await prisma.workshopPartRequest.deleteMany({ where: { id: { in: partRequestIds } } })
@@ -85,7 +91,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycle', () => {
+describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-sales lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -229,6 +235,14 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     expect(await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER })).toMatchObject({ type: 'invalid-transition' })
     const handedOver = await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER, customerAcknowledged: true })
     expect(handedOver.type).toBe('updated')
+    const firstServiceDue = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    const afterSalesTask = await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)
+    expect(afterSalesTask.type).toBe('created')
+    if (afterSalesTask.type !== 'created') return
+    afterSalesTaskIds.push(afterSalesTask.data.id)
+    expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(true)
+    expect(await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)).toMatchObject({ type: 'already-scheduled' })
+    expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'completed' })
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
