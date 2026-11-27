@@ -242,18 +242,18 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
     afterSalesTaskIds.push(afterSalesTask.data.id)
     expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(true)
     expect(await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)).toMatchObject({ type: 'already-scheduled' })
-    const foreignShowroom = await prisma.showroom.create({ data: {
+    const foreignP13Showroom = await prisma.showroom.create({ data: {
       name: `Fictional Foreign P13 ${suffix}`, address: 'Synthetic Test Road, 5', city: 'Test City',
       state: 'Test State', postalCode: '000005', phone: 'Synthetic only',
       email: `p13-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
     } })
     try {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignShowroom.id } })
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP13Showroom.id } })
       expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(false)
       expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'not-available' })
     } finally {
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
-      await prisma.showroom.delete({ where: { id: foreignShowroom.id } })
+      await prisma.showroom.delete({ where: { id: foreignP13Showroom.id } })
     }
     expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'completed' })
     const detail = await getSalesDeal(opened.data.id, sales)
