@@ -1,13 +1,16 @@
 import 'server-only'
 import type { AdminActor } from '@/lib/auth/require-admin'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere } from '@/lib/auth/admin-resource-policy'
 import { canEditVehicleInspection } from './inspection-service'
 import { buildInspectionReportChecks, reportSummary } from './report'
 
 /** Explicit, private staff projection without seller, customer, IP, credentials or files. */
 export async function getStaffInspectionReport(id: string, actor: AdminActor) {
-  const inspection = await prisma.vehicleInspection.findUnique({
-    where: { id },
+  const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
+  const inspection = await prisma.vehicleInspection.findFirst({
+    where: { id, ...scopeWhere },
     select: {
       id: true, vehicleId: true, inspectorId: true, status: true, version: true,
       createdAt: true, submittedAt: true, reviewedAt: true, reviewNote: true,
@@ -31,3 +34,4 @@ export async function getStaffInspectionReport(id: string, actor: AdminActor) {
     summary: reportSummary(checks),
   }
 }
+
