@@ -10,6 +10,7 @@ import {
   reviewVehicleInspection, startVehicleInspection, submitVehicleInspection,
   updateVehicleInspectionCheck,
 } from '@/lib/inspection/inspection-service'
+import { getStaffInspectionReport } from '@/lib/inspection/report-service'
 
 const fixture = { vehicles: [] as string[], inspections: [] as string[] }
 const unique = () => `inspection-e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -27,15 +28,19 @@ afterAll(async () => prisma.$disconnect())
 
 describe('P3-01 PostgreSQL inspection lifecycle', () => {
   it('creates a private 43-check inspection, enforces versions and a second-person approval', async () => {
-    const [inspector, reviewer, referenceVehicle] = await Promise.all([
-      prisma.user.findFirstOrThrow({ where: { role: UserRole.OPERATIONS, status: 'ACTIVE' } }),
+    const [inspectorAssignment, reviewer, referenceVehicle] = await Promise.all([
+      prisma.showroomStaffAssignment.findFirstOrThrow({
+        where: { user: { role: UserRole.OPERATIONS, status: 'ACTIVE' }, showroom: { active: true } },
+        select: { userId: true, showroomId: true },
+      }),
       prisma.user.findFirstOrThrow({ where: { role: UserRole.SUPER_ADMIN, status: 'ACTIVE' } }),
       prisma.vehicle.findFirstOrThrow({ select: { brandId: true, bodyTypeId: true } }),
     ])
+    const inspector = await prisma.user.findUniqueOrThrow({ where: { id: inspectorAssignment.userId } })
     const idSuffix = unique()
     const vehicle = await prisma.vehicle.create({
       data: {
-        ...referenceVehicle, slug: idSuffix, stockNumber: idSuffix.toUpperCase(),
+        ...referenceVehicle, showroomId: inspectorAssignment.showroomId, slug: idSuffix, stockNumber: idSuffix.toUpperCase(),
         model: 'Fictional Sedan', variant: 'Inspection Test', shortTitle: 'Synthetic Inspection Vehicle',
         year: 2024, price: 2_000_000, mileage: 10000, fuelType: 'Petrol', transmission: 'Automatic',
         shortDescription: 'Synthetic condition inspection fixture.',
@@ -44,6 +49,31 @@ describe('P3-01 PostgreSQL inspection lifecycle', () => {
       },
     })
     fixture.vehicles.push(vehicle.id)
+
+    const unassignedVehicleSuffix = `${idSuffix}-unassigned`
+    const unassignedVehicle = await prisma.vehicle.create({
+      data: {
+        ...referenceVehicle, showroomId: null, slug: unassignedVehicleSuffix, stockNumber: unassignedVehicleSuffix.toUpperCase(),
+        model: 'Fictional Sedan', variant: 'Out-of-scope inspection test', shortTitle: 'Unassigned Synthetic Vehicle',
+        year: 2024, price: 2_000_000, mileage: 10000, fuelType: 'Petrol', transmission: 'Automatic',
+        shortDescription: 'Synthetic vehicle outside the inspector showroom.',
+        description: 'Fictional inventory created exclusively for local PostgreSQL inspection tests.',
+        status: VehicleStatus.DRAFT, published: false,
+      },
+    })
+    fixture.vehicles.push(unassignedVehicle.id)
+    expect((await startVehicleInspection(unassignedVehicle.id, inspector)).type).toBe('not-found')
+    const unassignedInspection = await prisma.vehicleInspection.create({
+      data: { vehicleId: unassignedVehicle.id, inspectorId: inspector.id, status: VehicleInspectionStatus.DRAFT },
+      select: { id: true },
+    })
+    fixture.inspections.push(unassignedInspection.id)
+    expect((await updateVehicleInspectionCheck(unassignedInspection.id, inspector, {
+      code: vehicleConditionChecks[0].code, result: VehicleCheckResult.PASS, remarks: 'out of scope', version: 1,
+    })).type).toBe('not-found')
+    expect((await submitVehicleInspection(unassignedInspection.id, inspector, 1)).type).toBe('not-found')
+    expect(await getStaffInspectionReport(unassignedInspection.id, inspector)).toBeNull()
+
     const opened = await startVehicleInspection(vehicle.id, inspector)
     expect(opened.type).toBe('created')
     if (opened.type !== 'created') return
@@ -94,3 +124,4 @@ describe('P3-01 PostgreSQL inspection lifecycle', () => {
     })).type).toBe('not-editable')
   })
 })
+
