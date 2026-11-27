@@ -4,15 +4,16 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import {
-  DeliveryCaseStatus, DeliveryChecklistCode, InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
+  AfterSalesTaskType, DeliveryCaseStatus, DeliveryChecklistCode, InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
   WorkshopChecklistCode, WorkshopJobType, WorkshopOrderStatus,
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
-import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
+import { createDeliveryCase, listDeliveryCases, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
+import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -21,6 +22,7 @@ let inquiryId = ''
 let quoteId = ''
 let invoiceDraftId = ''
 let deliveryCaseId = ''
+const afterSalesTaskIds: string[] = []
 const sandboxAttemptIds: string[] = []
 const workshopOrderIds: string[] = []
 const partIds: string[] = []
@@ -30,6 +32,10 @@ const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (afterSalesTaskIds.length) {
+    await prisma.auditLog.deleteMany({ where: { entity: 'AfterSalesTask', entityId: { in: afterSalesTaskIds } } })
+    await prisma.afterSalesTask.deleteMany({ where: { id: { in: afterSalesTaskIds } } })
+  }
   if (partRequestIds.length) {
     await prisma.auditLog.deleteMany({ where: { entity: 'WorkshopPartRequest', entityId: { in: partRequestIds } } })
     await prisma.workshopPartRequest.deleteMany({ where: { id: { in: partRequestIds } } })
@@ -85,7 +91,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycle', () => {
+describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-sales lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -257,6 +263,27 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     expect(await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER })).toMatchObject({ type: 'invalid-transition' })
     const handedOver = await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER, customerAcknowledged: true })
     expect(handedOver.type).toBe('updated')
+    const firstServiceDue = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+    const afterSalesTask = await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)
+    expect(afterSalesTask.type).toBe('created')
+    if (afterSalesTask.type !== 'created') return
+    afterSalesTaskIds.push(afterSalesTask.data.id)
+    expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(true)
+    expect(await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)).toMatchObject({ type: 'already-scheduled' })
+    const foreignP13Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P13 ${suffix}`, address: 'Synthetic Test Road, 5', city: 'Test City',
+      state: 'Test State', postalCode: '000005', phone: 'Synthetic only',
+      email: `p13-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP13Showroom.id } })
+      expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(false)
+      expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP13Showroom.id } })
+    }
+    expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'completed' })
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
@@ -271,12 +298,6 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
     if (openedWorkshop.type !== 'created') return
     workshopOrderIds.push(openedWorkshop.data.id)
     expect((await createWorkshopOrder(vehicleId, workshop, WorkshopJobType.REPAIR)).type).toBe('already-active')
-    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
-    const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
-    expect(scheduled.type).toBe('updated')
-    const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
-    expect(started.type).toBe('updated')
-    expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
     const foreignP11Showroom = await prisma.showroom.create({ data: {
       name: `Fictional Foreign P11 ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
       state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
@@ -294,6 +315,12 @@ describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycl
       await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
+    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
+    const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
+    expect(scheduled.type).toBe('updated')
+    const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
+    expect(started.type).toBe('updated')
+    expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
     const part = await createPartAndReceive({ sku: `P12-${suffix}`, name: 'Fictional filter', unit: 'each', showroomId, quantity: '2', reason: 'Synthetic integration test opening stock' }, partsManager)
     expect(part.type).toBe('created')
     if (part.type !== 'created') return

@@ -14,14 +14,6 @@ function showroomRecordWhere(scope: Awaited<ReturnType<typeof getActorShowroomSc
   return scope.global ? {} : { id: { in: scope.showroomIds } }
 }
 
-function scopedWorkshopOrderWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  const base = actor.role === 'PARTS_MANAGER' ? showroomScopeWhere(scope) : accessibleResourceWhere(actor, scope)
-  return {
-    ...base,
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
-  }
-}
-
 export async function listParts(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   const [parts, movements] = await Promise.all([
@@ -81,7 +73,7 @@ export async function createWorkshopPartRequest(input: { workshopOrderId: string
   const scope = await getActorShowroomScope(actor)
   const order = await prisma.workshopOrder.findFirst({ where: { id: input.workshopOrderId,
     status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] },
-    ...scopedWorkshopOrderWhere(actor, scope) }, select: { id: true, showroomId: true } })
+    ...accessibleResourceWhere(actor, scope) }, select: { id: true, showroomId: true } })
   if (!order?.showroomId) return { type: 'not-available' as const }
   const part = await prisma.inventoryPart.findFirst({ where: { id: input.partId, active: true }, select: { id: true } })
   if (!part) return { type: 'not-available' as const }
@@ -94,7 +86,8 @@ export async function createWorkshopPartRequest(input: { workshopOrderId: string
 
 export async function listWorkshopPartRequests(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
-  const where = { workshopOrder: scopedWorkshopOrderWhere(actor, scope) }
+  const where = actor.role === 'PARTS_MANAGER' ? { workshopOrder: showroomScopeWhere(scope) }
+    : { workshopOrder: accessibleResourceWhere(actor, scope) }
   const requests = await prisma.workshopPartRequest.findMany({ where: { ...where, status: WorkshopPartRequestStatus.REQUESTED },
     select: { id: true, quantity: true, status: true, version: true, createdAt: true,
       part: { select: { sku: true, name: true, unit: true } },
@@ -107,7 +100,7 @@ export async function issueWorkshopPartRequest(input: { id: string; version: num
   const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
     const request = await tx.workshopPartRequest.findFirst({ where: { id: input.id, status: WorkshopPartRequestStatus.REQUESTED,
-      version: input.version, workshopOrder: { status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] }, ...scopedWorkshopOrderWhere(actor, scope) } },
+      version: input.version, workshopOrder: { status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] }, ...showroomScopeWhere(scope) } },
       select: { id: true, version: true, partId: true, quantity: true, workshopOrderId: true,
         workshopOrder: { select: { showroomId: true, status: true } } } })
     if (!request?.workshopOrder.showroomId) return { type: 'not-available' as const }
