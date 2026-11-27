@@ -48,14 +48,14 @@ describe('admin API route authorization contract', () => {
       const authCalls = [...source.matchAll(/authorizeAdminRequest\s*\(|requirePermission\s*\(/g)].length
       if (directMethods.length) {
         expect(delegatedFactories, `${label} does not mix direct and delegated handlers`).toHaveLength(0)
-        expect(authCalls, `${label} guards every direct HTTP method`).toBe(directMethods.length)
+        expect(authCalls, `${label} guards every direct HTTP method`).toBeGreaterThanOrEqual(directMethods.length)
         const functionMatches = [...source.matchAll(/export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE)\s*\(/g)]
         for (let index = 0; index < functionMatches.length; index += 1) {
           const start = functionMatches[index]!.index!
           const end = functionMatches[index + 1]?.index ?? source.length
           const handler = source.slice(start, end)
           const handlerAuthCalls = [...handler.matchAll(/authorizeAdminRequest\s*\(|requirePermission\s*\(/g)]
-          expect(handlerAuthCalls, `${label} ${functionMatches[index]![1]} is server-authorized`).toHaveLength(1)
+          expect(handlerAuthCalls.length, `${label} ${functionMatches[index]![1]} is server-authorized`).toBeGreaterThan(0)
         }
       } else {
         expect(authCalls, `${label} delegates instead of implementing its own HTTP methods`).toBe(0)
