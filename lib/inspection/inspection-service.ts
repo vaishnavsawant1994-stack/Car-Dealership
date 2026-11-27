@@ -3,6 +3,8 @@ import 'server-only'
 import { Prisma, UserRole, VehicleCheckResult, VehicleInspectionStatus } from '@prisma/client'
 import type { AdminActor } from '@/lib/auth/require-admin'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere, showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 import { assessVehicleInspection, getConditionCheck, vehicleConditionChecks } from './checklist'
 
 const editable: VehicleInspectionStatus[] = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
@@ -17,9 +19,10 @@ export function canReviewVehicleInspection(actor: Pick<AdminActor, 'id' | 'role'
 }
 
 export async function startVehicleInspection(vehicleId: string, actor: AdminActor) {
+  const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
-    const vehicle = await tx.vehicle.findUnique({
-      where: { id: vehicleId }, select: { id: true, stockNumber: true },
+    const vehicle = await tx.vehicle.findFirst({
+      where: { id: vehicleId, ...showroomScopeWhere(scope) }, select: { id: true, stockNumber: true },
     })
     if (!vehicle) return { type: 'not-found' as const }
     const existing = await tx.vehicleInspection.findFirst({
@@ -67,9 +70,10 @@ export async function updateVehicleInspectionCheck(
   if (input.result === VehicleCheckResult.FAIL && !input.remarks.trim()) {
     return { type: 'remarks-required' as const }
   }
+  const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
   return prisma.$transaction(async (tx) => {
-    const inspection = await tx.vehicleInspection.findUnique({
-      where: { id: inspectionId },
+    const inspection = await tx.vehicleInspection.findFirst({
+      where: { id: inspectionId, ...scopeWhere },
       select: { id: true, inspectorId: true, version: true, status: true, vehicleId: true },
     })
     if (!inspection || !canEditVehicleInspection(actor, inspection.inspectorId)) {
@@ -78,7 +82,7 @@ export async function updateVehicleInspectionCheck(
     if (!editable.includes(inspection.status)) return { type: 'not-editable' as const }
     if (inspection.version !== input.version) return { type: 'conflict' as const }
     const claim = await tx.vehicleInspection.updateMany({
-      where: { id: inspectionId, version: input.version, status: { in: editable } },
+      where: { id: inspectionId, version: input.version, status: { in: editable }, ...scopeWhere },
       data: { version: { increment: 1 }, status: VehicleInspectionStatus.IN_PROGRESS },
     })
     if (claim.count !== 1) return { type: 'conflict' as const }
@@ -103,9 +107,10 @@ export async function updateVehicleInspectionCheck(
 }
 
 export async function submitVehicleInspection(inspectionId: string, actor: AdminActor, version: number) {
+  const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
   return prisma.$transaction(async (tx) => {
-    const inspection = await tx.vehicleInspection.findUnique({
-      where: { id: inspectionId },
+    const inspection = await tx.vehicleInspection.findFirst({
+      where: { id: inspectionId, ...scopeWhere },
       select: {
         vehicleId: true, inspectorId: true, version: true, status: true,
         checks: { select: { code: true, result: true, remarks: true } },
@@ -119,7 +124,7 @@ export async function submitVehicleInspection(inspectionId: string, actor: Admin
     const assessment = assessVehicleInspection(inspection.checks)
     if (!assessment.canSubmit) return { type: 'not-ready' as const, assessment }
     const claim = await tx.vehicleInspection.updateMany({
-      where: { id: inspectionId, version, status: { in: editable } },
+      where: { id: inspectionId, version, status: { in: editable }, ...scopeWhere },
       data: { status: VehicleInspectionStatus.READY_FOR_REVIEW, version: { increment: 1 }, submittedAt: new Date() },
     })
     if (!claim.count) return { type: 'conflict' as const }
@@ -186,3 +191,4 @@ export async function reviewVehicleInspection(
     return { type: 'reviewed' as const, status: nextStatus, version: input.version + 1 }
   }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
 }
+
