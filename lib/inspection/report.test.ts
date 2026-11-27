@@ -22,11 +22,11 @@ describe('P3-02 private inspection report contract', () => {
     expect(report.map((item) => item.code)).toEqual(vehicleConditionChecks.map((item) => item.code))
     expect(report[0].result).toBe('PASS')
     expect(report[2].result).toBe('FAIL')
-    expect(report.some((item) => item.code === 'CUSTOM_FAKE_CHECK')).toBe(false)
+    expect(new Set(report.map((item) => String(item.code))).has('CUSTOM_FAKE_CHECK')).toBe(false)
     expect(report.every((item) => typeof item.label === 'string' && item.label.length > 0)).toBe(true)
   })
   it('produces explicit failure and critical failure totals without changing the source', () => {
-    const input = vehicleConditionChecks.map((item) => ({
+    const input: Array<{ code: string; result: VehicleCheckResult; remarks: string | null }> = vehicleConditionChecks.map((item) => ({
       code: item.code, result: VehicleCheckResult.PASS, remarks: null,
     }))
     input[0] = { ...input[0], result: VehicleCheckResult.FAIL, remarks: 'Synthetic registration mismatch.' }
