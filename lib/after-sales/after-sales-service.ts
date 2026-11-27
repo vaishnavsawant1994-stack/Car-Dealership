@@ -17,7 +17,7 @@ function scopedDeliveryCaseWhere(scope: Awaited<ReturnType<typeof getActorShowro
 function scopedAfterSalesTaskWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
   return {
     ...showroomScopeWhere(scope),
-    ...(!scope.global ? { deliveryCase: { is: { vehicle: linkedVehicleScope(scope) } } } : {}),
+    ...(!scope.global ? { deliveryCase: { is: linkedVehicleScope(scope) } } : {}),
   }
 }
 
