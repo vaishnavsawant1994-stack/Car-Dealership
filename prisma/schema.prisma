@@ -151,6 +151,21 @@ enum TestDriveStatus {
   NO_SHOW
 }
 
+enum VehicleInspectionStatus {
+  DRAFT
+  IN_PROGRESS
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum VehicleCheckResult {
+  NOT_CHECKED
+  PASS
+  FAIL
+  NOT_APPLICABLE
+}
+
 model User {
   id                      String                        @id @default(cuid())
   name                    String?
@@ -178,6 +193,8 @@ model User {
   assignedContactMessages ContactMessage[]              @relation("AssignedContactMessages")
   createdVehicles         Vehicle[]                     @relation("VehicleCreatedBy")
   updatedVehicles         Vehicle[]                     @relation("VehicleUpdatedBy")
+  performedInspections    VehicleInspection[]           @relation("VehicleInspectionInspector")
+  reviewedInspections     VehicleInspection[]           @relation("VehicleInspectionReviewer")
   vehicleStatusChanges    VehicleStatusHistory[]
   operationalMessages     OperationalMessage[]
   operationalActivities   OperationalActivity[]
@@ -378,6 +395,7 @@ model Vehicle {
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
+  conditionInspections     VehicleInspection[]
   createdBy                User?                  @relation("VehicleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy                User?                  @relation("VehicleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   createdAt                DateTime               @default(now())
@@ -1000,4 +1018,41 @@ model CapturedEmail {
 
   @@index([environment, createdAt])
   @@index([expiresAt])
+}
+
+
+model VehicleInspection {
+  id             String                  @id @default(cuid())
+  vehicleId      String
+  vehicle        Vehicle                 @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  inspectorId    String
+  inspector      User                    @relation("VehicleInspectionInspector", fields: [inspectorId], references: [id], onDelete: Restrict)
+  reviewerId     String?
+  reviewer       User?                   @relation("VehicleInspectionReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  status         VehicleInspectionStatus @default(DRAFT)
+  version        Int                     @default(1)
+  reviewNote     String?
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+  checks         VehicleInspectionCheck[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@index([vehicleId, createdAt])
+  @@index([inspectorId, status])
+  @@index([status, updatedAt])
+}
+
+model VehicleInspectionCheck {
+  id           String              @id @default(cuid())
+  inspectionId String
+  inspection   VehicleInspection   @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  code         String
+  category     String
+  result       VehicleCheckResult  @default(NOT_CHECKED)
+  remarks      String?
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([inspectionId, code])
+  @@index([category])
 }
