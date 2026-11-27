@@ -8,7 +8,7 @@ import { getConditionCheck } from '@/lib/inspection/checklist'
 import { canEditVehicleInspection } from '@/lib/inspection/inspection-service'
 import { deleteInspectionEvidenceObject, storeInspectionEvidence } from '@/lib/storage/inspection-evidence-storage'
 
-const editable = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
+const editable: VehicleInspectionStatus[] = [VehicleInspectionStatus.DRAFT, VehicleInspectionStatus.IN_PROGRESS]
 
 async function accessibleInspection(id: string, actor: { id: string; role: import('@prisma/client').UserRole }) {
   const inspection = await prisma.vehicleInspection.findUnique({
