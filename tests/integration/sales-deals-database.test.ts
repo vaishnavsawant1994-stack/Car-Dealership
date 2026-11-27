@@ -96,14 +96,14 @@ describe('P7 internal sales deal lifecycle', () => {
     expect(visible.some((deal) => deal.id === opened.data.id)).toBe(true)
     expect(await getSalesDeal(opened.data.id, peer)).toBeNull()
 
-    const missingAcceptance = await transitionSalesDeal(opened.data.id, sales, {
-      version: 1, status: SalesDealStatus.WON,
-    })
-    expect(missingAcceptance).toMatchObject({ type: 'invalid-transition', code: 'ACCEPTANCE_REQUIRED' })
     const negotiating = await transitionSalesDeal(opened.data.id, sales, {
       version: 1, status: SalesDealStatus.NEGOTIATION,
     })
     expect(negotiating).toMatchObject({ type: 'updated', data: { status: SalesDealStatus.NEGOTIATION, version: 2 } })
+    const missingAcceptance = await transitionSalesDeal(opened.data.id, sales, {
+      version: 2, status: SalesDealStatus.WON,
+    })
+    expect(missingAcceptance).toMatchObject({ type: 'invalid-transition', code: 'ACCEPTANCE_REQUIRED' })
     expect((await transitionSalesDeal(opened.data.id, sales, {
       version: 1, status: SalesDealStatus.OPEN,
     })).type).toBe('conflict')

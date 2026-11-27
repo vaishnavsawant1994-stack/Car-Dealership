@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('@/lib/auth/require-permission', () => ({ authorizeAdminRequest: vi.fn() }))
+vi.mock('@/lib/auth/require-permission', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/auth/require-permission')>()
+  return { ...actual, authorizeAdminRequest: vi.fn() }
+})
 vi.mock('@/lib/sales/deal-service', () => ({
   listSalesDeals: vi.fn(), createSalesDeal: vi.fn(), transitionSalesDeal: vi.fn(),
 }))
