@@ -4,4 +4,4 @@ CI now runs the existing Playwright end-to-end suite against the optimized produ
 
 The browser suite exercises customer/staff access, admin workflows, account behavior, and responsive layout. Uploaded vehicle images use the explicit local test-only storage switch inside the disposable runner.
 
-Protected staging visual acceptance, independent security review, production S3 integration, backup/restore, and rollback remain separate release gates.
+Protected staging visual acceptance, production S3 integration, backup/restore, and rollback remain release readiness tasks.
