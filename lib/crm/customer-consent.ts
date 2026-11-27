@@ -32,6 +32,7 @@ export function consentDisplay(snapshot: ConsentSnapshot | null) {
   return marketingChannels.map((channel) => ({
     channel,
     consented: hasCurrentMarketingConsent(snapshot, channel),
+    rawEnabled: snapshot?.[channel] === true,
     everConsentedAt: channel === 'marketingEmails' ?
       snapshot?.marketingConsentedAt ?? null : snapshot?.whatsAppConsentedAt ?? null,
   }))
