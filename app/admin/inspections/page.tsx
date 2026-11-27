@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db/prisma'
 
 export default async function Page({
   searchParams,
-}: { searchParams: Promise<{ status?: string }> }) {
+}: { searchParams: Promise<{ status?: string; vehicleId?: string }> }) {
   const actor = await requirePermission('vehicle.update')
   const query = await searchParams
   const allowed = Object.values(VehicleInspectionStatus)
@@ -32,7 +32,7 @@ export default async function Page({
     <AdminPageHeader title="Vehicle Condition Inspections"
       text="Internal checklist, evidence review and inspection history. Completing an inspection does not certify or publish a vehicle."
       breadcrumb="Inspections" />
-    <InspectionStart vehicles={vehicles} />
+    <InspectionStart vehicles={vehicles} initialVehicleId={query.vehicleId} />
     <form className="admin-filterbar" method="get">
       <label>Status <select name="status" defaultValue={status ?? ''}>
         <option value="">All accessible inspections</option>
