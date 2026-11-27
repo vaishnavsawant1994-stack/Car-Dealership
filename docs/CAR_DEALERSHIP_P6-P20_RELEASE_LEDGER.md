@@ -1,6 +1,6 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-27.** This ledger records code and validation evidence for the current development sequence. Every PR below is still a draft and unmerged; CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. Every PR below is still a draft and unmerged; CI success is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; CI #190 passed (lint, type-check, isolated PostgreSQL tests, production build). |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; CI #191 passed (lint, type-check, tests, production build). No real bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; exact head CI #198 passed: lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | This PR | Documentation only; dependent on P19 CI and owner acceptance. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; exact head CI #204 passed. Documentation only; owner acceptance remains outstanding. |
 
 ## Data and deployment boundaries
 
