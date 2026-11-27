@@ -20,16 +20,9 @@ function orderReference() {
   return `WRK-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`
 }
 
-function scopedWorkshopOrderWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  return {
-    ...accessibleResourceWhere(actor, scope),
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
-  }
-}
-
 export async function listWorkshopOrders(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
-  return prisma.workshopOrder.findMany({ where: scopedWorkshopOrderWhere(actor, scope), select: orderSelect,
+  return prisma.workshopOrder.findMany({ where: accessibleResourceWhere(actor, scope), select: orderSelect,
     take: 100, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }] })
 }
 
@@ -73,7 +66,7 @@ export async function updateWorkshopChecklist(
   const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
     const order = await tx.workshopOrder.findFirst({ where: { id, status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] },
-      ...scopedWorkshopOrderWhere(actor, scope) }, select: { id: true } })
+      ...accessibleResourceWhere(actor, scope) }, select: { id: true } })
     if (!order) return { type: 'not-available' as const }
     const item = await tx.workshopChecklistEntry.findUnique({ where: { workshopOrderId_code: { workshopOrderId: id, code: input.code } } })
     if (!item) return { type: 'not-available' as const }
@@ -94,7 +87,7 @@ export async function transitionWorkshopOrder(
 ) {
   const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
-    const order = await tx.workshopOrder.findFirst({ where: { id, ...scopedWorkshopOrderWhere(actor, scope) },
+    const order = await tx.workshopOrder.findFirst({ where: { id, ...accessibleResourceWhere(actor, scope) },
       select: { id: true, vehicleId: true, status: true, version: true } })
     if (!order) return { type: 'not-available' as const }
     if (order.version !== input.version) return { type: 'conflict' as const }
