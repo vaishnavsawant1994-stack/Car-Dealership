@@ -2,15 +2,19 @@
 
 import { useRouter } from 'next/navigation'
 import { useState, type FormEvent } from 'react'
+import { SalesDealCreateForm } from '@/components/admin/SalesDealCreateForm'
 
 type Draft = {
   id: string; vehiclePrice: number; discountAmount: number; estimatedOtherFees: number;
   estimatedSubtotal: number; currency: string; note: string | null; createdAt: string;
   createdBy: { name: string | null };
 }
-type Props = { inquiryId: string; currentPrice: number; canCreate: boolean; drafts: Draft[] }
+type Props = {
+  inquiryId: string; currentPrice: number; canCreate: boolean; drafts: Draft[]
+  canCreateDeal: boolean; existingDeal: { id: string; referenceNumber: string; status: string } | null
+}
 
-export function SalesQuoteDraftManager({ inquiryId, currentPrice, canCreate, drafts }: Props) {
+export function SalesQuoteDraftManager({ inquiryId, currentPrice, canCreate, drafts, canCreateDeal, existingDeal }: Props) {
   const router = useRouter()
   const [discount, setDiscount] = useState('0')
   const [fees, setFees] = useState('0')
@@ -87,5 +91,8 @@ export function SalesQuoteDraftManager({ inquiryId, currentPrice, canCreate, dra
         </li>)}</ul> : <p>No internal quote worksheets recorded for this enquiry.</p>}
       </div>
     </section>
+    <SalesDealCreateForm inquiryId={inquiryId}
+      quotes={drafts.map(({ id, estimatedSubtotal, currency, createdAt }) => ({ id, estimatedSubtotal, currency, createdAt }))}
+      canCreate={canCreateDeal} existingDeal={existingDeal} />
   </div>
 }

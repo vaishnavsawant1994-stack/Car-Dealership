@@ -122,6 +122,30 @@ enum VehicleStatus {
   ARCHIVED
 }
 
+enum SalesDealStatus {
+  OPEN
+  NEGOTIATION
+  WON
+  LOST
+  CANCELLED
+}
+
+enum SalesDealAcceptanceMethod {
+  SIGNED_ORDER_FORM
+  CUSTOMER_EMAIL
+  IN_PERSON_CONFIRMATION
+}
+
+enum SalesDealLossReason {
+  CUSTOMER_DECLINED
+  PURCHASED_ELSEWHERE
+  FINANCING_NOT_READY
+  VEHICLE_UNAVAILABLE
+  NO_RESPONSE
+  DUPLICATE
+  OTHER
+}
+
 enum VehicleImageCategory {
   EXTERIOR
   INTERIOR
@@ -201,6 +225,9 @@ model User {
   operationalActivities   OperationalActivity[]
   createdFollowUps        OperationalFollowUp[]         @relation("FollowUpCreatedBy")
   authoredSalesQuoteDrafts SalesQuoteDraft[] @relation("SalesQuoteDraftAuthor")
+  createdSalesDeals        SalesDeal[]        @relation("SalesDealCreator")
+  assignedSalesDeals       SalesDeal[]        @relation("SalesDealAssignee")
+  salesDealEvents          SalesDealEvent[]   @relation("SalesDealEventActor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -400,6 +427,7 @@ model Vehicle {
   favorites                Favorite[]
   inquiries                Inquiry[]
   salesQuoteDrafts         SalesQuoteDraft[]
+  salesDeals               SalesDeal[]
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
@@ -555,6 +583,7 @@ model Inquiry {
   vehicle                Vehicle?                    @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   messages               CustomerEngagementMessage[]
   salesQuoteDrafts        SalesQuoteDraft[]
+  salesDeals              SalesDeal[]
   createdAt              DateTime                    @default(now())
   updatedAt              DateTime                    @updatedAt
 
@@ -906,6 +935,7 @@ model Showroom {
   testDrives TestDrive[]
   sellRequests SellRequest[]
   contactMessages ContactMessage[]
+  salesDeals SalesDeal[]
 
   @@index([active])
   @@index([isPrimary])
@@ -1136,9 +1166,56 @@ model SalesQuoteDraft {
   currency           String   @default("INR")
   note               String?
   createdAt          DateTime @default(now())
+  salesDeal          SalesDeal?
 
   @@index([inquiryId, createdAt])
   @@index([vehicleId, createdAt])
+}
+
+/** Internal sales pipeline record only; it does not reserve or sell the vehicle. */
+model SalesDeal {
+  id                 String                    @id @default(cuid())
+  referenceNumber    String                    @unique
+  inquiryId          String
+  inquiry            Inquiry                   @relation(fields: [inquiryId], references: [id], onDelete: Restrict)
+  quoteDraftId       String                    @unique
+  quoteDraft         SalesQuoteDraft           @relation(fields: [quoteDraftId], references: [id], onDelete: Restrict)
+  vehicleId          String
+  vehicle            Vehicle                   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  showroomId         String?
+  showroom            Showroom?                 @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  assignedToId       String?
+  assignedTo         User?                     @relation("SalesDealAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById        String
+  createdBy          User                      @relation("SalesDealCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  status             SalesDealStatus           @default(OPEN)
+  version            Int                       @default(1)
+  acceptanceMethod   SalesDealAcceptanceMethod?
+  lossReason         SalesDealLossReason?
+  closedAt           DateTime?
+  events             SalesDealEvent[]
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@index([showroomId, assignedToId, status, updatedAt])
+  @@index([vehicleId, status])
+  @@index([inquiryId, createdAt])
+}
+
+/** Append-only transition record with constrained codes and no freeform customer data. */
+model SalesDealEvent {
+  id               String                    @id @default(cuid())
+  dealId           String
+  deal             SalesDeal                 @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  actorId          String
+  actor            User                      @relation("SalesDealEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  fromStatus       SalesDealStatus?
+  toStatus         SalesDealStatus
+  acceptanceMethod SalesDealAcceptanceMethod?
+  lossReason       SalesDealLossReason?
+  createdAt        DateTime                  @default(now())
+
+  @@index([dealId, createdAt])
 }
 
 enum CustomerDataRightsKind {
