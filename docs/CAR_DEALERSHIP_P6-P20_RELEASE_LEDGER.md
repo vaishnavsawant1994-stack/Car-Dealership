@@ -1,12 +1,12 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. P6–P20 PRs #38–#52 and the P21/P22 follow-ups #53–#55 are open and mergeable; none is merged. CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. P6–P20 PRs #38–#52, P21/P22 follow-ups #53–#55, P23 scope follow-up #59, and full-history scan #60 are open; none is merged. PRs #56–#58 were superseded. CI success is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; exact-head CI #398 passed. F: main and separate P1-05 worktrees are clean; broader child-record scope audit continues in #53 and #55. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; exact-head CI #398 passed. No F: edits were made; direct revalidation of that checkout is currently denied by workspace permissions. Broader child-record scope audit continues in #53, #55, and #59. |
 | P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Open, mergeable, ready for normal review; exact-head CI #315 passed. |
 | P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Open, mergeable, ready for normal review; exact-head CI #341 passed. |
 | P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Open, mergeable, ready for normal review; exact-head CI #342 passed. No payment processor or capture. |
@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Open, mergeable, ready for normal review; exact-head CI #390 passed. |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Open, mergeable, ready for normal review; exact-head CI #406 passed, including local cleanup path-traversal regression tests. No real bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Open, mergeable, ready for normal review; exact-head CI #394 passed, including all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Historical exact-head CI #407/#415/#416 passed. Current ledger head `b878241bbfe05f41b97c05f3757a3ff12639bd8c` passed exact-head Actions run #46124401322, including isolated database tests, production build, and browser acceptance. Release acceptance remains outstanding. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Historical exact-head CI #407/#415/#416 passed. P20 head `36ac75ccca85c886889fb2cce079621ba343f3f0` passed exact-head Actions run [#46126941647](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/46126941647), including isolated PostgreSQL tests, production build, and browser acceptance. This ledger refresh is documentation-only and is being revalidated by the current PR run. Release acceptance remains outstanding. |
 
 ## Data and deployment boundaries
 
@@ -29,7 +29,7 @@
 - The preview project's default branch remains empty and has no schema migration. No migration was applied to existing staging or production. No production or staging deployment was performed.
 - Vercel staging SSO/protection remains in place.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
-- The F: drive worktree and local databases were preserved; they were inspected read-only and were not overwritten.
+- No writes have been made to the F: checkout or local databases. The current session cannot read the F: checkout due workspace permissions; all available local worktrees and their uncommitted changes remain preserved.
 - P0-03 follow-up PR #54 removes the obsolete blanket commercial-database block while retaining explicit project, host, database-name, scheme, and legacy-target checks. Exact-head CI #408 passed; it remains open for normal review.
 - The dedicated Vercel roadmap-preview project requires SSO for every deployment and has no deployment. Its environment variables are preview-only. The Neon preview project's default branch `neondb` remains empty. A least-privilege read/write runtime role and sensitive preview-only `DATABASE_URL` are configured, but that URL still points to the empty default branch; an API attempt to retarget it to the validation branch was denied. A fresh 32-byte email-capture key and preview-only auth/site settings are stored. The isolated validation child branch holds the tested schema described above but is not the Vercel runtime target. Separate public/private object-storage buckets and non-secret settings are configured; S3 access and secret keys are still missing, so the isolation preflight still blocks a build. No preview deployment has been attempted. Existing staging/demo project settings, databases, and credentials were not changed.
 
