@@ -40,7 +40,11 @@ export class LocalImageStorage implements ImageStorageAdapter {
   }
   async deleteObject(storageKey: string) {
     const parts = storageKey.split('/')
-    if (parts.length !== 3 || parts[0] !== 'vehicles') throw new Error('INVALID_STORAGE_KEY')
+    if (parts.length !== 3 || parts[0] !== 'vehicles' ||
+      !/^[a-zA-Z0-9_-]+$/.test(parts[1]) ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$/.test(parts[2])) {
+      throw new Error('INVALID_STORAGE_KEY')
+    }
     const directory = path.join(this.root, parts[1])
     const name = path.parse(parts[2]).name
     await Promise.all([`${name}.webp`, ...Object.keys(sizes).map((variant) => `${name}-${variant}.webp`)].map((file) => unlink(path.join(directory, file)).catch(() => undefined)))
