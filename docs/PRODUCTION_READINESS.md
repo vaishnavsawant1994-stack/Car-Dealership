@@ -15,7 +15,7 @@
 ## Release gates
 
 - [ ] Reconcile the preserved F: checkout and P1-05 local work with PR #38; complete the broader resource and derived-record isolation review. P21 PR #53 covers inspections and linked quotes; P22 PR #55 covers private sell-request attachment reads.
-- [ ] Set repository privacy and complete historical credential exposure response.
+- [ ] Keep repository public at the owner's direction; complete the historical credential exposure scan and respond to any confirmed exposure.
 - [ ] Establish secure staging Super Admin recovery through private masked password entry.
 - [ ] Validate P0-06 authentication and real vehicle image upload/storage/variants/cleanup against an isolated S3-compatible test account with approved credentials.
 - [ ] Complete protected staging browser acceptance at desktop and mobile breakpoints while preserving Vercel SSO.
