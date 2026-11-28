@@ -11,4 +11,4 @@ Existing Brand, BodyType and Feature tables remain canonical. This work hardens 
 - The catalog edit form remounts when switching records and preserves the form node before awaiting a request; network errors restore the Save button instead of leaving it permanently busy.
 - Tests cover resource type spoofing, image URL rules, website URL rules, and valid branded/feature fixtures.
 
-No deletion of referenced records, uncontrolled catalog changes, external messaging or protected staging deployment is permitted by this feature PR. CI, independent review and final acceptance remain separate.
+No deletion of referenced records, uncontrolled catalog changes, external messaging or protected staging deployment is permitted by this feature PR. CI and final acceptance remain separate.
