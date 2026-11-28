@@ -407,6 +407,8 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     expect(emptyAnalytics.workshopOrders).toEqual([])
     expect(emptyAnalytics.afterSalesTasks).toEqual([])
 
+  })
+
   it('hides deals and finance records whose linked inquiry belongs to another showroom', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -520,6 +522,5 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       if (foreignShowroomId) await prisma.showroom.deleteMany({ where: { id: foreignShowroomId } })
       if (mainShowroomId) await prisma.showroom.deleteMany({ where: { id: mainShowroomId } })
     }
-  })
   })
 })
