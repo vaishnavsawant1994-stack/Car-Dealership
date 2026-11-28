@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { randomUUID } from 'node:crypto'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -11,7 +12,7 @@ export class LocalImageStorage implements ImageStorageAdapter {
   private root = path.join(process.cwd(), 'public', 'uploads', 'vehicles')
   createUploadUrl(input: { vehicleId: string; filename: string; contentType: string }) {
     const safe = input.filename.toLowerCase().replace(/[^a-z0-9.-]+/g, '-')
-    const storageKey = `vehicles/${input.vehicleId}/${Date.now()}-${safe}`
+    const storageKey = `vehicles/${input.vehicleId}/${randomUUID()}-${safe}`
     return Promise.resolve({ uploadUrl: `/api/admin/vehicles/${input.vehicleId}/images`, storageKey, method: 'POST' as const })
   }
   async completeUpload(input: { vehicleId: string; storageKey: string; buffer?: Buffer; contentType: string }): Promise<StoredImage> {
@@ -40,7 +41,11 @@ export class LocalImageStorage implements ImageStorageAdapter {
   }
   async deleteObject(storageKey: string) {
     const parts = storageKey.split('/')
-    if (parts.length !== 3 || parts[0] !== 'vehicles') throw new Error('INVALID_STORAGE_KEY')
+    if (parts.length !== 3 || parts[0] !== 'vehicles' ||
+      !/^[a-zA-Z0-9_-]+$/.test(parts[1]) ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,254}$/.test(parts[2])) {
+      throw new Error('INVALID_STORAGE_KEY')
+    }
     const directory = path.join(this.root, parts[1])
     const name = path.parse(parts[2]).name
     await Promise.all([`${name}.webp`, ...Object.keys(sizes).map((variant) => `${name}-${variant}.webp`)].map((file) => unlink(path.join(directory, file)).catch(() => undefined)))
