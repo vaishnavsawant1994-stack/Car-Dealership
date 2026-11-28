@@ -15,7 +15,7 @@ This is an integration and QA candidate, not a live product release. The origina
 
 ## Not complete or accepted
 
-- An independently validated P1-05 organization/showroom tenant isolation policy across *all* staff APIs and database queries; the owner's separate local Codex work must be reconciled.
+- Complete P1-05 organization/showroom isolation validation across all staff APIs and database queries, reconciling the owner's separate local work.
 - Full sales deal lifecycle, contract/quote approval, GST/RTO accounting, payments/settlements, buyer delivery, workshop, parts inventory, after-sales, omnichannel communications and marketing analytics.
 - Customer verified self-service opt-in, secure data export or lawful erasure approvals, retention and private file antivirus scanning.
 - Client-grade responsive browser/pixel QA on all required routes, live authenticated tests, reliable backup/restore and staged rollback.
