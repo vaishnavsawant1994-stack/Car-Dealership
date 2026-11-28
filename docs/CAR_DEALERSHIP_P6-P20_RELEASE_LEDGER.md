@@ -30,7 +30,7 @@
 - No live payment processing, customer messaging, or campaign delivery was enabled.
 - The F: drive worktree and local databases were preserved; they were inspected read-only and were not overwritten.
 - P0-03 follow-up PR #54 removes the obsolete blanket commercial-database block while retaining explicit project, host, database-name, scheme, and legacy-target checks. Exact-head CI #408 passed; it remains open for normal review.
-- A separate Vercel preview project was created with SSO required for all deployments. It has no deployment. A fresh Neon preview project and default branch were created and verified to contain zero public tables; no migration was run. Preview environment setup is incomplete because the provider's automatic review rejected adding the email-capture encryption key. No alternate secret-transfer path was used.
+- The dedicated Vercel roadmap-preview project requires SSO for every deployment and has no deployment. Its environment variables are preview-only. The separate Neon preview project `car-dealership-preview-db` has one new default branch, `neondb`, with no tables and zero bytes written. A fresh 32-byte email-capture key is stored as a sensitive Vercel preview-only variable; it was generated for this isolated preview and was not displayed. No migration was run. Preview remains incomplete: it has no `DATABASE_URL` or restricted runtime login, so no build or deployment has been attempted. Existing staging/demo project settings, databases, and credentials were not changed.
 
 ## Unresolved release gates
 
