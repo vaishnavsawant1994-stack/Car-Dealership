@@ -1,6 +1,6 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. PRs #38–#55 and #57 are open and mergeable; none is merged. PR #56 was closed as superseded. CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. P6–P20 PRs #38–#52 and the P21/P22 follow-ups #53–#55 are open and mergeable; none is merged. CI success is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Open, mergeable, ready for normal review; exact-head CI #390 passed. |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Open, mergeable, ready for normal review; exact-head CI #406 passed, including local cleanup path-traversal regression tests. No real bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Open, mergeable, ready for normal review; exact-head CI #394 passed, including all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Exact-head CI #407 passed; docs-only heads `0e0956a1a3f85b16f8de713ccabee2a3d7c19b36` and `85849702af866d693b1d64211efb38dff6a13499` passed CI #415 and #416, respectively, including all 55 browser tests. The current ledger update is documentation-only; release acceptance remains outstanding. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Historical exact-head CI #407/#415/#416 passed. Current ledger head `b878241bbfe05f41b97c05f3757a3ff12639bd8c` passed exact-head Actions run #46124401322, including isolated database tests, production build, and browser acceptance. Release acceptance remains outstanding. |
 
 ## Data and deployment boundaries
 
@@ -36,7 +36,7 @@
 ## Unresolved release gates
 
 - Repository remains public at the owner's direction. Before deployment, obtain a dedicated full-history credential scan and respond to any confirmed exposure. A pattern-only scan of the 433 commits reachable from 42 refs in the local P20 Git database found matches only in `.env.example`, CI, and database-isolation/health/logging/recovery tests (12 commits across 8 files). No dedicated scanner was installed, so this does not prove the entire GitHub history clean.
-- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`. P23 PR #57 carries delivery/workshop child-scope predicates onto the current P20 base; exact-head CI run #46122489499 passed on `f13d85f615cc15ef44d3359859e35302c01183e9`.
+- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
