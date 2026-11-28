@@ -4,6 +4,8 @@ import { adminError, conflictError, validationError } from '@/lib/admin/api'
 import { writeAuditLog } from '@/lib/admin/audit'
 import { canTransitionVehicle, statusTransitionNeedsReason } from '@/lib/admin/vehicle-workflow'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { vehicleStatusSchema } from '@/lib/validation/admin'
 
@@ -15,14 +17,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const parsed = vehicleStatusSchema.safeParse(body)
     if (!parsed.success) return validationError(parsed.error.flatten().fieldErrors)
     const actor = await authorizeAdminRequest(permissions[parsed.data.status])
+    const scope = await getActorShowroomScope(actor)
     const { id } = await context.params
-    const current = await prisma.vehicle.findUnique({ where: { id }, select: { status: true, version: true, stockNumber: true, published: true } })
+    const current = await prisma.vehicle.findFirst({ where: { id, ...showroomScopeWhere(scope) }, select: { status: true, version: true, stockNumber: true, published: true } })
     if (!current) return NextResponse.json({ error: { code: 'NOT_FOUND', message: 'Vehicle not found.' } }, { status: 404 })
     if (current.version !== parsed.data.version) return conflictError()
     if (!canTransitionVehicle(current.status, parsed.data.status)) return NextResponse.json({ error: { code: 'INVALID_TRANSITION', message: `${current.status} cannot transition to ${parsed.data.status}.` } }, { status: 422 })
     if (statusTransitionNeedsReason(current.status, parsed.data.status) && (!parsed.data.reason || parsed.data.reason.length < 5)) return NextResponse.json({ error: { code: 'REASON_REQUIRED', message: 'Provide a reason for this status change.' } }, { status: 400 })
     const vehicle = await prisma.$transaction(async (tx) => {
-      const result = await tx.vehicle.updateMany({ where: { id, version: parsed.data.version }, data: { status: parsed.data.status, featured: parsed.data.status === VehicleStatus.SOLD || parsed.data.status === VehicleStatus.ARCHIVED ? false : undefined, published: parsed.data.status === VehicleStatus.ARCHIVED ? false : undefined, updatedById: actor.id, version: { increment: 1 } } })
+      const result = await tx.vehicle.updateMany({ where: { id, version: parsed.data.version, ...showroomScopeWhere(scope) }, data: { status: parsed.data.status, featured: parsed.data.status === VehicleStatus.SOLD || parsed.data.status === VehicleStatus.ARCHIVED ? false : undefined, published: parsed.data.status === VehicleStatus.ARCHIVED ? false : undefined, updatedById: actor.id, version: { increment: 1 } } })
       if (!result.count) return null
       await tx.vehicleStatusHistory.create({ data: { vehicleId: id, fromStatus: current.status, toStatus: parsed.data.status, reason: parsed.data.reason, actorId: actor.id } })
       return tx.vehicle.findUniqueOrThrow({ where: { id } })

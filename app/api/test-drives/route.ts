@@ -6,6 +6,7 @@ import { getAuthenticatedUser } from '@/lib/auth/session'
 import { createReferenceNumber } from '@/lib/references'
 import { sendEngagementConfirmation, sendLeadNotification } from '@/lib/email/service'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { primaryShowroomId } from '@/lib/auth/showroom-scope'
 
 export async function POST(request: Request) {
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
@@ -18,18 +19,21 @@ export async function POST(request: Request) {
       getAuthenticatedUser(),
       prisma.vehicle.findFirst({
         where: { id: parsed.data.vehicleId, published: true, status: { in: ['AVAILABLE', 'RESERVED'] } },
-        select: { id: true, shortTitle: true, stockNumber: true },
+        select: { id: true, shortTitle: true, stockNumber: true, showroomId: true },
       }),
       prisma.testDrive.findFirst({ where: { vehicleId: parsed.data.vehicleId, email: parsed.data.email.toLowerCase(), preferredDate: parsed.data.preferredDate, status: { notIn: ['CANCELLED', 'REJECTED'] }, createdAt: { gt: new Date(Date.now() - 10 * 60_000) } }, select: { referenceNumber: true } }),
     ])
     if (!vehicle) return NextResponse.json({ error: { code: 'VEHICLE_UNAVAILABLE', message: 'This vehicle is no longer available for a test drive.' } }, { status: 409 })
     if (duplicate) return NextResponse.json({ error: { code: 'DUPLICATE_REQUEST', message: `A matching test drive already exists. Reference: ${duplicate.referenceNumber}` } }, { status: 409 })
     const referenceNumber = await createReferenceNumber('TD')
+    const showroomId = vehicle.showroomId ?? await primaryShowroomId()
+    if (!showroomId) return NextResponse.json({ error: { code: 'SUBMISSION_UNAVAILABLE', message: 'The showroom team is temporarily unavailable.' } }, { status: 503 })
     const testDrive = await prisma.testDrive.create({
       data: {
         referenceNumber,
         userId: user?.id,
         vehicleId: parsed.data.vehicleId,
+        showroomId,
         fullName: user?.name ?? parsed.data.name,
         phone: user?.phone ?? parsed.data.phone,
         email: user?.email ?? parsed.data.email.toLowerCase(),

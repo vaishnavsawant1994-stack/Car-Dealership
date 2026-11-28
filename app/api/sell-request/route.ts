@@ -6,6 +6,7 @@ import { prisma } from '@/lib/db/prisma'
 import { createReferenceNumber } from '@/lib/references'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
 import { deleteSellAttachment, storeSellAttachment, type StoredSellAttachment } from '@/lib/storage/sell-request-storage'
+import { primaryShowroomId } from '@/lib/auth/showroom-scope'
 
 export async function POST(request: Request) {
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
@@ -28,9 +29,12 @@ export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
     const reference = await createReferenceNumber('SELL')
+    const showroomId = await primaryShowroomId()
+    if (!showroomId) return NextResponse.json({ message: 'The showroom team is temporarily unavailable.' }, { status: 503 })
     const sellRequest = await prisma.sellRequest.create({
       data: {
         referenceNumber: reference,
+        showroomId,
         userId: user?.id,
         status: 'SUBMITTED',
         name: user?.name ?? result.data.name,

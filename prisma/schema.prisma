@@ -151,6 +151,21 @@ enum TestDriveStatus {
   NO_SHOW
 }
 
+enum VehicleInspectionStatus {
+  DRAFT
+  IN_PROGRESS
+  READY_FOR_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum VehicleCheckResult {
+  NOT_CHECKED
+  PASS
+  FAIL
+  NOT_APPLICABLE
+}
+
 model User {
   id                      String                        @id @default(cuid())
   name                    String?
@@ -178,10 +193,14 @@ model User {
   assignedContactMessages ContactMessage[]              @relation("AssignedContactMessages")
   createdVehicles         Vehicle[]                     @relation("VehicleCreatedBy")
   updatedVehicles         Vehicle[]                     @relation("VehicleUpdatedBy")
+  performedInspections    VehicleInspection[]           @relation("VehicleInspectionInspector")
+  reviewedInspections     VehicleInspection[]           @relation("VehicleInspectionReviewer")
+  uploadedInspectionEvidence VehicleInspectionEvidence[] @relation("InspectionEvidenceUploader")
   vehicleStatusChanges    VehicleStatusHistory[]
   operationalMessages     OperationalMessage[]
   operationalActivities   OperationalActivity[]
   createdFollowUps        OperationalFollowUp[]         @relation("FollowUpCreatedBy")
+  authoredSalesQuoteDrafts SalesQuoteDraft[] @relation("SalesQuoteDraftAuthor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -190,6 +209,9 @@ model User {
   contentRevisions        ContentRevision[]             @relation("ContentRevisionAuthor")
   publishedRevisions      ContentRevision[]             @relation("ContentRevisionPublisher")
   auditLogs               AuditLog[]
+  showroomAssignments     ShowroomStaffAssignment[]
+  dataRightsRequests      CustomerDataRightsRequest[] @relation("DataRightsCustomer")
+  createdDataRightsRequests CustomerDataRightsRequest[] @relation("DataRightsStaffCreator")
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
   notificationSettings    CustomerNotificationSettings?
@@ -322,6 +344,10 @@ model BodyType {
 
 model Vehicle {
   id                       String                 @id @default(cuid())
+  procurementRequestId     String?                @unique
+  procurementRequest       SellRequest?           @relation("ProcurementVehicle", fields: [procurementRequestId], references: [id], onDelete: Restrict)
+  showroomId               String?
+  showroom                 Showroom?              @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   slug                     String                 @unique
   stockNumber              String                 @unique
   brandId                  String
@@ -373,9 +399,11 @@ model Vehicle {
   features                 VehicleFeature[]
   favorites                Favorite[]
   inquiries                Inquiry[]
+  salesQuoteDrafts         SalesQuoteDraft[]
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
+  conditionInspections     VehicleInspection[]
   createdBy                User?                  @relation("VehicleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy                User?                  @relation("VehicleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
   createdAt                DateTime               @default(now())
@@ -398,6 +426,7 @@ model Vehicle {
   @@index([publishedAt])
   @@index([scheduledPublishAt])
   @@index([updatedById])
+  @@index([showroomId, status, published])
   @@index([published, status])
   @@index([brandId, published, status])
   @@index([bodyTypeId, published, status])
@@ -504,6 +533,8 @@ model Favorite {
 
 model Inquiry {
   id                     String                      @id @default(cuid())
+  showroomId             String?
+  showroom               Showroom?                   @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber        String                      @unique
   userId                 String?
   vehicleId              String?
@@ -523,6 +554,7 @@ model Inquiry {
   assignedTo             User?                       @relation("AssignedInquiries", fields: [assignedToId], references: [id], onDelete: SetNull)
   vehicle                Vehicle?                    @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
   messages               CustomerEngagementMessage[]
+  salesQuoteDrafts        SalesQuoteDraft[]
   createdAt              DateTime                    @default(now())
   updatedAt              DateTime                    @updatedAt
 
@@ -533,10 +565,13 @@ model Inquiry {
   @@index([priority])
   @@index([followUpAt])
   @@index([submittedAt])
+  @@index([showroomId, assignedToId, submittedAt])
 }
 
 model TestDrive {
   id                     String                      @id @default(cuid())
+  showroomId             String?
+  showroom               Showroom?                   @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber        String                      @unique
   userId                 String?
   vehicleId              String
@@ -572,10 +607,14 @@ model TestDrive {
   @@index([followUpAt])
   @@index([preferredDate])
   @@index([submittedAt])
+  @@index([showroomId, assignedToId, submittedAt])
 }
 
 model SellRequest {
   id              String                  @id @default(cuid())
+  procuredVehicle Vehicle?                @relation("ProcurementVehicle")
+  showroomId      String?
+  showroom        Showroom?               @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber String                  @unique
   userId          String?
   assignedToId    String?
@@ -609,6 +648,7 @@ model SellRequest {
   @@index([priority])
   @@index([followUpAt])
   @@index([createdAt])
+  @@index([showroomId, assignedToId, createdAt])
 }
 
 model SellRequestAttachment {
@@ -754,6 +794,8 @@ model ReferenceCounter {
 
 model ContactMessage {
   id              String               @id @default(cuid())
+  showroomId      String?
+  showroom        Showroom?            @relation(fields: [showroomId], references: [id], onDelete: Restrict)
   referenceNumber String               @unique
   name            String
   phone           String
@@ -776,6 +818,7 @@ model ContactMessage {
   @@index([priority])
   @@index([assignedToId])
   @@index([followUpAt])
+  @@index([showroomId, assignedToId, createdAt])
 }
 
 model NewsletterSubscriber {
@@ -856,6 +899,13 @@ model Showroom {
   isPrimary    Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  version      Int      @default(1)
+  staffAssignments ShowroomStaffAssignment[]
+  vehicles Vehicle[]
+  inquiries Inquiry[]
+  testDrives TestDrive[]
+  sellRequests SellRequest[]
+  contactMessages ContactMessage[]
 
   @@index([active])
   @@index([isPrimary])
@@ -948,6 +998,20 @@ model AdminPreference {
   user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+
+/** Explicit staff-to-showroom association; no duplicate branch or user table. */
+model ShowroomStaffAssignment {
+  id         String   @id @default(cuid())
+  showroomId String
+  userId     String
+  createdAt  DateTime @default(now())
+  showroom   Showroom @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([showroomId, userId])
+  @@index([userId])
+}
+
 model AuditLog {
   id           String   @id @default(cuid())
   actorId      String?
@@ -997,4 +1061,110 @@ model CapturedEmail {
 
   @@index([environment, createdAt])
   @@index([expiresAt])
+}
+
+
+model VehicleInspection {
+  id             String                  @id @default(cuid())
+  vehicleId      String
+  vehicle        Vehicle                 @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  inspectorId    String
+  inspector      User                    @relation("VehicleInspectionInspector", fields: [inspectorId], references: [id], onDelete: Restrict)
+  reviewerId     String?
+  reviewer       User?                   @relation("VehicleInspectionReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  status         VehicleInspectionStatus @default(DRAFT)
+  version        Int                     @default(1)
+  reviewNote     String?
+  submittedAt    DateTime?
+  reviewedAt     DateTime?
+  checks         VehicleInspectionCheck[]
+  evidence       VehicleInspectionEvidence[]
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  @@index([vehicleId, createdAt])
+  @@index([inspectorId, status])
+  @@index([status, updatedAt])
+}
+
+model VehicleInspectionCheck {
+  id           String              @id @default(cuid())
+  inspectionId String
+  inspection   VehicleInspection   @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  code         String
+  category     String
+  result       VehicleCheckResult  @default(NOT_CHECKED)
+  remarks      String?
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([inspectionId, code])
+  @@index([category])
+}
+
+
+model VehicleInspectionEvidence {
+  id           String            @id @default(cuid())
+  inspectionId String
+  inspection   VehicleInspection @relation(fields: [inspectionId], references: [id], onDelete: Restrict)
+  checkCode    String
+  storageKey   String            @unique
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  checksum     String
+  uploadedById String
+  uploadedBy   User              @relation("InspectionEvidenceUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+  createdAt    DateTime          @default(now())
+
+  @@unique([inspectionId, checksum])
+  @@index([inspectionId, checkCode, createdAt])
+}
+
+/** Internal indicative price worksheet. Never a tax invoice or public offer. */
+model SalesQuoteDraft {
+  id                 String   @id @default(cuid())
+  inquiryId          String
+  inquiry            Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Restrict)
+  vehicleId          String
+  vehicle            Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  createdById        String
+  createdBy          User     @relation("SalesQuoteDraftAuthor", fields: [createdById], references: [id], onDelete: Restrict)
+  vehiclePrice       Int
+  discountAmount     Int      @default(0)
+  estimatedOtherFees Int      @default(0)
+  estimatedSubtotal  Int
+  currency           String   @default("INR")
+  note               String?
+  createdAt          DateTime @default(now())
+
+  @@index([inquiryId, createdAt])
+  @@index([vehicleId, createdAt])
+}
+
+enum CustomerDataRightsKind {
+  ACCESS
+  RECTIFICATION
+  ERASURE
+}
+
+enum CustomerDataRightsStatus {
+  PENDING_ID_VERIFICATION
+  UNDER_MANUAL_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model CustomerDataRightsRequest {
+  id          String                   @id @default(cuid())
+  customerId  String
+  customer    User                     @relation("DataRightsCustomer", fields: [customerId], references: [id], onDelete: Restrict)
+  createdById String
+  createdBy   User                     @relation("DataRightsStaffCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  kind        CustomerDataRightsKind
+  status      CustomerDataRightsStatus @default(PENDING_ID_VERIFICATION)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  @@index([customerId, createdAt])
+  @@index([status, createdAt])
 }

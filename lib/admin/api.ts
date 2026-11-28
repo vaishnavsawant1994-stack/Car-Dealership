@@ -4,6 +4,7 @@ import { AdminPermissionError } from '@/lib/auth/require-permission'
 export function adminError(error: unknown) {
   if (error instanceof AdminPermissionError) return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'Your staff role does not permit this operation.' } }, { status: 403 })
   if (error instanceof Error && error.message === 'ASSIGNMENT_FORBIDDEN') return NextResponse.json({ error: { code: 'FORBIDDEN', message: 'You can only assign records within your permitted queue.' } }, { status: 403 })
+  if (error instanceof Error && error.message === 'ASSIGNEE_OUTSIDE_SHOWROOM') return NextResponse.json({ error: { code: 'ASSIGNEE_OUTSIDE_SHOWROOM', message: 'Assign this record only to active staff assigned to its showroom.' } }, { status: 422 })
   console.error('admin_operation_failed', { error })
   return NextResponse.json({ error: { code: 'OPERATION_FAILED', message: 'The admin operation could not be completed.' } }, { status: 500 })
 }

@@ -14,10 +14,11 @@ import { useFocusTrap } from '@/lib/hooks/use-focus-trap'
 export type AdminNavItem = { label: string; href: string; icon: string }
 
 const icons: Record<string, typeof LayoutDashboard> = {
-  dashboard: LayoutDashboard, vehicles: CarFront, brands: Tags, bodyTypes: Boxes, features: Wrench,
-  enquiries: MessageSquareText, testDrives: ClipboardCheck, sellRequests: CarFront, contacts: ContactRound,
+  dashboard: LayoutDashboard, vehicles: CarFront, inspection: ClipboardCheck, brands: Tags, bodyTypes: Boxes, features: Wrench,
+  enquiries: MessageSquareText, sales: CircleGauge, testDrives: ClipboardCheck, sellRequests: CarFront, procurement: ClipboardCheck, contacts: ContactRound, customers: ContactRound,
   testimonials: Star, gallery: GalleryHorizontal, content: Files, newsletter: FileImage, showrooms: Building2,
-  users: UsersRound, settings: Settings, audit: ShieldCheck,
+  users: UsersRound, roles: ShieldCheck, organisation: Building2, settings: Settings, audit: ShieldCheck,
+  access: ShieldCheck,
 }
 
 export function AdminShell({ children, navGroups, name, role, unread }: { children: ReactNode; navGroups: Array<{ label: string; items: AdminNavItem[] }>; name: string; role: string; unread: number }) {

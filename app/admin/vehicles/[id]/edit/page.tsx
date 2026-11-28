@@ -3,11 +3,14 @@ import { AdminPageHeader } from '@/components/admin/AdminPrimitives'
 import { VehicleForm } from '@/components/admin/VehicleForm'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { prisma } from '@/lib/db/prisma'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { showroomScopeWhere } from '@/lib/auth/admin-resource-policy'
 
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
-  await requirePermission('vehicle.update')
+  const actor = await requirePermission('vehicle.update')
+  const showroom = showroomScopeWhere(await getActorShowroomScope(actor))
   const { id } = await params
-  const [vehicle, brands, bodyTypes, features] = await Promise.all([prisma.vehicle.findUnique({ where: { id }, include: { features: { select: { featureId: true } } } }), prisma.brand.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }), prisma.bodyType.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }), prisma.feature.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }], select: { id: true, name: true, category: true } })])
+  const [vehicle, brands, bodyTypes, features] = await Promise.all([prisma.vehicle.findFirst({ where: { id, ...showroom }, include: { features: { select: { featureId: true } } } }), prisma.brand.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }), prisma.bodyType.findMany({ where: { active: true }, orderBy: { name: 'asc' }, select: { id: true, name: true } }), prisma.feature.findMany({ where: { active: true }, orderBy: [{ category: 'asc' }, { name: 'asc' }], select: { id: true, name: true, category: true } })])
   if (!vehicle) notFound()
   const formVehicle = {
     id: vehicle.id,
