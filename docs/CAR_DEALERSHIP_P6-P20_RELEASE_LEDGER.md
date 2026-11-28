@@ -35,7 +35,7 @@
 
 ## Unresolved release gates
 
-- Repository remains public at the owner's direction. Before deployment, obtain a dedicated full-history credential scan and respond to any confirmed exposure. A pattern-only scan of the 433 commits reachable from 42 refs in the local P20 Git database found matches only in `.env.example`, CI, and database-isolation/health/logging/recovery tests (12 commits across 8 files). No dedicated scanner was installed, so this does not prove the entire GitHub history clean.
+- Repository remains public at the owner's direction. PR #60 adds a pinned Gitleaks full-history scan and exact-fingerprint false-positive handling. Its exact-head run 3 passed after scanning 700 commits and reviewing three findings: two deterministic sandbox test idempotency keys and one S3 environment-variable identifier. No real credential was confirmed in those findings. Re-run the scanner on the final release commit after pending PRs merge.
 - P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
