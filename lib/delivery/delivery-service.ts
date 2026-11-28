@@ -29,18 +29,18 @@ function dealShowroomWhere(scope: Awaited<ReturnType<typeof getActorShowroomScop
 }
 
 function eligibleDealWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  const base = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
+  const resourceScope = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
     ? showroomScopeWhere(scope)
     : accessibleResourceWhere(actor, scope)
-  return { ...base, ...dealShowroomWhere(scope) }
+  return { ...resourceScope, ...dealShowroomWhere(scope) }
 }
 
 function deliveryWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  const base = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
+  const resourceScope = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
     ? showroomScopeWhere(scope)
     : accessibleResourceWhere(actor, scope)
   return {
-    ...base,
+    ...resourceScope,
     ...(!scope.global ? {
       vehicle: { is: showroomScopeWhere(scope) },
       deal: { is: dealShowroomWhere(scope) },
