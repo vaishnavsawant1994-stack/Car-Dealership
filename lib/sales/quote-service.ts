@@ -32,7 +32,10 @@ export async function getSalesQuoteDrafts(inquiryId: string, actor: AdminActor) 
   })
   if (!inquiry) return null
   const drafts = await prisma.salesQuoteDraft.findMany({
-    where: { inquiryId }, take: 50, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    where: {
+      inquiryId,
+      inquiry: { is: accessibleQuoteInquiryWhere(actor, scope) },
+    }, take: 50, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     select: { id: true, vehiclePrice: true, discountAmount: true,
       estimatedOtherFees: true, estimatedSubtotal: true, currency: true,
       note: true, createdAt: true, createdBy: { select: { name: true } } },
