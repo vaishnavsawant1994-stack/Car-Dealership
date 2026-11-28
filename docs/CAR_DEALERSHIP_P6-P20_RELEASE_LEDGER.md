@@ -20,7 +20,7 @@
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Open, mergeable, ready for normal review; exact-head CI #390 passed. |
 | P18 | S3 original and variant object cleanup, with partial-write cleanup | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Open, mergeable, ready for normal review; exact-head CI #406 passed, including local cleanup path-traversal regression tests. No real bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Open, mergeable, ready for normal review; exact-head CI #394 passed, including all 55 browser tests. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Open, mergeable, ready for normal review; exact-head CI #407 passed. The docs-only head `0e0956a1a3f85b16f8de713ccabee2a3d7c19b36` also passed exact-head CI #415, including all 55 browser tests. Release acceptance remains outstanding. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Exact-head CI #407 passed; docs-only heads `0e0956a1a3f85b16f8de713ccabee2a3d7c19b36` and `85849702af866d693b1d64211efb38dff6a13499` passed CI #415 and #416, respectively, including all 55 browser tests. The current ledger update is documentation-only; release acceptance remains outstanding. |
 
 ## Data and deployment boundaries
 
