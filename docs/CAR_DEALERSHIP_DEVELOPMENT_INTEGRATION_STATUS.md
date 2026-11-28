@@ -19,7 +19,7 @@ This branch consolidates the remotely available and independently tested Car Dea
 ### Required final release gates (deferred by owner, not waived)
 
 - Repository privacy and historical credential exposure response.
-- Independent security review and secure staging administrator password recovery via private masked input.
+- Secure staging administrator password recovery via private masked input.
 - P0-06 authenticated user/login/logout and full vehicle image upload/storage/variants/cleanup acceptance.
 - P0-07 validated backup/restore and P0-08 release monitoring/rollback.
 - Versioned schema migration and branch/tenant isolation for the correct approved database.
