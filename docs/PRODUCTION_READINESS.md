@@ -1,6 +1,6 @@
 # Production readiness
 
-**State: engineering review candidate; not approved for staging migration, production release, or public client demo.** All development work is isolated in dependency-ordered draft pull requests. Production and existing protected staging were not modified.
+**State: engineering review candidate; not approved for staging migration, production release, or public client demo.** Development work is in dependency-ordered open pull requests, none merged. Production and existing protected staging were not modified.
 
 ## Implemented product capabilities
 
@@ -10,7 +10,7 @@
 - Public newsletter signup and campaign sending remain disabled; campaign activation is blocked in code and staff controls cannot subscribe a record.
 - Showroom-scoped operational counts for recent sales and current delivery, workshop, and after-sales queues.
 - S3 vehicle image adapter now removes original and variant objects on cleanup and attempts cleanup after partial writes. Provider integration is not yet proven.
-- CI validates migrations and tests on a new disposable PostgreSQL instance. P19's prior head passed all 55 browser tests in CI #258; the refreshed integrated P19 head is undergoing exact-head CI #290.
+- CI validates migrations and tests on disposable PostgreSQL; P19 exact-head CI #394 passed all 55 browser tests. A separate temporary Neon preview child branch accepted all 22 migration SQL files (60 tables, 32 enums, 100 foreign keys), but the Prisma migration engine and migration history were not exercised.
 
 ## Release gates
 
@@ -19,7 +19,7 @@
 - [ ] Establish secure staging Super Admin recovery through private masked password entry.
 - [ ] Validate P0-06 authentication and real vehicle image upload/storage/variants/cleanup against an isolated S3-compatible test account with approved credentials.
 - [ ] Complete protected staging browser acceptance at desktop and mobile breakpoints while preserving Vercel SSO.
-- [ ] Confirm isolated preview database identity, backup/restore drill, monitoring and tested rollback (P0-07/P0-08).
+- [ ] Point the protected preview runtime at a schema-initialized branch after Prisma migration-engine validation; complete backup/restore, monitoring and tested rollback (P0-07/P0-08). S3 access/secret keys are still missing, so the build preflight remains blocked.
 - [ ] Obtain explicit release acceptance before staging migration, deployment, or client-facing demo.
 
 Live payment capture, external messaging, newsletter delivery, and production migrations are intentionally unavailable in the development slices. They require separate operational and security acceptance.
