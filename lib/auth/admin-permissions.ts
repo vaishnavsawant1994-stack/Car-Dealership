@@ -8,7 +8,7 @@ export const adminPermissions = [
   'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
-  'finance.view', 'finance.update',
+  'analytics.view', 'finance.view', 'finance.update',
   'delivery.view', 'delivery.update', 'delivery.settlementVerify', 'afterSales.view', 'afterSales.update',
   'workshop.view', 'workshop.update', 'parts.view', 'parts.update',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
@@ -28,7 +28,7 @@ const sales: AdminPermission[] = [
 ]
 
 const operations: AdminPermission[] = [
-  'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
+  'dashboard.view', 'analytics.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
   'brand.manage', 'bodyType.manage', 'feature.manage',
   'delivery.view', 'delivery.update', 'afterSales.view', 'afterSales.update',
   'workshop.view', 'workshop.update',
