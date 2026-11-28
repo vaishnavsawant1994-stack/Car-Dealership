@@ -303,7 +303,7 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       deliveryCase: { status: DeliveryCaseStatus.HANDED_OVER, afterSalesTasks: [{ status: 'COMPLETED' }] } })
     expect(customerPurchases[0]).not.toHaveProperty('quoteDraft')
     expect(await listCustomerPurchases(otherCustomer.id)).toHaveLength(0)
-    const detail = await getSalesDeal(opened.data.id, sales)
+    const detail = await getSalesDeal(opened.data.id, finance)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
     ])
