@@ -137,7 +137,7 @@ describe('P7 internal sales deal lifecycle', () => {
     const worksheets = await listSalesInvoiceDrafts(finance)
     expect(worksheets.map((draft) => draft.id)).toContain(invoice.data.id)
     expect((await createSalesInvoiceDraft(opened.data.id, finance)).type).toBe('already-created')
-    const detail = await getSalesDeal(opened.data.id, sales)
+    const detail = await getSalesDeal(opened.data.id, finance)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
     ])
