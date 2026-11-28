@@ -24,7 +24,7 @@
 
 ## Data and deployment boundaries
 
-- CI exercises migrations against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
+- Exact-head P20 CI [run 46128834680](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/46128834680) runs `npx prisma migrate deploy` followed by `npm run db:seed:ci` against a fresh loopback PostgreSQL 16 container named `car_dealership_test`, validating the Prisma migration engine and seed path in isolation.
 - A second isolated check executed the 22 current Prisma migration SQL files (472 statements) in order, one transaction per migration, on fresh Neon preview child branch `car-dealership-migration-qa-compute`. It produced 60 public tables (matching 60 Prisma models), 32 enums, and 100 foreign keys. A synthetic preview fingerprint row was added; the branch has no users, vehicles, or showrooms. This used direct migration SQL, not Prisma's migration engine, so the `_prisma_migrations` history was not initialized and the branch is validation-only.
 - The preview project's default branch remains empty and has no schema migration. No migration was applied to existing staging or production. No production or staging deployment was performed.
 - Vercel staging SSO/protection remains in place.
