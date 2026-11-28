@@ -1,27 +1,27 @@
-# Production Readiness
+# Production readiness
 
-## Completed foundation
+**State: engineering review candidate; not approved for staging migration, production release, or public client demo.** All development work is isolated in dependency-ordered draft pull requests. Production and existing protected staging were not modified.
 
-- Next.js App Router public website and responsive shared interface
-- PostgreSQL Docker development environment
-- Prisma migration history and deterministic catalogue seed
-- Database-backed homepage, inventory, vehicle details, brands, body types and search
-- Server-side filtering, sorting and pagination
-- Persisted vehicle enquiries and test-drive requests
-- Public-safe API errors, loading states, 404 behavior and canonical redirects
-- Unit, PostgreSQL integration and Playwright coverage for the inventory milestone
+## Implemented product capabilities
 
-## Remaining production work
+- Public inventory and vehicle experience, responsive customer and staff applications, authentication, admin operations, and the existing showroom/role policy foundations.
+- Sales deal lifecycle, finance worksheet/invoice draft, deterministic payment sandbox simulation, delivery and transfer, workshop, parts stock ledger, and after-sales tasks.
+- Read-only verified customer purchase portal and audited channel-specific notification consent settings.
+- Public newsletter signup and campaign sending remain disabled; campaign activation is blocked in code and staff controls cannot subscribe a record.
+- Showroom-scoped operational counts for recent sales and current delivery, workshop, and after-sales queues.
+- S3 vehicle image adapter now removes original and variant objects on cleanup and attempts cleanup after partial writes. Provider integration is not yet proven.
+- CI validates migrations and tests on a new disposable PostgreSQL instance. P19's prior head passed all 55 browser tests in CI #258; the refreshed integrated P19 head is undergoing exact-head CI #290.
 
-- Authentication, customer account workflows and role enforcement
-- Admin inventory/content management and tagged cache invalidation
-- Authenticated favourites and compare workflow
-- Object storage for vehicle media and private documents
-- Transactional email delivery and staff notifications
-- Rate limiting, bot controls and additional CSRF review
-- Production database backup/restore drills and secret management
-- Observability, deployment configuration and final visual-regression baselines
+## Release gates
 
-## Next recommended phase
+- [ ] Reconcile the preserved F: checkout and P1-05 local work with PR #38; complete the broader resource and derived-record isolation review.
+- [ ] Set repository privacy and complete historical credential exposure response.
+- [ ] Establish secure staging Super Admin recovery through private masked password entry.
+- [ ] Validate P0-06 authentication and real vehicle image upload/storage/variants/cleanup against an isolated S3-compatible test account with approved credentials.
+- [ ] Complete protected staging browser acceptance at desktop and mobile breakpoints while preserving Vercel SSO.
+- [ ] Confirm isolated preview database identity, backup/restore drill, monitoring and tested rollback (P0-07/P0-08).
+- [ ] Obtain explicit release acceptance before staging migration, deployment, or client-facing demo.
 
-Build authentication and the admin vehicle-management workflow against the established inventory schema. Add tagged revalidation after admin mutations before introducing longer-lived public caching.
+Live payment capture, external messaging, newsletter delivery, and production migrations are intentionally unavailable in the development slices. They require separate operational and security acceptance.
+
+See [CAR_DEALERSHIP_P6-P20_RELEASE_LEDGER.md](CAR_DEALERSHIP_P6-P20_RELEASE_LEDGER.md) for the ordered PRs, CI evidence, and phase status.
