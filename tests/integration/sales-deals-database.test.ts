@@ -253,8 +253,9 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     deliveryCaseId = openedDelivery.data.id
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
+    const peerEditableDeliveryItem = openedDelivery.data.items.find((item) => item.code !== DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED)!
     expect(await updateDeliveryChecklistItem(deliveryCaseId, peer, {
-      code: openedDelivery.data.items[0].code, completed: true, version: openedDelivery.data.items[0].version,
+      code: peerEditableDeliveryItem.code, completed: true, version: peerEditableDeliveryItem.version,
     })).toMatchObject({ type: 'not-available' })
     expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
     expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
