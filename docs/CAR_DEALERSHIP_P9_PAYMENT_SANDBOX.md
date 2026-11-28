@@ -4,7 +4,7 @@
 
 - Added a provider interface with a deterministic local simulator. It makes no network requests and accepts no card, bank, token, or customer payment credentials.
 - Added an explicit environment guard: payments default to disabled and the simulator is enabled only when `PAYMENT_MODE=sandbox` and `APP_ENV` is `test` or protected `preview`. `live`, staging, demo, local, and commercial modes remain disabled.
-- Added idempotent synthetic attempts against finance worksheets. Attempts record only an INR amount snapshot, simulation outcome, actor, and synthetic reference; no invoice/deal state is changed.
+- Added idempotent synthetic attempts against finance worksheets. Attempts record only an INR amount snapshot, simulation outcome, actor, and synthetic reference; no invoice/deal state is changed. Reads and writes retain both showroom and assignment scope across the deal, inquiry, vehicle, and worksheet.
 - Added a gated admin UI action, private API, audit events, migration checks, and replay/conflict handling.
 
 ## Explicit limits
