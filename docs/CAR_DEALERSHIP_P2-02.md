@@ -16,4 +16,4 @@
 
 P2-03: controlled procurement intake conversion/identity and document requirements, designed after P1-05 resource-boundary integration. P2-02 is evidence visibility, not a new inspection write engine or full legal acquisition.
 
-Remain on isolated feature branches until integration review. The user explicitly deferred repository privacy, secure Super Admin login and independent security review to final release acceptance; do not weaken or misrepresent these controls.
+Remain on isolated feature branches until integration review. The owner chose to keep the repository public; historical credential exposure response and secure Super Admin login remain release acceptance items. Do not weaken or misrepresent these controls.
