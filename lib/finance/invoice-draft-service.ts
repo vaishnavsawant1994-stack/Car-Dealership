@@ -14,7 +14,10 @@ function invoiceDraftReference() {
 function dealShowroomWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
   return {
     ...showroomScopeWhere(scope),
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+    ...(!scope.global ? {
+      inquiry: { is: { showroomId: { in: [...scope.showroomIds] } } },
+      vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } },
+    } : {}),
   }
 }
 
@@ -87,7 +90,7 @@ export async function createSalesInvoiceDraft(dealId: string, actor: AdminActor)
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      const existing = await prisma.salesInvoiceDraft.findUnique({ where: { dealId }, select: { id: true, referenceNumber: true } })
+      const existing = await prisma.salesInvoiceDraft.findFirst({ where: { dealId, deal: dealShowroomWhere(scope) }, select: { id: true, referenceNumber: true } })
       if (existing) return { type: 'already-created' as const, data: existing }
       throw error
     }
