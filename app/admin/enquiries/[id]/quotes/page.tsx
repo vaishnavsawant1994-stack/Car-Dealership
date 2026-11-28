@@ -5,11 +5,14 @@ import { SalesQuoteDraftManager } from '@/components/admin/SalesQuoteDraftManage
 import { hasPermission } from '@/lib/auth/admin-permissions'
 import { requirePermission } from '@/lib/auth/require-permission'
 import { getSalesQuoteDrafts } from '@/lib/sales/quote-service'
+import { getActiveSalesDealForInquiry } from '@/lib/sales/deal-service'
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const actor = await requirePermission('enquiry.view')
   const { id } = await params
-  const data = await getSalesQuoteDrafts(id, actor)
+  const [data, activeDeal] = await Promise.all([
+    getSalesQuoteDrafts(id, actor), getActiveSalesDealForInquiry(id, actor),
+  ])
   if (!data) notFound()
   return <>
     <AdminPageHeader title="Internal Sales Quote Drafts"
@@ -22,6 +25,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
     />
     <SalesQuoteDraftManager inquiryId={id} currentPrice={data.inquiry.vehicle?.price ?? 0}
       canCreate={data.canCreate && hasPermission(actor.role, 'enquiry.update')}
+      canCreateDeal={data.canCreate && !!data.drafts.length && hasPermission(actor.role, 'enquiry.update') && !activeDeal}
+      existingDeal={activeDeal}
       drafts={data.drafts.map((draft) => ({ ...draft, createdAt: draft.createdAt.toISOString() }))} />
   </>
 }
