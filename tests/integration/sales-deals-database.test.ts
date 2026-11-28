@@ -12,6 +12,7 @@ import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } fr
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
 import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
+import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -22,11 +23,28 @@ let invoiceDraftId = ''
 let deliveryCaseId = ''
 const sandboxAttemptIds: string[] = []
 const workshopOrderIds: string[] = []
+const partIds: string[] = []
+const partRequestIds: string[] = []
 const originalPaymentMode = process.env.PAYMENT_MODE
 const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (partRequestIds.length) {
+    await prisma.auditLog.deleteMany({ where: { entity: 'WorkshopPartRequest', entityId: { in: partRequestIds } } })
+    await prisma.workshopPartRequest.deleteMany({ where: { id: { in: partRequestIds } } })
+  }
+  if (partIds.length) {
+    const movements = await prisma.partInventoryMovement.findMany({ where: { partId: { in: partIds } }, select: { id: true } })
+    const movementIds = movements.map(({ id }) => id)
+    await prisma.auditLog.deleteMany({ where: { OR: [
+      { entity: 'InventoryPart', entityId: { in: partIds } },
+      { resourceType: 'InventoryPart', resourceId: { in: partIds } },
+      ...(movementIds.length ? [{ entity: 'PartInventoryMovement', entityId: { in: movementIds } }, { resourceType: 'PartInventoryMovement', resourceId: { in: movementIds } }] : []),
+    ] } })
+    if (movementIds.length) await prisma.partInventoryMovement.deleteMany({ where: { id: { in: movementIds } } })
+    await prisma.inventoryPart.deleteMany({ where: { id: { in: partIds } } })
+  }
   if (workshopOrderIds.length) {
     await prisma.auditLog.deleteMany({ where: { OR: [
       { entity: 'WorkshopOrder', entityId: { in: workshopOrderIds } },
@@ -67,7 +85,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
+describe('P7-P12 internal sales, finance, delivery, workshop, and parts lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -105,8 +123,12 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
       email: `p11-workshop-${suffix}@car-dealership.test`, name: 'Fictional P11 Workshop',
       role: UserRole.WORKSHOP, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
-    userIds.push(sales.id, peer.id, finance.id, operations.id, workshop.id)
-    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance, operations, workshop].map((user) => ({ userId: user.id, showroomId })) })
+    const partsManager = await prisma.user.create({ data: {
+      email: `p12-parts-manager-${suffix}@car-dealership.test`, name: 'Fictional P12 Parts Manager',
+      role: UserRole.PARTS_MANAGER, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(sales.id, peer.id, finance.id, operations.id, workshop.id, partsManager.id)
+    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance, operations, workshop, partsManager].map((user) => ({ userId: user.id, showroomId })) })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -249,6 +271,12 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
     if (openedWorkshop.type !== 'created') return
     workshopOrderIds.push(openedWorkshop.data.id)
     expect((await createWorkshopOrder(vehicleId, workshop, WorkshopJobType.REPAIR)).type).toBe('already-active')
+    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
+    const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
+    expect(scheduled.type).toBe('updated')
+    const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
+    expect(started.type).toBe('updated')
+    expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
     const foreignP11Showroom = await prisma.showroom.create({ data: {
       name: `Fictional Foreign P11 ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
       state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
@@ -266,11 +294,35 @@ describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
       await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
-    const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
-    expect(scheduled.type).toBe('updated')
-    const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
-    expect(started.type).toBe('updated')
-    expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
+    const part = await createPartAndReceive({ sku: `P12-${suffix}`, name: 'Fictional filter', unit: 'each', showroomId, quantity: '2', reason: 'Synthetic integration test opening stock' }, partsManager)
+    expect(part.type).toBe('created')
+    if (part.type !== 'created') return
+    partIds.push(part.data.id)
+    const requested = await createWorkshopPartRequest({ workshopOrderId: openedWorkshop.data.id, partId: part.data.id, quantity: '1' }, workshop)
+    expect(requested.type).toBe('requested')
+    if (requested.type !== 'requested') return
+    partRequestIds.push(requested.data.id)
+    const foreignP12Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P12 ${suffix}`, address: 'Synthetic Test Road, 4', city: 'Test City',
+      state: 'Test State', postalCode: '000004', phone: 'Synthetic only',
+      email: `p12-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP12Showroom.id } })
+      expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(false)
+      expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP12Showroom.id } })
+    }
+    expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(true)
+    expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'issued' })
+    const excess = await createWorkshopPartRequest({ workshopOrderId: openedWorkshop.data.id, partId: part.data.id, quantity: '3' }, workshop)
+    expect(excess.type).toBe('requested')
+    if (excess.type !== 'requested') return
+    partRequestIds.push(excess.data.id)
+    expect(await issueWorkshopPartRequest({ id: excess.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'insufficient-stock' })
+    expect((await listParts(workshop)).stocks.find((stock) => stock.partId === part.data.id)?.quantity).toBe('1')
     for (const item of openedWorkshop.data.checklist) {
       expect(await updateWorkshopChecklist(openedWorkshop.data.id, workshop, { code: item.code, completed: true, version: item.version })).toMatchObject({ type: 'updated' })
     }
