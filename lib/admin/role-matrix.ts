@@ -14,7 +14,7 @@ const descriptions: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Dealership administrator: routine staff and business operations, excluding owner-only actions.',
   [UserRole.OPERATIONS]: 'Vehicle, inspection, procurement and operational coordination.',
   [UserRole.SALES]: 'Sales enquiries, test-drive coordination and customer communications.',
-  [UserRole.FINANCE]: 'Restricted access to internal invoice drafts and finance records.',
+  [UserRole.FINANCE]: 'Restricted access to internal finance worksheets and offline settlement verification.',
   [UserRole.CONTENT_MANAGER]: 'Website content and approved public configuration management.',
   [UserRole.CUSTOMER]: 'Public customer account; no staff/admin permissions.',
 }

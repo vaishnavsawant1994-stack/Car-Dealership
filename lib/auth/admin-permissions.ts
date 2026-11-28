@@ -9,6 +9,7 @@ export const adminPermissions = [
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
   'finance.view', 'finance.update',
+  'delivery.view', 'delivery.update', 'delivery.settlementVerify',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
   'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
@@ -18,6 +19,7 @@ export type AdminPermission = (typeof adminPermissions)[number]
 
 const sales: AdminPermission[] = [
   'dashboard.view', 'vehicle.view',
+  'delivery.view',
   'enquiry.view', 'enquiry.assign', 'enquiry.update', 'enquiry.close',
   'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
   'sellRequest.view', 'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
@@ -27,6 +29,7 @@ const sales: AdminPermission[] = [
 const operations: AdminPermission[] = [
   'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
   'brand.manage', 'bodyType.manage', 'feature.manage',
+  'delivery.view', 'delivery.update',
   'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'notification.view', 'export.create',
@@ -37,7 +40,7 @@ const content: AdminPermission[] = [
   'newsletter.view', 'newsletter.export', 'settings.view', 'notification.view',
 ]
 
-const finance: AdminPermission[] = ['dashboard.view', 'finance.view', 'finance.update', 'auditLog.view', 'notification.view']
+const finance: AdminPermission[] = ['dashboard.view', 'finance.view', 'finance.update', 'delivery.view', 'delivery.settlementVerify', 'auditLog.view', 'notification.view']
 
 const admin: AdminPermission[] = adminPermissions.filter((permission) => !['vehicle.delete', 'user.role.manage', 'emailCapture.view'].includes(permission))
 
