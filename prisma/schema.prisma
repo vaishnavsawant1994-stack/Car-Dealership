@@ -230,6 +230,7 @@ model User {
   assignedSalesDeals       SalesDeal[]        @relation("SalesDealAssignee")
   salesDealEvents          SalesDealEvent[]   @relation("SalesDealEventActor")
   financeDraftsCreated     SalesInvoiceDraft[] @relation("SalesInvoiceDraftCreator")
+  paymentSandboxAttempts   PaymentSandboxAttempt[] @relation("PaymentSandboxActor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -1243,10 +1244,34 @@ model SalesInvoiceDraft {
   estimatedOtherFees Int
   estimatedSubtotal  Int
   currency           String                  @default("INR")
+  paymentSimulations PaymentSandboxAttempt[]
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
 
   @@index([status, createdAt])
+  @@index([createdById, createdAt])
+}
+
+enum PaymentSandboxOutcome {
+  APPROVED
+  DECLINED
+}
+
+/** Synthetic provider responses only; this table cannot represent real capture or settlement. */
+model PaymentSandboxAttempt {
+  id                 String                @id @default(cuid())
+  invoiceDraftId     String
+  invoiceDraft       SalesInvoiceDraft     @relation(fields: [invoiceDraftId], references: [id], onDelete: Restrict)
+  createdById        String
+  createdBy          User                  @relation("PaymentSandboxActor", fields: [createdById], references: [id], onDelete: Restrict)
+  idempotencyKey     String                @unique
+  simulatorReference String                @unique
+  amount             Int
+  currency           String                @default("INR")
+  outcome            PaymentSandboxOutcome
+  createdAt          DateTime              @default(now())
+
+  @@index([invoiceDraftId, createdAt])
   @@index([createdById, createdAt])
 }
 
