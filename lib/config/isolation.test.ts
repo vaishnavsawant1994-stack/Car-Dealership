@@ -44,12 +44,17 @@ describe('Car-Dealership database isolation preflight', () => {
     expect(() => assertAllowedDatabaseUrl('postgresql://u:p@other-db.example/car_dealership_demo', 'unit')).toThrow()
     expect(() => assertAllowedDatabaseUrl('postgresql://u:p@demo-db.example/car_dealership_staging', 'unit')).toThrow()
   })
-  it('blocks wrong project identity and commercial connections', () => {
+  it('blocks wrong project identity and requires exact target approval for commercial connections', () => {
     process.env.APP_PROJECT_ID = 'optimus-automobiles'
     expect(() => assertAllowedDatabaseUrl(local, 'unit')).toThrow()
     process.env.APP_PROJECT_ID = 'car-dealership'
     process.env.APP_ENV = 'commercial'
-    expect(() => assertAllowedDatabaseUrl(local, 'unit')).toThrow()
+    const commercial = 'postgresql://u:p@production-db.example/car_dealership_prod'
+    expect(() => assertAllowedDatabaseUrl(commercial, 'unit')).toThrow()
+    process.env.EXPECTED_DATABASE_HOST = 'production-db.example'
+    process.env.EXPECTED_DATABASE_NAME = 'car_dealership_prod'
+    expect(() => assertAllowedDatabaseUrl(commercial, 'unit')).not.toThrow()
+    expect(() => assertAllowedDatabaseUrl('postgresql://u:p@other-db.example/car_dealership_prod', 'unit')).toThrow()
   })
   it('requires an explicit APP_ENV in production', () => {
     delete process.env.APP_ENV
