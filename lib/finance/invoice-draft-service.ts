@@ -12,10 +12,20 @@ function invoiceDraftReference() {
   return `DRAFT-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`
 }
 
+function dealShowroomWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
+  return {
+    ...showroomScopeWhere(scope),
+    ...(!scope.global ? {
+      inquiry: { is: { showroomId: { in: [...scope.showroomIds] } } },
+      vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } },
+    } : {}),
+  }
+}
+
 export async function listSalesInvoiceDrafts(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesInvoiceDraft.findMany({
-    where: { deal: showroomScopeWhere(scope) },
+    where: { deal: dealShowroomWhere(scope) },
     select: {
       id: true, referenceNumber: true, status: true, version: true, vehicleTitle: true,
       stockNumber: true, vehiclePrice: true, discountAmount: true, estimatedOtherFees: true,
@@ -31,7 +41,7 @@ export async function listSalesInvoiceDrafts(actor: AdminActor) {
 export async function listWonSalesDealsForFinance(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findMany({
-    where: { status: SalesDealStatus.WON, ...showroomScopeWhere(scope), invoiceDraft: null },
+    where: { status: SalesDealStatus.WON, ...dealShowroomWhere(scope), invoiceDraft: null },
     select: { id: true, referenceNumber: true, updatedAt: true,
       vehicle: { select: { shortTitle: true, stockNumber: true } },
       quoteDraft: { select: { estimatedSubtotal: true, currency: true } } },
@@ -45,7 +55,7 @@ export async function createSalesInvoiceDraft(dealId: string, actor: AdminActor)
   try {
     return await prisma.$transaction(async (tx) => {
       const deal = await tx.salesDeal.findFirst({
-        where: { id: dealId, status: SalesDealStatus.WON, ...showroomScopeWhere(scope) },
+        where: { id: dealId, status: SalesDealStatus.WON, ...dealShowroomWhere(scope) },
         select: {
           id: true, referenceNumber: true, status: true,
           quoteDraft: { select: { vehiclePrice: true, discountAmount: true, estimatedOtherFees: true, estimatedSubtotal: true, currency: true } },
@@ -82,7 +92,7 @@ export async function createSalesInvoiceDraft(dealId: string, actor: AdminActor)
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      const existing = await prisma.salesInvoiceDraft.findUnique({ where: { dealId }, select: { id: true, referenceNumber: true } })
+      const existing = await prisma.salesInvoiceDraft.findFirst({ where: { dealId, deal: dealShowroomWhere(scope) }, select: { id: true, referenceNumber: true } })
       if (existing) return { type: 'already-created' as const, data: existing }
       throw error
     }
@@ -100,7 +110,7 @@ export async function runPaymentSandboxSimulation(
   try {
     return await prisma.$transaction(async (tx) => {
       const draft = await tx.salesInvoiceDraft.findFirst({
-        where: { id: invoiceDraftId, status: 'DRAFT', deal: showroomScopeWhere(scope) },
+        where: { id: invoiceDraftId, status: 'DRAFT', deal: dealShowroomWhere(scope) },
         select: { id: true, estimatedSubtotal: true, currency: true },
       })
       if (!draft || draft.currency !== 'INR' || draft.estimatedSubtotal <= 0) return { type: 'not-available' as const }
