@@ -75,11 +75,17 @@ export async function updateWorkshopChecklist(
     const order = await tx.workshopOrder.findFirst({ where: { id, status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] },
       ...scopedWorkshopOrderWhere(actor, scope) }, select: { id: true } })
     if (!order) return { type: 'not-available' as const }
-    const item = await tx.workshopChecklistEntry.findUnique({ where: { workshopOrderId_code: { workshopOrderId: id, code: input.code } } })
+    const item = await tx.workshopChecklistEntry.findFirst({ where: {
+      workshopOrderId: id, code: input.code,
+      workshopOrder: { is: { id, status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] }, ...scopedWorkshopOrderWhere(actor, scope) } },
+    } })
     if (!item) return { type: 'not-available' as const }
     if (item.version !== input.version) return { type: 'conflict' as const }
-    const updated = await tx.workshopChecklistEntry.updateMany({ where: { id: item.id, version: input.version },
-      data: { completedAt: input.completed ? new Date() : null, completedById: input.completed ? actor.id : null, version: { increment: 1 } } })
+    const updated = await tx.workshopChecklistEntry.updateMany({
+      where: { id: item.id, version: input.version,
+        workshopOrder: { is: { id, status: { in: [WorkshopOrderStatus.OPEN, WorkshopOrderStatus.SCHEDULED, WorkshopOrderStatus.IN_PROGRESS] }, ...scopedWorkshopOrderWhere(actor, scope) } } },
+      data: { completedAt: input.completed ? new Date() : null, completedById: input.completed ? actor.id : null, version: { increment: 1 } },
+    })
     if (!updated.count) return { type: 'conflict' as const }
     await tx.workshopOrder.update({ where: { id }, data: { version: { increment: 1 } } })
     await tx.auditLog.create({ data: { actorId: actor.id, action: 'WORKSHOP_CHECKLIST_UPDATED', entity: 'WorkshopChecklistEntry', entityId: item.id,
@@ -103,10 +109,11 @@ export async function transitionWorkshopOrder(
       (order.status === WorkshopOrderStatus.IN_PROGRESS && input.status === WorkshopOrderStatus.COMPLETED)
     if (!allowed) return { type: 'invalid-transition' as const }
     if (input.status === WorkshopOrderStatus.COMPLETED) {
-      const checks = await tx.workshopChecklistEntry.findMany({ where: { workshopOrderId: id }, select: { completedAt: true } })
+      const checks = await tx.workshopChecklistEntry.findMany({ where: { workshopOrderId: id,
+        workshopOrder: { is: { id, ...scopedWorkshopOrderWhere(actor, scope) } } }, select: { completedAt: true } })
       if (checks.length !== checklistCodes.length || checks.some((check) => !check.completedAt)) return { type: 'checks-incomplete' as const }
     }
-    const changed = await tx.workshopOrder.updateMany({ where: { id, version: input.version, status: order.status },
+    const changed = await tx.workshopOrder.updateMany({ where: { id, version: input.version, status: order.status, ...scopedWorkshopOrderWhere(actor, scope) },
       data: { status: input.status, version: { increment: 1 } } })
     if (!changed.count) return { type: 'conflict' as const }
     await tx.auditLog.create({ data: { actorId: actor.id, action: 'WORKSHOP_ORDER_STATUS_CHANGED', entity: 'WorkshopOrder', entityId: id,
