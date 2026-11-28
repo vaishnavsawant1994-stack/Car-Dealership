@@ -87,7 +87,7 @@ export const valuationSchema = z.object({
 })
 
 export const contentUpdateSchema = z.object({ value: z.record(z.string(), z.unknown()), status: z.enum(ContentStatus), version: z.number().int().positive() })
-export const staffInviteSchema = z.object({ email: z.email().transform((value) => value.toLowerCase()), role: z.enum([UserRole.SALES, UserRole.FINANCE, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN]) })
+export const staffInviteSchema = z.object({ email: z.email().transform((value) => value.toLowerCase()), role: z.enum([UserRole.SALES, UserRole.FINANCE, UserRole.WORKSHOP, UserRole.PARTS_MANAGER, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN]) })
 export { staffLifecycleSchema as staffUpdateSchema } from '@/lib/admin/staff-lifecycle-policy'
 export const settingUpdateSchema = z.object({ value: z.string().trim().max(2000), version: z.number().int().positive() })
 export const imageMetadataSchema = z.object({ category: z.enum(VehicleImageCategory).exclude(['DOCUMENT']), altText: z.string().trim().min(3).max(240), isPrimary: z.boolean().default(false) })
