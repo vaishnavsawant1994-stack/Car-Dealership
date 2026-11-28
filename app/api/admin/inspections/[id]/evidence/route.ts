@@ -19,7 +19,9 @@ async function accessibleInspection(id: string, actor: { id: string; role: impor
     select: { id: true, inspectorId: true, status: true, vehicleId: true, version: true,
       _count: { select: { evidence: true } } },
   })
-  return inspection && canEditVehicleInspection(actor, inspection.inspectorId) ? inspection : null
+  return inspection && canEditVehicleInspection(actor, inspection.inspectorId)
+    ? { ...inspection, scopeWhere }
+    : null
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,7 +31,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const inspection = await accessibleInspection(id, actor)
     if (!inspection) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
     const data = await prisma.vehicleInspectionEvidence.findMany({
-      where: { inspectionId: id }, take: 60,
+      where: { inspectionId: id, inspection: { is: inspection.scopeWhere } }, take: 60,
       orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { id: true, checkCode: true, originalName: true, mimeType: true,
         sizeBytes: true, checksum: true, createdAt: true, uploadedBy: { select: { name: true } } },
@@ -64,7 +66,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     try {
       const outcome = await prisma.$transaction(async (tx) => {
         const claim = await tx.vehicleInspection.updateMany({
-          where: { id, version: version.data, status: { in: editable } },
+          where: { id, version: version.data, status: { in: editable }, ...inspection.scopeWhere },
           data: { version: { increment: 1 } },
         })
         if (!claim.count) return { type: 'conflict' as const }

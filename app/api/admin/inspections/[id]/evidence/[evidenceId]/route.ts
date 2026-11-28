@@ -19,7 +19,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
     }
     const evidence = await prisma.vehicleInspectionEvidence.findFirst({
-      where: { id: evidenceId, inspectionId: id },
+      where: { id: evidenceId, inspectionId: id, inspection: { is: scopeWhere } },
       select: { id: true, originalName: true, mimeType: true, sizeBytes: true, storageKey: true },
     })
     if (!evidence) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
