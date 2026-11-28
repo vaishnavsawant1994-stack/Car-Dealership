@@ -116,11 +116,14 @@ export async function updateDeliveryChecklistItem(
     const delivery = await tx.deliveryCase.findFirst({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING,
       ...deliveryWhere(actor, scope) }, select: { id: true } })
     if (!delivery) return { type: 'not-available' as const }
-    const item = await tx.deliveryChecklistEntry.findUnique({ where: { deliveryCaseId_code: { deliveryCaseId, code: input.code } } })
+    const item = await tx.deliveryChecklistEntry.findFirst({ where: {
+      deliveryCaseId, code: input.code, deliveryCase: { is: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, ...deliveryWhere(actor, scope) } },
+    } })
     if (!item) return { type: 'not-available' as const }
     if (item.version !== input.version) return { type: 'conflict' as const }
     const updated = await tx.deliveryChecklistEntry.updateMany({
-      where: { id: item.id, version: input.version },
+      where: { id: item.id, version: input.version,
+        deliveryCase: { is: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, ...deliveryWhere(actor, scope) } } },
       data: { completedAt: input.completed ? new Date() : null, completedById: input.completed ? actor.id : null, version: { increment: 1 } },
     })
     if (!updated.count) return { type: 'conflict' as const }
@@ -143,35 +146,40 @@ export async function transitionDeliveryCase(
     if (delivery.version !== input.version) return { type: 'conflict' as const }
     if (input.status === DeliveryCaseStatus.READY_FOR_HANDOVER) {
       if (delivery.status !== DeliveryCaseStatus.PREPARING || actor.role === UserRole.FINANCE) return { type: 'invalid-transition' as const }
-      const checks = await tx.deliveryChecklistEntry.findMany({ where: { deliveryCaseId }, select: { code: true, completedAt: true, completedById: true } })
+      const checks = await tx.deliveryChecklistEntry.findMany({ where: { deliveryCaseId,
+        deliveryCase: { is: { id: deliveryCaseId, ...deliveryWhere(actor, scope) } } },
+        select: { code: true, completedAt: true, completedById: true } })
       if (checks.length !== checklistCodes.length || checks.some((check) => !check.completedAt) ||
         checks.find((check) => check.code === DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED)?.completedById === actor.id) {
         return { type: 'checks-incomplete' as const }
       }
-      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, version: input.version },
+      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, version: input.version, ...deliveryWhere(actor, scope) },
         data: { status: DeliveryCaseStatus.READY_FOR_HANDOVER, version: { increment: 1 } } })
       if (!changed.count) return { type: 'conflict' as const }
     } else if (input.status === DeliveryCaseStatus.HANDED_OVER) {
       if (delivery.status !== DeliveryCaseStatus.READY_FOR_HANDOVER || actor.role === UserRole.FINANCE || input.customerAcknowledged !== true) return { type: 'invalid-transition' as const }
-      const vehicle = await tx.vehicle.updateMany({ where: { id: delivery.vehicleId, status: VehicleStatus.RESERVED },
+      const vehicle = await tx.vehicle.updateMany({ where: { id: delivery.vehicleId, status: VehicleStatus.RESERVED,
+        deliveryCases: { some: { id: deliveryCaseId, ...deliveryWhere(actor, scope) } } },
         data: { status: VehicleStatus.SOLD, published: false, version: { increment: 1 } } })
       if (!vehicle.count) throw new DeliveryTransactionConflict()
-      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.READY_FOR_HANDOVER, version: input.version },
+      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.READY_FOR_HANDOVER, version: input.version, ...deliveryWhere(actor, scope) },
         data: { status: DeliveryCaseStatus.HANDED_OVER, version: { increment: 1 } } })
       if (!changed.count) throw new DeliveryTransactionConflict()
       await tx.vehicleStatusHistory.create({ data: { vehicleId: delivery.vehicleId, fromStatus: VehicleStatus.RESERVED,
         toStatus: VehicleStatus.SOLD, reason: 'CUSTOMER_HANDOVER_RECORDED', actorId: actor.id } })
     } else if (input.status === DeliveryCaseStatus.CANCELLED) {
       if (delivery.status !== DeliveryCaseStatus.PREPARING || actor.role === UserRole.FINANCE) return { type: 'invalid-transition' as const }
-      const paymentCheck = await tx.deliveryChecklistEntry.findUnique({
-        where: { deliveryCaseId_code: { deliveryCaseId, code: DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED } },
+      const paymentCheck = await tx.deliveryChecklistEntry.findFirst({
+        where: { deliveryCaseId, code: DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED,
+          deliveryCase: { is: { id: deliveryCaseId, ...deliveryWhere(actor, scope) } } },
         select: { completedAt: true },
       })
       if (paymentCheck?.completedAt) return { type: 'invalid-transition' as const }
-      const released = await tx.vehicle.updateMany({ where: { id: delivery.vehicleId, status: VehicleStatus.RESERVED },
+      const released = await tx.vehicle.updateMany({ where: { id: delivery.vehicleId, status: VehicleStatus.RESERVED,
+        deliveryCases: { some: { id: deliveryCaseId, ...deliveryWhere(actor, scope) } } },
         data: { status: VehicleStatus.AVAILABLE, version: { increment: 1 } } })
       if (!released.count) throw new DeliveryTransactionConflict()
-      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, version: input.version },
+      const changed = await tx.deliveryCase.updateMany({ where: { id: deliveryCaseId, status: DeliveryCaseStatus.PREPARING, version: input.version, ...deliveryWhere(actor, scope) },
         data: { status: DeliveryCaseStatus.CANCELLED, version: { increment: 1 } } })
       if (!changed.count) throw new DeliveryTransactionConflict()
       await tx.vehicleStatusHistory.create({ data: { vehicleId: delivery.vehicleId, fromStatus: VehicleStatus.RESERVED,
