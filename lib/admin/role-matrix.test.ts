@@ -22,7 +22,7 @@ describe('P1-05 effective staff role permissions', () => {
   })
   it('prevents self-approval and privileged access by ordinary admins and customer roles', () => {
     expect(canManagePrivilegedRoles(UserRole.SUPER_ADMIN)).toBe(true)
-    for (const role of [UserRole.ADMIN, UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.CUSTOMER]) {
+    for (const role of [UserRole.ADMIN, UserRole.SALES, UserRole.FINANCE, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.CUSTOMER]) {
       expect(canManagePrivilegedRoles(role)).toBe(false)
     }
     expect(hasPermission(UserRole.CUSTOMER, 'user.view')).toBe(false)

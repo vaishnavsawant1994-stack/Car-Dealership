@@ -9,6 +9,7 @@ datasource db {
 enum UserRole {
   CUSTOMER
   SALES
+  FINANCE
   OPERATIONS
   CONTENT_MANAGER
   ADMIN
@@ -228,6 +229,7 @@ model User {
   createdSalesDeals        SalesDeal[]        @relation("SalesDealCreator")
   assignedSalesDeals       SalesDeal[]        @relation("SalesDealAssignee")
   salesDealEvents          SalesDealEvent[]   @relation("SalesDealEventActor")
+  financeDraftsCreated     SalesInvoiceDraft[] @relation("SalesInvoiceDraftCreator")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -1194,6 +1196,7 @@ model SalesDeal {
   lossReason         SalesDealLossReason?
   closedAt           DateTime?
   events             SalesDealEvent[]
+  invoiceDraft       SalesInvoiceDraft?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
 
@@ -1216,6 +1219,35 @@ model SalesDealEvent {
   createdAt        DateTime                  @default(now())
 
   @@index([dealId, createdAt])
+}
+
+enum SalesInvoiceDraftStatus {
+  DRAFT
+  VOID
+}
+
+/** Internal finance worksheet only; never a tax invoice or payment request. */
+model SalesInvoiceDraft {
+  id                 String                  @id @default(cuid())
+  referenceNumber    String                  @unique
+  dealId             String                  @unique
+  deal               SalesDeal               @relation(fields: [dealId], references: [id], onDelete: Restrict)
+  createdById        String
+  createdBy          User                    @relation("SalesInvoiceDraftCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  status             SalesInvoiceDraftStatus @default(DRAFT)
+  version            Int                     @default(1)
+  vehicleTitle       String
+  stockNumber        String
+  vehiclePrice       Int
+  discountAmount     Int
+  estimatedOtherFees Int
+  estimatedSubtotal  Int
+  currency           String                  @default("INR")
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([status, createdAt])
+  @@index([createdById, createdAt])
 }
 
 enum CustomerDataRightsKind {

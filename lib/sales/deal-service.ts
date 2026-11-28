@@ -14,6 +14,26 @@ const openInquiryStates: InquiryStatus[] = [
 ]
 const activeDealStates = [SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON]
 
+function accessibleSalesResourceWhere(
+  actor: AdminActor,
+  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
+) {
+  return {
+    ...accessibleResourceWhere(actor, scope),
+    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+  }
+}
+
+function accessibleSalesDealWhere(
+  actor: AdminActor,
+  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
+) {
+  return {
+    ...accessibleSalesResourceWhere(actor, scope),
+    ...(!scope.global ? { inquiry: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+  }
+}
+
 const dealSummarySelect = {
   id: true,
   referenceNumber: true,
@@ -36,26 +56,6 @@ const dealSummarySelect = {
 
 function dealReference() {
   return `DEAL-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 8).toUpperCase()}`
-}
-
-function accessibleSalesResourceWhere(
-  actor: AdminActor,
-  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
-) {
-  return {
-    ...accessibleResourceWhere(actor, scope),
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
-  }
-}
-
-function accessibleSalesDealWhere(
-  actor: AdminActor,
-  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
-) {
-  return {
-    ...accessibleSalesResourceWhere(actor, scope),
-    ...(!scope.global ? { inquiry: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
-  }
 }
 
 export async function listSalesDeals(actor: AdminActor, status?: SalesDealStatus) {
