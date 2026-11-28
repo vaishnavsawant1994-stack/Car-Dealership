@@ -62,3 +62,13 @@ jobs:
           # This is a randomly generated, ephemeral JWT signing secret for CI builds.
           # It is not the staging Super Admin password or a persistent deployment secret.
           AUTH_SECRET="$(openssl rand -hex 48)" npm run build
+      - name: Install Chromium for browser acceptance
+        run: npx playwright install --with-deps chromium
+      - name: Browser acceptance (isolated CI database)
+        env:
+          PLAYWRIGHT_WEB_SERVER_COMMAND: npm run start -- --port 3001
+          PLAYWRIGHT_PORT: 3001
+          IMAGE_STORAGE_DRIVER: local
+          ALLOW_LOCAL_IMAGE_STORAGE: "true"
+          ALLOW_CI_EMAIL_PREVIEW_URL: "true"
+        run: AUTH_SECRET="$(openssl rand -hex 48)" npm run test:e2e
