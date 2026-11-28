@@ -18,7 +18,7 @@
 | P15 | Audited notification consent and withdrawal controls | [#47](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/47) | Ready for review; exact-head CI #386 passed. |
 | P16 | Marketing signup/campaign delivery hard-disabled | [#48](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/48) | Ready for review; exact-head CI #388 passed. Marketing remains disabled. |
 | P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Ready for review; exact-head CI #390 passed. |
-| P18 | S3 original and variant object cleanup, retryable deletion after storage failure | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Ready for review; exact-head CI #392 passed. No live bucket was used. |
+| P18 | S3 original and variant cleanup, retryable deletion, and guarded local cleanup paths | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Ready for review; current exact-head CI #406 passed. Path-traversal regression coverage passed; no live bucket was used. |
 | P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Ready for review; exact-head CI #394 passed, including all 55 browser tests. |
 | P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Ready for review; application/test head CI #396 passed lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and browser acceptance. P1-05 status correction on docs head `d28b1809` also passed exact-head CI #403. |
 
