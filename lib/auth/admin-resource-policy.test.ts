@@ -1,12 +1,12 @@
 import { UserRole } from '@prisma/client'
 import { describe, expect, it } from 'vitest'
-import { accessibleResourceWhere, canAccessAssignedResource, canAccessScopedResource, canAssignResource, canManageUser, mayViewPrivateDocuments, showroomScopeWhere } from './admin-resource-policy'
+import { accessibleResourceWhere, canAccessAssignedResource, canAccessScopedResource, canAssignResource, canManageUser, mayViewPrivateDocuments, showroomScopeWhere, inspectionShowroomWhere } from './admin-resource-policy'
 
 const actor = (id: string, role: UserRole) => ({ id, role })
 const assignedResource = (assignedToId: string | null) => ({ assignedToId })
 
 describe('admin resource access boundaries', () => {
-  it.each([UserRole.SALES, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s sees unassigned and own assigned records only', (role) => {
+  it.each([UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s sees unassigned and own assigned records only', (role) => {
     const current = actor('staff-a', role)
     expect(canAccessAssignedResource(current, assignedResource(null))).toBe(true)
     expect(canAccessAssignedResource(current, assignedResource('staff-a'))).toBe(true)
@@ -19,7 +19,7 @@ describe('admin resource access boundaries', () => {
     expect(canAccessAssignedResource(current, assignedResource('staff-b'))).toBe(true)
   })
 
-  it.each([UserRole.SALES, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s can assign only to self or leave the queue unassigned', (role) => {
+  it.each([UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s can assign only to self or leave the queue unassigned', (role) => {
     const current = actor('staff-a', role)
     expect(canAssignResource(current, null)).toBe(true)
     expect(canAssignResource(current, 'staff-a')).toBe(true)
@@ -57,7 +57,7 @@ describe('admin resource access boundaries', () => {
     expect(showroomScopeWhere(scope)).toEqual({ showroomId: { in: ['showroom-a'] } })
   })
 
-  it.each([UserRole.SALES, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s database mutations retain showroom and assignment predicates', (role) => {
+  it.each([UserRole.SALES, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER])('%s database mutations retain showroom and assignment predicates', (role) => {
     const current = actor('staff-a', role)
     const scope = { global: false as const, showroomIds: ['showroom-a', 'showroom-b'] }
     expect(accessibleResourceWhere(current, scope)).toEqual({
@@ -73,4 +73,15 @@ describe('admin resource access boundaries', () => {
     expect(showroomScopeWhere(scope)).toEqual({})
     expect(accessibleResourceWhere(current, scope)).toEqual({})
   })
+
+  it('scopes inspection child records through their parent vehicle', () => {
+    expect(inspectionShowroomWhere({ global: false, showroomIds: ['showroom-a'] })).toEqual({
+      vehicle: { is: { showroomId: { in: ['showroom-a'] } } },
+    })
+    expect(inspectionShowroomWhere({ global: false, showroomIds: [] })).toEqual({
+      vehicle: { is: { showroomId: { in: [] } } },
+    })
+    expect(inspectionShowroomWhere({ global: true, showroomIds: [] })).toEqual({})
+  })
 })
+
