@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { adminError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { canEditVehicleInspection } from '@/lib/inspection/inspection-service'
 import { readInspectionEvidence } from '@/lib/storage/inspection-evidence-storage'
@@ -9,14 +11,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   try {
     const actor = await authorizeAdminRequest('vehicle.update')
     const { id, evidenceId } = await params
-    const inspection = await prisma.vehicleInspection.findUnique({
-      where: { id }, select: { inspectorId: true },
+    const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
+    const inspection = await prisma.vehicleInspection.findFirst({
+      where: { id, ...scopeWhere }, select: { inspectorId: true },
     })
     if (!inspection || !canEditVehicleInspection(actor, inspection.inspectorId)) {
       return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
     }
     const evidence = await prisma.vehicleInspectionEvidence.findFirst({
-      where: { id: evidenceId, inspectionId: id },
+      where: { id: evidenceId, inspectionId: id, inspection: { is: scopeWhere } },
       select: { id: true, originalName: true, mimeType: true, sizeBytes: true, storageKey: true },
     })
     if (!evidence) return NextResponse.json({ error: { code: 'NOT_FOUND' } }, { status: 404 })
@@ -32,3 +35,4 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     } })
   } catch (error) { return adminError(error) }
 }
+
