@@ -6,7 +6,7 @@
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; exact-head CI #167 passed. P1-05 source head 223220110243bb7415dc22d5bd1634cdead5b7e0 is an ancestor of this PR. Local P1-05/P21 edits in the C: P20 worktree are preserved and uncommitted; the F: checkout cannot currently produce a valid git status, so full checkout reconciliation remains open. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; refreshed exact-head CI #398 passed. P1-05 source head 223220110243bb7415dc22d5bd1634cdead5b7e0 is an ancestor of current PR #38 head 85dbfa8a3f44abe2ab2a39c74eebcce67cfa53bb. F: Car Dealership and its separate P1-05 worktree were read-only inspected and clean; existing C: P20 edits remain preserved and uncommitted. |
 | P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Draft; exact-head CI #315 passed. Deal reads and writes also constrain the linked inquiry showroom. |
 | P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Draft; exact-head CI #341 passed. Finance access constrains linked deal, inquiry, and vehicle showroom scope. |
 | P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Draft; exact-head CI #342 passed. No payment processor or capture. |
@@ -35,12 +35,12 @@ P21 inspection and derived quote scope work remains tracked in draft [PR #53](ht
 - Vercel SSO remains enabled on existing staging and demo deployments. No deployment or alias change was made.
 - No isolated Vercel preview was created because no GitHub namespace was connected to Vercel.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
-- The F: checkout was not modified. Its current git status remains unreadable; no local edits or database files were overwritten. Existing dirty changes in the separate C: P20 worktree were left intact.
+- F: Car Dealership and the separate P1-05 worktree were read-only inspected and clean; neither was modified. Existing dirty inspection/P1-05 edits in the C: P20 worktree were preserved, along with all local databases.
 - The repository remains public at the user's direction.
 
 ## Remaining release work
 
-- Complete F: checkout/worktree reconciliation without replacing local changes, then finish the broad showroom/assignment and derived-child access audit.
+- Reconcile the preserved uncommitted inspection/P1-05 documentation edits in the C: P20 worktree with the final PR stack without replacing them, then finish the broad showroom/assignment and derived-child access audit.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage still need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence; code-level S3 cleanup does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
