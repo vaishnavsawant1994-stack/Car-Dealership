@@ -1,6 +1,6 @@
 # P1-05 — Roles & Access Matrix
 
-**Status: P1-05 local implementation has been merged into an isolated review branch based on PR #38 head `d7b7919aab5e56f1fa1858de89bb93eeb748cd2b`. The branch has not been pushed; exact-head CI, full integration validation, independent security review, staging migration, and deployment remain pending.**
+**Status as of 2026-11-28:** P1-05 role and showroom changes are included in the Phase 1–5 development branch and flow into the dependent P7 PR #39. PR #38 exact-head CI [46130049325](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/46130049325) passed migrations, seed, lint, type-check, tests and production build on `1b6db79e2423d098369a07c519c53846c3c84abf`. The branch is not merged to `main`; no hosted migration or deployment was performed. Broader query and derived-record scoping continues in PRs #53, #55 and #59.
 
 ## Scope and source of truth
 
@@ -52,7 +52,7 @@ Dashboard permission follow-up (2026-11-02): operational metrics and panels for 
 
 ## Acceptance still required
 
-Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; obtain independent review; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before those code and review gates are satisfied. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
+Run the authenticated E2E matrix; finish the resource-query and derived-child data-scope audit beyond the automated route guard contract; reconcile the base branch; then prepare a draft PR with exact-head CI. Do not apply the migration or deploy this draft before required validation and release approval. No role assignment, policy grant, or P0 release gate is accepted by this development slice.
 
 ## Export permission audit follow-up (2026-11-02)
 
