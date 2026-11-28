@@ -14,6 +14,7 @@ import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, tr
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
 import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
+import { listCustomerPurchases } from '@/lib/portal/customer-purchase-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -91,7 +92,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-sales lifecycle', () => {
+describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and customer purchase lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -133,7 +134,15 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
       email: `p12-parts-manager-${suffix}@car-dealership.test`, name: 'Fictional P12 Parts Manager',
       role: UserRole.PARTS_MANAGER, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
-    userIds.push(sales.id, peer.id, finance.id, operations.id, workshop.id, partsManager.id)
+    const customer = await prisma.user.create({ data: {
+      email: `p14-customer-${suffix}@car-dealership.test`, name: 'Fictional P14 Customer',
+      role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    const otherCustomer = await prisma.user.create({ data: {
+      email: `p14-other-customer-${suffix}@car-dealership.test`, name: 'Fictional Unrelated Customer',
+      role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(sales.id, peer.id, finance.id, operations.id, workshop.id, partsManager.id, customer.id, otherCustomer.id)
     await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance, operations, workshop, partsManager].map((user) => ({ userId: user.id, showroomId })) })
 
     const vehicle = await prisma.vehicle.create({ data: {
@@ -146,7 +155,7 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
     } })
     vehicleId = vehicle.id
     const inquiry = await prisma.inquiry.create({ data: {
-      referenceNumber: suffix.toUpperCase(), showroomId, assignedToId: sales.id, vehicleId,
+      referenceNumber: suffix.toUpperCase(), showroomId, assignedToId: sales.id, userId: customer.id, vehicleId,
       fullName: 'Fictional P7 Customer', phone: '0000000000', email: `customer-${suffix}@car-dealership.test`,
       message: 'Synthetic request; no external contact.', consentAccepted: false, status: InquiryStatus.IN_PROGRESS,
     } })
@@ -239,6 +248,7 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
       await prisma.showroom.delete({ where: { id: foreignDeliveryShowroom.id } })
     }
+    deliveryCaseId = openedDelivery.data.id
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
     expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
@@ -284,6 +294,12 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
       await prisma.showroom.delete({ where: { id: foreignP13Showroom.id } })
     }
     expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'completed' })
+    const customerPurchases = await listCustomerPurchases(customer.id)
+    expect(customerPurchases).toHaveLength(1)
+    expect(customerPurchases[0]).toMatchObject({ referenceNumber: opened.data.referenceNumber, status: SalesDealStatus.WON,
+      deliveryCase: { status: DeliveryCaseStatus.HANDED_OVER, afterSalesTasks: [{ status: 'COMPLETED' }] } })
+    expect(customerPurchases[0]).not.toHaveProperty('quoteDraft')
+    expect(await listCustomerPurchases(otherCustomer.id)).toHaveLength(0)
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
@@ -314,7 +330,6 @@ describe('P7-P13 internal sales, finance, delivery, workshop, parts, and after-s
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
       await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
-    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
     expect(scheduled.type).toBe('updated')
