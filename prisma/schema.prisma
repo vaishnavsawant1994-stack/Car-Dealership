@@ -236,6 +236,8 @@ model User {
   deliveryCasesCreated     DeliveryCase[] @relation("DeliveryCaseCreator")
   assignedDeliveryCases    DeliveryCase[] @relation("DeliveryCaseAssignee")
   deliveryChecklistActions DeliveryChecklistEntry[] @relation("DeliveryChecklistActor")
+  afterSalesTasksCreated AfterSalesTask[] @relation("AfterSalesTaskCreator")
+  afterSalesTasksAssigned AfterSalesTask[] @relation("AfterSalesTaskAssignee")
   workshopOrdersCreated  WorkshopOrder[] @relation("WorkshopOrderCreator")
   assignedWorkshopOrders WorkshopOrder[] @relation("WorkshopOrderAssignee")
   workshopChecklistActions WorkshopChecklistEntry[] @relation("WorkshopChecklistActor")
@@ -953,6 +955,7 @@ model Showroom {
   contactMessages ContactMessage[]
   salesDeals SalesDeal[]
   deliveryCases DeliveryCase[]
+  afterSalesTasks AfterSalesTask[]
   workshopOrders WorkshopOrder[]
   partInventoryMovements PartInventoryMovement[]
 
@@ -1324,11 +1327,48 @@ model DeliveryCase {
   status         DeliveryCaseStatus        @default(PREPARING)
   version        Int                       @default(1)
   items          DeliveryChecklistEntry[]
+  afterSalesTasks AfterSalesTask[]
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
 
   @@index([showroomId, assignedToId, status, updatedAt])
   @@index([vehicleId, status])
+}
+
+enum AfterSalesTaskType {
+  FIRST_SERVICE
+  WARRANTY_CHECK_IN
+  DOCUMENTS_CONFIRMATION
+  CUSTOMER_FEEDBACK
+}
+
+enum AfterSalesTaskStatus {
+  OPEN
+  COMPLETED
+}
+
+/** Internal post-handover follow-up; deliberately contains no customer contact details or message body. */
+model AfterSalesTask {
+  id             String             @id @default(cuid())
+  deliveryCaseId String
+  deliveryCase   DeliveryCase       @relation(fields: [deliveryCaseId], references: [id], onDelete: Cascade)
+  showroomId     String
+  showroom       Showroom           @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  type           AfterSalesTaskType
+  status         AfterSalesTaskStatus @default(OPEN)
+  dueAt          DateTime
+  completedAt    DateTime?
+  version        Int                @default(1)
+  assignedToId   String?
+  assignedTo     User?              @relation("AfterSalesTaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdBy      User               @relation("AfterSalesTaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([deliveryCaseId, type, dueAt])
+  @@index([showroomId, status, dueAt])
+  @@index([assignedToId, dueAt])
 }
 
 model DeliveryChecklistEntry {
