@@ -4,11 +4,12 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 vi.mock('server-only', () => ({}))
 
 import {
-  InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
+  DeliveryCaseStatus, DeliveryChecklistCode, InquiryStatus, SalesDealAcceptanceMethod, SalesDealStatus, UserRole, UserStatus, VehicleStatus,
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
+import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -16,12 +17,18 @@ let vehicleId = ''
 let inquiryId = ''
 let quoteId = ''
 let invoiceDraftId = ''
+let deliveryCaseId = ''
 const sandboxAttemptIds: string[] = []
 const originalPaymentMode = process.env.PAYMENT_MODE
 const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (deliveryCaseId) {
+    await prisma.auditLog.deleteMany({ where: { resourceType: 'DeliveryCase', resourceId: deliveryCaseId } })
+    await prisma.auditLog.deleteMany({ where: { entity: 'DeliveryCase', entityId: deliveryCaseId } })
+    await prisma.deliveryCase.delete({ where: { id: deliveryCaseId } })
+  }
   if (sandboxAttemptIds.length) {
     await prisma.auditLog.deleteMany({ where: { entity: 'PaymentSandboxAttempt', entityId: { in: sandboxAttemptIds } } })
     await prisma.paymentSandboxAttempt.deleteMany({ where: { id: { in: sandboxAttemptIds } } })
@@ -49,8 +56,8 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7 internal sales deal lifecycle', () => {
-  it('isolates deals by showroom and assignment, versions transitions, and requires coded outcomes', async () => {
+describe('P7-P10 internal sales, finance, and delivery lifecycle', () => {
+  it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
       database.pathname !== '/car_dealership_test') {
@@ -79,8 +86,12 @@ describe('P7 internal sales deal lifecycle', () => {
       email: `p7-finance-${suffix}@car-dealership.test`, name: 'Fictional P7 Finance',
       role: UserRole.FINANCE, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
-    userIds.push(sales.id, peer.id, finance.id)
-    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })) })
+    const operations = await prisma.user.create({ data: {
+      email: `p7-operations-${suffix}@car-dealership.test`, name: 'Fictional P10 Operations',
+      role: UserRole.OPERATIONS, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(sales.id, peer.id, finance.id, operations.id)
+    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance, operations].map((user) => ({ userId: user.id, showroomId })) })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -142,21 +153,6 @@ describe('P7 internal sales deal lifecycle', () => {
     expect(worksheets.map((draft) => draft.id)).toContain(invoice.data.id)
     expect((await createSalesInvoiceDraft(opened.data.id, finance)).type).toBe('already-created')
     process.env.PAYMENT_MODE = 'sandbox'
-    const foreignP9Showroom = await prisma.showroom.create({ data: {
-      name: `Fictional Foreign P9 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
-      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
-      email: `p9-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
-    } })
-    try {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP9Showroom.id } })
-      expect((await listSalesInvoiceDrafts(finance)).some((draft) => draft.id === invoice.data.id)).toBe(false)
-      expect((await runPaymentSandboxSimulation(invoice.data.id, finance, {
-        idempotencyKey: `p9-sandbox-${suffix}-foreign`, outcome: 'APPROVED',
-      })).type).toBe('not-available')
-    } finally {
-      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
-      await prisma.showroom.delete({ where: { id: foreignP9Showroom.id } })
-    }
     const simulationKey = `p9-sandbox-${suffix}-idempotency`
     const simulation = await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'APPROVED' })
     expect(simulation.type).toBe('simulated')
@@ -168,13 +164,54 @@ describe('P7 internal sales deal lifecycle', () => {
     expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
     const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
     expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
+    const foreignP10Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P10 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p10-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP10Showroom.id } })
+      expect((await listEligibleDealsForDelivery(operations)).some((deal) => deal.id === opened.data.id)).toBe(false)
+      expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP10Showroom.id } })
+    }
+    const openedDelivery = await createDeliveryCase(opened.data.id, operations)
+    expect(openedDelivery.type).toBe('created')
+    if (openedDelivery.type !== 'created') return
+    deliveryCaseId = openedDelivery.data.id
+    expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
+    expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
+    expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
+    expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
+    expect((await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId } })).status).toBe(VehicleStatus.RESERVED)
+    const wrongSettlementRole = await updateDeliveryChecklistItem(deliveryCaseId, operations, {
+      code: DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED, completed: true, version: 1,
+    })
+    expect(wrongSettlementRole.type).toBe('forbidden')
+    for (const item of openedDelivery.data.items) {
+      const reviewer = item.code === DeliveryChecklistCode.CLEARED_PAYMENT_VERIFIED ? finance : operations
+      const updated = await updateDeliveryChecklistItem(deliveryCaseId, reviewer, {
+        code: item.code, completed: true, version: item.version,
+      })
+      expect(updated.type).toBe('updated')
+    }
+    const beforeReady = await prisma.deliveryCase.findUniqueOrThrow({ where: { id: deliveryCaseId }, select: { version: true } })
+    expect(await transitionDeliveryCase(deliveryCaseId, finance, { version: beforeReady.version, status: DeliveryCaseStatus.READY_FOR_HANDOVER })).toMatchObject({ type: 'invalid-transition' })
+    const ready = await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeReady.version, status: DeliveryCaseStatus.READY_FOR_HANDOVER })
+    expect(ready.type).toBe('updated')
+    const beforeHandover = await prisma.deliveryCase.findUniqueOrThrow({ where: { id: deliveryCaseId }, select: { version: true } })
+    expect(await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER })).toMatchObject({ type: 'invalid-transition' })
+    const handedOver = await transitionDeliveryCase(deliveryCaseId, operations, { version: beforeHandover.version, status: DeliveryCaseStatus.HANDED_OVER, customerAcknowledged: true })
+    expect(handedOver.type).toBe('updated')
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
     ])
     const savedVehicle = await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId } })
-    expect(savedVehicle.status).toBe(VehicleStatus.AVAILABLE)
-    expect(savedVehicle.published).toBe(true)
+    expect(savedVehicle.status).toBe(VehicleStatus.SOLD)
+    expect(savedVehicle.published).toBe(false)
     expect(await prisma.auditLog.count({ where: { entity: 'SalesDeal', entityId: opened.data.id } })).toBe(3)
   })
 })

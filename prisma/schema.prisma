@@ -231,6 +231,9 @@ model User {
   salesDealEvents          SalesDealEvent[]   @relation("SalesDealEventActor")
   financeDraftsCreated     SalesInvoiceDraft[] @relation("SalesInvoiceDraftCreator")
   paymentSandboxAttempts   PaymentSandboxAttempt[] @relation("PaymentSandboxActor")
+  deliveryCasesCreated     DeliveryCase[] @relation("DeliveryCaseCreator")
+  assignedDeliveryCases    DeliveryCase[] @relation("DeliveryCaseAssignee")
+  deliveryChecklistActions DeliveryChecklistEntry[] @relation("DeliveryChecklistActor")
   assignedFollowUps       OperationalFollowUp[]         @relation("FollowUpAssignedTo")
   staffInvitationsSent    StaffInvitation[]             @relation("InvitationInviter")
   staffInvitation         StaffInvitation?              @relation("InvitationAcceptedUser")
@@ -431,6 +434,7 @@ model Vehicle {
   inquiries                Inquiry[]
   salesQuoteDrafts         SalesQuoteDraft[]
   salesDeals               SalesDeal[]
+  deliveryCases            DeliveryCase[]
   testDrives               TestDrive[]
   slugRedirects            VehicleSlugRedirect[]
   statusHistory            VehicleStatusHistory[]
@@ -939,6 +943,7 @@ model Showroom {
   sellRequests SellRequest[]
   contactMessages ContactMessage[]
   salesDeals SalesDeal[]
+  deliveryCases DeliveryCase[]
 
   @@index([active])
   @@index([isPrimary])
@@ -1198,6 +1203,7 @@ model SalesDeal {
   closedAt           DateTime?
   events             SalesDealEvent[]
   invoiceDraft       SalesInvoiceDraft?
+  deliveryCase       DeliveryCase?
   createdAt          DateTime                  @default(now())
   updatedAt          DateTime                  @updatedAt
 
@@ -1273,6 +1279,59 @@ model PaymentSandboxAttempt {
 
   @@index([invoiceDraftId, createdAt])
   @@index([createdById, createdAt])
+}
+
+enum DeliveryCaseStatus {
+  PREPARING
+  READY_FOR_HANDOVER
+  HANDED_OVER
+  CANCELLED
+}
+
+enum DeliveryChecklistCode {
+  CLEARED_PAYMENT_VERIFIED
+  CUSTOMER_DOCUMENTS_CHECKED
+  VEHICLE_PREPARATION_COMPLETE
+  INSURANCE_DOCUMENTS_READY
+  RC_TRANSFER_DOCUMENTS_READY
+}
+
+/** Operational handover record. Registration and transfer submission stay manual. */
+model DeliveryCase {
+  id             String                    @id @default(cuid())
+  referenceNumber String                   @unique
+  dealId         String                    @unique
+  deal           SalesDeal                 @relation(fields: [dealId], references: [id], onDelete: Restrict)
+  vehicleId      String
+  vehicle        Vehicle                   @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+  showroomId     String?
+  showroom       Showroom?                 @relation(fields: [showroomId], references: [id], onDelete: Restrict)
+  assignedToId   String?
+  assignedTo     User?                     @relation("DeliveryCaseAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdBy      User                      @relation("DeliveryCaseCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  status         DeliveryCaseStatus        @default(PREPARING)
+  version        Int                       @default(1)
+  items          DeliveryChecklistEntry[]
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+
+  @@index([showroomId, assignedToId, status, updatedAt])
+  @@index([vehicleId, status])
+}
+
+model DeliveryChecklistEntry {
+  id             String                 @id @default(cuid())
+  deliveryCaseId String
+  deliveryCase   DeliveryCase           @relation(fields: [deliveryCaseId], references: [id], onDelete: Cascade)
+  code           DeliveryChecklistCode
+  completedAt    DateTime?
+  completedById  String?
+  completedBy    User?                  @relation("DeliveryChecklistActor", fields: [completedById], references: [id], onDelete: SetNull)
+  version        Int                    @default(1)
+
+  @@unique([deliveryCaseId, code])
+  @@index([code, completedAt])
 }
 
 enum CustomerDataRightsKind {
