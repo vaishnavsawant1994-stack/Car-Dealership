@@ -331,14 +331,6 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
-    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
-    const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
-    expect(scheduled.type).toBe('updated')
-    const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
-    expect(started.type).toBe('updated')
-    expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 3, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'checks-incomplete' })
-    expect((await createWorkshopOrder(vehicleId, workshop, WorkshopJobType.REPAIR)).type).toBe('already-active')
-    expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
     expect(scheduled.type).toBe('updated')
     const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
@@ -365,7 +357,6 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
       await prisma.showroom.delete({ where: { id: foreignP12Showroom.id } })
     }
-    partRequestIds.push(requested.data.id)
     expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(true)
     expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'issued' })
     const excess = await createWorkshopPartRequest({ workshopOrderId: openedWorkshop.data.id, partId: part.data.id, quantity: '3' }, workshop)
