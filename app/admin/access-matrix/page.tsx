@@ -7,9 +7,9 @@ import { UserRole } from '@prisma/client'
 const roles = Object.values(UserRole)
 const roleDescriptions: Record<UserRole, string> = {
   CUSTOMER: 'Customer account; no staff application access.',
-  SALES: 'Customer enquiries, test drives, and assigned sales follow-up.',
-  FINANCE: 'Finance review and internal invoice draft worksheets only.',
-  OPERATIONS: 'Inventory operations, test drives, inspections, valuations, and sell requests.',
+  SALES: 'Customer enquiries, test drives, and assigned sales follow-up, including delivery visibility.',
+  FINANCE: 'Finance review and internal worksheets, plus cleared funds verification for delivery.',
+  OPERATIONS: 'Inventory operations, test drives, inspections, valuations, sell requests, and vehicle handover.',
   CONTENT_MANAGER: 'Published testimonials, gallery, website content, newsletter, and non-secret settings visibility.',
   ADMIN: 'Dealership administration; protected Super Admin controls remain restricted.',
   SUPER_ADMIN: 'Full application administration, including protected staff and security controls.',

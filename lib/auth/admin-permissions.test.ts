@@ -11,6 +11,7 @@ const expectedAllPermissions = [
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
   'finance.view', 'finance.update',
+  'delivery.view', 'delivery.update', 'delivery.settlementVerify',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
   'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
@@ -19,13 +20,13 @@ const expectedAllPermissions = [
 const expectedPermissions: Record<UserRole, readonly string[]> = {
   [UserRole.CUSTOMER]: [],
   [UserRole.SALES]: [
-    'dashboard.view', 'vehicle.view', 'enquiry.view', 'enquiry.assign', 'enquiry.update', 'enquiry.close',
+    'dashboard.view', 'vehicle.view', 'delivery.view', 'enquiry.view', 'enquiry.assign', 'enquiry.update', 'enquiry.close',
     'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
     'sellRequest.view', 'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close', 'notification.view',
   ],
-  [UserRole.FINANCE]: ['dashboard.view', 'finance.view', 'finance.update', 'auditLog.view', 'notification.view'],
+  [UserRole.FINANCE]: ['dashboard.view', 'finance.view', 'finance.update', 'delivery.view', 'delivery.settlementVerify', 'auditLog.view', 'notification.view'],
   [UserRole.OPERATIONS]: [
-    'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
+    'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive', 'delivery.view', 'delivery.update',
     'brand.manage', 'bodyType.manage', 'feature.manage', 'testDrive.view', 'testDrive.assign', 'testDrive.confirm',
     'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel', 'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect',
     'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete', 'contactInquiry.view', 'notification.view', 'export.create',
