@@ -10,7 +10,7 @@ import {
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
-import { createDeliveryCase, listDeliveryCases, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
+import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
 import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
@@ -93,7 +93,7 @@ afterAll(async () => {
   await prisma.$disconnect()
 })
 
-describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, customer purchase, and analytics lifecycle', () => {
+describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and customer purchase lifecycle', () => {
   it('isolates work by showroom/assignment and enforces deal, finance, sandbox, and handover gates', async () => {
     const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
     if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
@@ -217,9 +217,38 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
     const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
     expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
+    const foreignP10Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P10 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p10-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP10Showroom.id } })
+      expect((await listEligibleDealsForDelivery(operations)).some((deal) => deal.id === opened.data.id)).toBe(false)
+      expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP10Showroom.id } })
+    }
     const openedDelivery = await createDeliveryCase(opened.data.id, operations)
     expect(openedDelivery.type).toBe('created')
     if (openedDelivery.type !== 'created') return
+    deliveryCaseId = openedDelivery.data.id
+    const foreignDeliveryShowroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign Delivery Case ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
+      state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
+      email: `delivery-case-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignDeliveryShowroom.id } })
+      expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(false)
+      expect(await transitionDeliveryCase(deliveryCaseId, operations, {
+        version: openedDelivery.data.version, status: DeliveryCaseStatus.CANCELLED,
+      })).toEqual({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignDeliveryShowroom.id } })
+    }
     deliveryCaseId = openedDelivery.data.id
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
@@ -252,6 +281,19 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     afterSalesTaskIds.push(afterSalesTask.data.id)
     expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(true)
     expect(await createAfterSalesTask({ deliveryCaseId, type: AfterSalesTaskType.FIRST_SERVICE, dueAt: firstServiceDue }, operations)).toMatchObject({ type: 'already-scheduled' })
+    const foreignP13Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P13 ${suffix}`, address: 'Synthetic Test Road, 5', city: 'Test City',
+      state: 'Test State', postalCode: '000005', phone: 'Synthetic only',
+      email: `p13-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP13Showroom.id } })
+      expect((await listAfterSalesTasks(operations)).some((task) => task.id === afterSalesTask.data.id)).toBe(false)
+      expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP13Showroom.id } })
+    }
     expect(await completeAfterSalesTask(afterSalesTask.data.id, 1, operations)).toMatchObject({ type: 'completed' })
     const customerPurchases = await listCustomerPurchases(customer.id)
     expect(customerPurchases).toHaveLength(1)
@@ -273,6 +315,22 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     if (openedWorkshop.type !== 'created') return
     workshopOrderIds.push(openedWorkshop.data.id)
     expect((await createWorkshopOrder(vehicleId, workshop, WorkshopJobType.REPAIR)).type).toBe('already-active')
+    const foreignP11Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P11 ${suffix}`, address: 'Synthetic Test Road, 3', city: 'Test City',
+      state: 'Test State', postalCode: '000003', phone: 'Synthetic only',
+      email: `p11-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP11Showroom.id } })
+      expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(false)
+      const item = openedWorkshop.data.checklist[0]
+      expect(await updateWorkshopChecklist(openedWorkshop.data.id, workshop, {
+        code: item.code, completed: true, version: item.version,
+      })).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
+    }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
     const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
     expect(scheduled.type).toBe('updated')
@@ -287,6 +345,19 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     expect(requested.type).toBe('requested')
     if (requested.type !== 'requested') return
     partRequestIds.push(requested.data.id)
+    const foreignP12Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P12 ${suffix}`, address: 'Synthetic Test Road, 4', city: 'Test City',
+      state: 'Test State', postalCode: '000004', phone: 'Synthetic only',
+      email: `p12-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP12Showroom.id } })
+      expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(false)
+      expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'not-available' })
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP12Showroom.id } })
+    }
     expect((await listWorkshopPartRequests(partsManager)).some((entry) => entry.id === requested.data.id)).toBe(true)
     expect(await issueWorkshopPartRequest({ id: requested.data.id, version: 1 }, partsManager)).toMatchObject({ type: 'issued' })
     const excess = await createWorkshopPartRequest({ workshopOrderId: openedWorkshop.data.id, partId: part.data.id, quantity: '3' }, workshop)
@@ -301,7 +372,6 @@ describe('P7-P17 sales, finance, delivery, workshop, parts, after-sales, custome
     const beforeComplete = await prisma.workshopOrder.findUniqueOrThrow({ where: { id: openedWorkshop.data.id }, select: { version: true } })
     expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: beforeComplete.version, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'updated' })
     expect((await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId }, select: { status: true } })).status).toBe(VehicleStatus.SOLD)
-
     const analytics = await getShowroomAnalytics(operations)
     expect(analytics.periodDays).toBe(30)
     expect(analytics.salesDeals.find((entry) => entry.status === SalesDealStatus.WON)?.count).toBe(1)
