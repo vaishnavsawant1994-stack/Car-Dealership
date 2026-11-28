@@ -253,6 +253,9 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     deliveryCaseId = openedDelivery.data.id
     expect(openedDelivery.data.items).toHaveLength(Object.values(DeliveryChecklistCode).length)
     expect((await listDeliveryCases(operations)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
+    expect(await updateDeliveryChecklistItem(deliveryCaseId, peer, {
+      code: openedDelivery.data.items[0].code, completed: true, version: openedDelivery.data.items[0].version,
+    })).toMatchObject({ type: 'not-available' })
     expect((await listDeliveryCases(finance)).some((entry) => entry.id === deliveryCaseId)).toBe(true)
     expect((await createDeliveryCase(opened.data.id, operations)).type).toBe('not-available')
     expect((await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId } })).status).toBe(VehicleStatus.RESERVED)
@@ -333,6 +336,9 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       await prisma.showroom.delete({ where: { id: foreignP11Showroom.id } })
     }
     expect((await listWorkshopOrders(workshop)).some((order) => order.id === openedWorkshop.data.id)).toBe(true)
+    expect(await updateWorkshopChecklist(openedWorkshop.data.id, peer, {
+      code: openedWorkshop.data.checklist[0].code, completed: true, version: openedWorkshop.data.checklist[0].version,
+    })).toMatchObject({ type: 'not-available' })
     const scheduled = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 1, status: WorkshopOrderStatus.SCHEDULED })
     expect(scheduled.type).toBe('updated')
     const started = await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: 2, status: WorkshopOrderStatus.IN_PROGRESS })
