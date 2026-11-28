@@ -2,12 +2,12 @@
 
 import { ArrowUp, ChevronDown, ChevronRight, Clock3, Compass, Info, Mail, MapPin, Phone, Scale, Send, ShieldCheck, Wrench } from 'lucide-react'
 import Link from 'next/link'
-import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { BrandLogo } from '@/components/layout/BrandLogo'
 import { SocialIcon } from '@/components/layout/SocialIcon'
 import { footerColumns } from '@/lib/constants/site'
 import { useSiteConfig } from '@/components/providers/SiteConfigProvider'
+import { publicNewsletterSignupEnabled } from '@/lib/marketing/campaign-policy'
 
 function slugify(label: string) {
   const routes: Record<string, string> = {
@@ -39,9 +39,6 @@ function slugify(label: string) {
 }
 
 export function Footer() {
-  const [email, setEmail] = useState('')
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
-  const [message, setMessage] = useState('')
   const [openSection, setOpenSection] = useState<string | null>('Quick Links')
   const config = useSiteConfig()
   const publicConfig = { ...config, location: config.address }
@@ -51,27 +48,6 @@ export function Footer() {
     'Our Services': Wrench,
     Information: Info,
     Legal: Scale,
-  }
-
-  async function submitNewsletter(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setStatus('loading')
-    setMessage('')
-
-    try {
-      const response = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      const body = await response.json().catch(() => ({ message: 'Subscription could not be completed.' })) as { message?: string }
-      setStatus(response.ok ? 'success' : 'error')
-      setMessage(body.message ?? 'Something went wrong.')
-      if (response.ok) setEmail('')
-    } catch {
-      setStatus('error')
-      setMessage('We could not connect. Check your connection and try again.')
-    }
   }
 
   const socialLinks = [
@@ -146,29 +122,10 @@ export function Footer() {
             <span className="footer-newsletter__icon"><Send aria-hidden="true" /></span>
             <span><small>Stay informed</small><h2>Newsletter</h2></span>
           </div>
-          <p>Subscribe to get the latest updates on new arrivals, offers and more.</p>
-          <form onSubmit={submitNewsletter}>
-            <label htmlFor="newsletter-email">Email address</label>
-            <input
-              id="newsletter-email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Enter your email"
-              type="email"
-              autoComplete="email"
-              required
-            />
-            <button type="submit" disabled={status === 'loading'}>
-              {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
-              <Send size={15} aria-hidden="true" />
-            </button>
-          </form>
-          <small className="footer-newsletter__note"><ShieldCheck aria-hidden="true" /> Private, useful updates. No spam.</small>
-          {message ? (
-            <p className={`form-status form-status--${status}`} role="status">
-              {message}
-            </p>
-          ) : null}
+          {publicNewsletterSignupEnabled ? <>
+            <p>Subscribe to get the latest updates on new arrivals, offers and more.</p>
+            <a className="footer-newsletter__note" href="/account/settings"><ShieldCheck aria-hidden="true" /> Manage communication choices</a>
+          </> : <p>Newsletter signup is paused while promotional campaigns are disabled.</p>}
         </div>
       </div>
       <div className="footer-bottom">
