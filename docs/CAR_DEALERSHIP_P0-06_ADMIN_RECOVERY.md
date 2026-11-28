@@ -48,7 +48,7 @@ Vercel deployment.
 ## Current status
 Recovery code provided for review/CI. **No password has been changed
 by merging or viewing this PR**. This command needs an operator-held
-credential to enable usable login, plus reviewed, one-off execution in
+credential to enable usable login, plus owner-approved, one-off execution in
 a disposable maintenance process.
 
 ## Recovery-command hardening (2026-11-02)
@@ -71,5 +71,5 @@ local PostgreSQL CI-style suite **14 files / 92 tests passed**, lint and
 typecheck passed, and the production build generated **117 static pages**.
 The CI seed used a generated test-only password on an isolated loopback
 PostgreSQL 16 container, which was removed after verification. This is local
-test evidence; PR exact-head CI and independent review are still required
-before any live recovery.
+test evidence; exact-head CI and owner-approved masked execution are
+still required before any live recovery.
