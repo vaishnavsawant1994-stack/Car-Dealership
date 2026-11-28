@@ -82,7 +82,8 @@ export async function POST(request: Request) {
       // Do not log tokens, personal email addresses or error payloads.
       console.error('staff_invitation_delivery_failed', { invitationId: invitation.id })
     }
-    const previewVisible = process.env.NODE_ENV !== 'production'
+    const previewVisible = process.env.NODE_ENV !== 'production' ||
+      (process.env.APP_ENV === 'test' && process.env.ALLOW_CI_EMAIL_PREVIEW_URL === 'true')
     return NextResponse.json({
       data: { id: invitation.id, email: invitation.email, expiresAt: invitation.expiresAt,
         ...(preview && previewVisible ? { previewUrl: '/staff-invitation?token=' + encodeURIComponent(token) } : {}) },

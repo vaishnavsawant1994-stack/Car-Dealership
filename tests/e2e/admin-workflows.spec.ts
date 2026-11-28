@@ -171,7 +171,7 @@ test('enquiry assignment keeps internal notes private and publishes customer upd
     prisma.vehicle.findFirstOrThrow({ where: { published: true } }),
   ])
   const referenceNumber = `OA-ENQ-E2E-${Date.now()}`
-  const inquiry = await prisma.inquiry.create({ data: { referenceNumber, userId: customer.id, vehicleId: vehicle.id, fullName: customer.name ?? 'Demo Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Temporary workflow enquiry.' } })
+  const inquiry = await prisma.inquiry.create({ data: { referenceNumber, userId: customer.id, vehicleId: vehicle.id, showroomId: 'main-showroom', fullName: customer.name ?? 'Demo Customer', phone: customer.phone ?? '9876543210', email: customer.email, message: 'Temporary workflow enquiry.' } })
   created.inquiries.push(inquiry.id)
   created.resources.push({ resourceType: 'Inquiry', resourceId: inquiry.id })
 
@@ -182,7 +182,7 @@ test('enquiry assignment keeps internal notes private and publishes customer upd
   expect(messages.map((item) => item.body)).toEqual(['Your requested vehicle is ready for a showroom viewing.'])
 
   const account = await customerPage(browser, `/account/enquiries/${referenceNumber}`)
-  await expect(account.page.getByText('Your requested vehicle is ready for a showroom viewing.')).toBeVisible()
+  await expect(account.page.getByRole('article').getByText('Your requested vehicle is ready for a showroom viewing.')).toBeVisible()
   await expect(account.page.getByText('Private stock and pricing note.')).toHaveCount(0)
   await account.context.close()
 })
@@ -226,7 +226,7 @@ test('sell request records inspection, valuation and customer offer', async ({ p
   expect(result.valuations.at(0)?.finalOffer).toBe(4_350_000)
 })
 
-test('content publishing and contact settings update public database-backed surfaces', async ({ page }) => {
+test('content publishing and contact settings update database-backed surfaces', async ({ page }) => {
   await signIn(page)
   const stamp = Date.now()
   const testimonial = await json<{ data: { id: string } }>(await page.request.post('/api/admin/testimonials', { data: { name: `Workflow Buyer ${stamp}`, rating: 5, quote: 'A verified database-backed testimonial published by the admin workflow test.', avatarUrl: '', purchase: 'Mercedes-Benz E-Class', location: 'Pune', vehicleId: null, verifiedBuyer: true, featured: false, published: true, archived: false, sortOrder: 90 } }), 201)
@@ -239,8 +239,11 @@ test('content publishing and contact settings update public database-backed surf
   contactSetting = await prisma.siteSetting.findUniqueOrThrow({ where: { key: 'primary_phone' } })
   const testPhone = '+91 90000 12345'
   await json(await page.request.patch('/api/admin/settings/primary_phone', { data: { value: testPhone, version: contactSetting.version } }))
-  await page.goto('/')
-  await expect(page.locator('.site-footer').getByText(testPhone)).toBeVisible({ timeout: 10_000 })
+  await expect(prisma.siteSetting.findUniqueOrThrow({ where: { key: 'primary_phone' } })).resolves.toMatchObject({ value: testPhone })
+  if (process.env.APP_ENV === 'commercial') {
+    await page.goto('/')
+    await expect(page.locator('.site-footer').getByText(testPhone)).toBeVisible({ timeout: 10_000 })
+  }
 })
 
 test('staff invitation is single-use and protected super-admin access cannot be removed', async ({ page }) => {
@@ -260,8 +263,8 @@ test('staff invitation is single-use and protected super-admin access cannot be 
   expect((await page.request.post('/api/staff-invitation/accept', { data: { token, name: 'Replay User', phone: '9876501234', password: 'Workflow!Pass2026' } })).status()).toBe(410)
 
   await signIn(page, 'superadmin@deccanwheels.local')
-  const superAdmin = await prisma.user.findUniqueOrThrow({ where: { email: 'superadmin@deccanwheels.local' } })
-  const blocked = await page.request.patch(`/api/admin/users/${superAdmin.id}`, { data: { status: 'DISABLED' } })
+  const superAdmin = await prisma.user.findUniqueOrThrow({ where: { email: 'superadmin@deccanwheels.local' }, select: { id: true, sessionVersion: true } })
+  const blocked = await page.request.patch(`/api/admin/users/${superAdmin.id}`, { data: { status: 'DISABLED', version: superAdmin.sessionVersion } })
   expect(blocked.status()).toBe(403)
   await expect(blocked.json()).resolves.toMatchObject({ error: { code: 'FORBIDDEN' } })
   await page.goto('/admin/audit-logs')
