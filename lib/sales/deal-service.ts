@@ -48,10 +48,20 @@ function accessibleSalesResourceWhere(
   }
 }
 
+function accessibleSalesDealWhere(
+  actor: AdminActor,
+  scope: Awaited<ReturnType<typeof getActorShowroomScope>>,
+) {
+  return {
+    ...accessibleSalesResourceWhere(actor, scope),
+    ...(!scope.global ? { inquiry: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+  }
+}
+
 export async function listSalesDeals(actor: AdminActor, status?: SalesDealStatus) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findMany({
-    where: { ...accessibleSalesResourceWhere(actor, scope), ...(status ? { status } : {}) },
+    where: { ...accessibleSalesDealWhere(actor, scope), ...(status ? { status } : {}) },
     select: dealSummarySelect,
     take: 100,
     orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
@@ -61,7 +71,7 @@ export async function listSalesDeals(actor: AdminActor, status?: SalesDealStatus
 export async function getActiveSalesDealForInquiry(inquiryId: string, actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findFirst({
-    where: { inquiryId, status: { in: activeDealStates }, ...accessibleSalesResourceWhere(actor, scope) },
+    where: { inquiryId, status: { in: activeDealStates }, ...accessibleSalesDealWhere(actor, scope) },
     select: { id: true, referenceNumber: true, status: true },
   })
 }
@@ -112,7 +122,7 @@ export async function createSalesDeal(inquiryId: string, actor: AdminActor, quot
 export async function transitionSalesDeal(id: string, actor: AdminActor, input: TransitionSalesDealInput) {
   const scope = await getActorShowroomScope(actor)
   return prisma.$transaction(async (tx) => {
-    const where = { id, ...accessibleSalesResourceWhere(actor, scope) }
+    const where = { id, ...accessibleSalesDealWhere(actor, scope) }
     const current = await tx.salesDeal.findFirst({ where, select: { id: true, status: true, version: true } })
     if (!current) return { type: 'not-found' as const }
     if (current.version !== input.version) return { type: 'conflict' as const }
@@ -153,7 +163,7 @@ export async function transitionSalesDeal(id: string, actor: AdminActor, input: 
 export async function getSalesDeal(id: string, actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findFirst({
-    where: { id, ...accessibleSalesResourceWhere(actor, scope) },
+    where: { id, ...accessibleSalesDealWhere(actor, scope) },
     select: { ...dealSummarySelect, events: { take: 100, orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
       select: { id: true, fromStatus: true, toStatus: true, acceptanceMethod: true, lossReason: true,
         createdAt: true, actor: { select: { name: true } } } } },
