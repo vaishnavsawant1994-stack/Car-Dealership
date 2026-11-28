@@ -14,7 +14,7 @@
 
 ## Release gates
 
-- [ ] Reconcile the preserved F: checkout and P1-05 local work with PR #38; complete the broader resource and derived-record isolation review.
+- [ ] Reconcile the preserved F: checkout and P1-05 local work with PR #38; complete the broader resource and derived-record isolation review. P21 PR #53 covers inspections and linked quotes; P22 PR #55 covers private sell-request attachment reads.
 - [ ] Set repository privacy and complete historical credential exposure response.
 - [ ] Establish secure staging Super Admin recovery through private masked password entry.
 - [ ] Validate P0-06 authentication and real vehicle image upload/storage/variants/cleanup against an isolated S3-compatible test account with approved credentials.
