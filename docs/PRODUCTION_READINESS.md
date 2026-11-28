@@ -10,7 +10,7 @@
 - Public newsletter signup and campaign sending remain disabled; campaign activation is blocked in code and staff controls cannot subscribe a record.
 - Showroom-scoped operational counts for recent sales and current delivery, workshop, and after-sales queues.
 - S3 vehicle image adapter now removes original and variant objects on cleanup and attempts cleanup after partial writes. Provider integration is not yet proven.
-- CI validates migrations and tests on a new disposable PostgreSQL instance. The new P19 work adds browser acceptance on that isolated instance; its first run is pending in PR #51.
+- CI validates migrations and tests on a new disposable PostgreSQL instance. P19's prior head passed all 55 browser tests in CI #258; the refreshed integrated P19 head is undergoing exact-head CI #290.
 
 ## Release gates
 
