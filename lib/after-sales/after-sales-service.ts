@@ -10,14 +10,24 @@ function linkedVehicleScope(scope: Awaited<ReturnType<typeof getActorShowroomSco
   return scope.global ? {} : { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } }
 }
 
+function scopedSalesDealWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
+  if (scope.global) return {}
+  const showroom = showroomScopeWhere(scope)
+  return { ...showroom, inquiry: { is: showroom }, vehicle: { is: showroom } }
+}
+
 function scopedDeliveryCaseWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
-  return { ...showroomScopeWhere(scope), ...linkedVehicleScope(scope) }
+  return {
+    ...showroomScopeWhere(scope),
+    ...linkedVehicleScope(scope),
+    ...(!scope.global ? { deal: { is: scopedSalesDealWhere(scope) } } : {}),
+  }
 }
 
 function scopedAfterSalesTaskWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
   return {
     ...showroomScopeWhere(scope),
-    ...(!scope.global ? { deliveryCase: { is: linkedVehicleScope(scope) } } : {}),
+    ...(!scope.global ? { deliveryCase: { is: scopedDeliveryCaseWhere(scope) } } : {}),
   }
 }
 
