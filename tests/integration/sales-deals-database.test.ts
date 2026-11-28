@@ -427,6 +427,8 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     let invoiceId: string | undefined
     let salesId: string | undefined
     let financeId: string | undefined
+    let mismatchedDeliveryCaseId: string | undefined
+    let mismatchedAfterSalesTaskId: string | undefined
 
     try {
       const referenceVehicle = await prisma.vehicle.findFirstOrThrow({ select: { brandId: true, bodyTypeId: true } })
@@ -495,6 +497,24 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       } })
       invoiceId = invoice.id
 
+      expect((await listEligibleDealsForDelivery(sales)).some((item) => item.id === deal.id)).toBe(false)
+      expect(await createDeliveryCase(deal.id, sales)).toEqual({ type: 'not-available' })
+
+      const mismatchedDeliveryCase = await prisma.deliveryCase.create({ data: {
+        referenceNumber: `DLV-${testKey}`, dealId: deal.id, vehicleId: vehicle.id,
+        showroomId: mainShowroom.id, assignedToId: sales.id, createdById: sales.id,
+        status: DeliveryCaseStatus.HANDED_OVER,
+      } })
+      mismatchedDeliveryCaseId = mismatchedDeliveryCase.id
+      const mismatchedTask = await prisma.afterSalesTask.create({ data: {
+        deliveryCaseId: mismatchedDeliveryCase.id, showroomId: mainShowroom.id,
+        type: AfterSalesTaskType.FIRST_SERVICE, dueAt: new Date(Date.now() + 86_400_000),
+        assignedToId: sales.id, createdById: sales.id,
+      } })
+      mismatchedAfterSalesTaskId = mismatchedTask.id
+      expect((await listDeliveryCases(sales)).some((item) => item.id === mismatchedDeliveryCase.id)).toBe(false)
+      expect((await listAfterSalesTasks(sales)).some((item) => item.id === mismatchedTask.id)).toBe(false)
+
       expect(await getSalesQuoteDrafts(inquiry.id, sales)).toBeNull()
       expect(await getSalesDeal(deal.id, sales)).toBeNull()
       expect((await listSalesDeals(sales)).some((item) => item.id === deal.id)).toBe(false)
@@ -509,6 +529,8 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     } finally {
       if (previousPaymentMode === undefined) delete process.env.PAYMENT_MODE
       else process.env.PAYMENT_MODE = previousPaymentMode
+      if (mismatchedAfterSalesTaskId) await prisma.afterSalesTask.deleteMany({ where: { id: mismatchedAfterSalesTaskId } })
+      if (mismatchedDeliveryCaseId) await prisma.deliveryCase.deleteMany({ where: { id: mismatchedDeliveryCaseId } })
       if (invoiceId) await prisma.salesInvoiceDraft.deleteMany({ where: { id: invoiceId } })
       if (dealId) await prisma.salesDeal.deleteMany({ where: { id: dealId } })
       if (quoteId) await prisma.salesQuoteDraft.deleteMany({ where: { id: quoteId } })
