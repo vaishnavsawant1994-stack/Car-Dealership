@@ -21,7 +21,7 @@ Once an authorized operator has completed the canonical seller acquisition lifec
 
 Run the ordinary Prisma migration/test workflow against an isolated local/CI PostgreSQL database. Never run the migration directly on live staging until the stacked branch is reconciled, reviewed, and approved. Existing main remains unchanged.
 
-P2-03 must not be merged before its parent PR #22 (P2-02) and PR #21 (P2-01). Branch permissions and actual legal acquisition evidence need future review with the broader P1-05 boundary model. Repository privacy and live secure administrator recovery remain release gates.
+P2-03 must not be merged before its parent PR #22 (P2-02) and PR #21 (P2-01). Branch permissions and actual legal acquisition evidence need future review with the broader P1-05 boundary model. Historical credential exposure response and live secure administrator recovery remain release gates. The repository stays public at the owner's direction.
 
 ## Product limitations
 
