@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { randomUUID } from 'node:crypto'
 import { mkdir, unlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -11,7 +12,7 @@ export class LocalImageStorage implements ImageStorageAdapter {
   private root = path.join(process.cwd(), 'public', 'uploads', 'vehicles')
   createUploadUrl(input: { vehicleId: string; filename: string; contentType: string }) {
     const safe = input.filename.toLowerCase().replace(/[^a-z0-9.-]+/g, '-')
-    const storageKey = `vehicles/${input.vehicleId}/${Date.now()}-${safe}`
+    const storageKey = `vehicles/${input.vehicleId}/${randomUUID()}-${safe}`
     return Promise.resolve({ uploadUrl: `/api/admin/vehicles/${input.vehicleId}/images`, storageKey, method: 'POST' as const })
   }
   async completeUpload(input: { vehicleId: string; storageKey: string; buffer?: Buffer; contentType: string }): Promise<StoredImage> {
