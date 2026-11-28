@@ -1,6 +1,10 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** PRs #38–#53 are open, mergeable, and ready for normal review; none is merged. Exact-head CI is engineering evidence, not release acceptance.
+**As of 2026-11-28.** PRs #38–#54 are open, mergeable, and ready for normal review; none is merged. Exact-head CI is engineering evidence, not release acceptance.
+
+## P0-03 database preflight follow-up
+
+PR #54 removes the blanket production-environment block while retaining explicit project identity, approved host/name, PostgreSQL scheme, and legacy-source checks. Exact-head CI #408 passed. No hosted connection was made by this change.
 
 ## Dependency-ordered development slices
 
@@ -33,7 +37,8 @@ P21 inspection and derived quote scope work is ready for review in [PR #53](http
 - Migrations were exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
 - No migration was applied to Neon, production, or existing staging. Neon staging's default branch was observed unprotected and was not used.
 - Vercel SSO remains enabled on existing staging and demo deployments. No deployment or alias change was made.
-- No isolated Vercel preview was created. The connected GitHub namespace is available under a different Vercel team than the existing staging project; no project integration or protection settings were changed.
+- A separate Vercel preview project was created in the existing Vercel team with SSO required for every deployment. It has no deployment and no Git integration.
+- A new Neon preview project and main branch were created; read-only SQL confirmed database `neondb` has zero public tables. No migrations were applied.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
 - F: Car Dealership and the separate P1-05 worktree were read-only inspected and clean; neither was modified. Existing dirty inspection/P1-05 edits in the C: P20 worktree were preserved, along with all local databases.
 - The repository remains public at the user's direction.
@@ -46,6 +51,7 @@ P21 inspection and derived quote scope work is ready for review in [PR #53](http
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
 - Protected browser, responsive visual, and role acceptance must run on protected staging after an isolated preview configuration is available.
 - Review and remediate any real credential exposure found in repository history before deployment; repository privacy itself is not a release gate. A preliminary high-confidence pattern scan over history available in the C: P20 checkout returned candidates only in `.env.example`, CI, and test files. No dedicated secret-scanning tool was available, so this does not prove the full GitHub history is credential-free.
+- Preview environment setup is incomplete: automatic review rejected adding the email-capture encryption key. No secret was transferred and no preview build was attempted.
 - Explicit release approval is still required before hosted migration, deployment, or a public demo.
 
 These remaining items prevent a production-readiness claim. Do not bypass them.
