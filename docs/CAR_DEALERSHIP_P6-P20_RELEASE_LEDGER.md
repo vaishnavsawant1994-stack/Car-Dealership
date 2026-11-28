@@ -1,6 +1,6 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. PRs #38–#55 are open, mergeable, and out of draft; none is merged. CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. PRs #38–#55 and #57 are open and mergeable; none is merged. PR #56 was closed as superseded. CI success is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
@@ -24,18 +24,19 @@
 
 ## Data and deployment boundaries
 
-- Migrations are exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
-- No migration was applied to Neon, production, or existing staging. No production deployment or staging deployment was performed.
+- CI exercises migrations against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
+- A second isolated check executed the 22 current Prisma migration SQL files (472 statements) in order, one transaction per migration, on fresh Neon preview child branch `car-dealership-migration-qa-compute`. It produced 60 public tables (matching 60 Prisma models), 32 enums, and 100 foreign keys. A synthetic preview fingerprint row was added; the branch has no users, vehicles, or showrooms. This used direct migration SQL, not Prisma's migration engine, so the `_prisma_migrations` history was not initialized and the branch is validation-only.
+- The preview project's default branch remains empty and has no schema migration. No migration was applied to existing staging or production. No production or staging deployment was performed.
 - Vercel staging SSO/protection remains in place.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
 - The F: drive worktree and local databases were preserved; they were inspected read-only and were not overwritten.
 - P0-03 follow-up PR #54 removes the obsolete blanket commercial-database block while retaining explicit project, host, database-name, scheme, and legacy-target checks. Exact-head CI #408 passed; it remains open for normal review.
-- The dedicated Vercel roadmap-preview project requires SSO for every deployment and has no deployment. Its environment variables are preview-only. The separate Neon preview project `car-dealership-preview-db` has one new default branch, `neondb`, with no tables and zero bytes written. A fresh 32-byte email-capture key is stored as a sensitive Vercel preview-only variable; it was generated for this isolated preview and was not displayed. No migration was run. Preview remains incomplete: it has no `DATABASE_URL` or restricted runtime login, so no build or deployment has been attempted. Existing staging/demo project settings, databases, and credentials were not changed.
+- The dedicated Vercel roadmap-preview project requires SSO for every deployment and has no deployment. Its environment variables are preview-only. The Neon preview project's default branch `neondb` remains empty. A least-privilege read/write runtime role and sensitive preview-only `DATABASE_URL` are configured, but that URL still points to the empty default branch; an API attempt to retarget it to the validation branch was denied. A fresh 32-byte email-capture key and preview-only auth/site settings are stored. The isolated validation child branch holds the tested schema described above but is not the Vercel runtime target. Separate public/private object-storage buckets and non-secret settings are configured; S3 access and secret keys are still missing, so the isolation preflight still blocks a build. No preview deployment has been attempted. Existing staging/demo project settings, databases, and credentials were not changed.
 
 ## Unresolved release gates
 
 - Repository remains public at the owner's direction. Before deployment, obtain a dedicated full-history credential scan and respond to any confirmed exposure. A pattern-only scan of the 433 commits reachable from 42 refs in the local P20 Git database found matches only in `.env.example`, CI, and database-isolation/health/logging/recovery tests (12 commits across 8 files). No dedicated scanner was installed, so this does not prove the entire GitHub history clean.
-- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`.
+- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`. P23 PR #57 carries delivery/workshop child-scope predicates onto the current P20 base; exact-head CI run #46122489499 passed on `f13d85f615cc15ef44d3359859e35302c01183e9`.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
