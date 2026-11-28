@@ -6,7 +6,7 @@
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; exact-head CI #398 passed. No F: edits were made; direct revalidation of that checkout is currently denied by workspace permissions. Broader child-record scope audit continues in #53, #55, and #59. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; latest docs-refresh exact-head CI [46130049325](https://github.com/vaishnavsawant1994-stack/Car-Dealership/actions/runs/46130049325) passed on `1b6db79e2423d098369a07c519c53846c3c84abf` (migrations, seed, lint, type-check, tests, build). No F: edits were made; direct revalidation of that checkout is currently denied by workspace permissions. Broader child-record scope audit continues in #53, #55, and #59. |
 | P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Open, mergeable, ready for normal review; exact-head CI #315 passed. |
 | P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Open, mergeable, ready for normal review; exact-head CI #341 passed. |
 | P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Open, mergeable, ready for normal review; exact-head CI #342 passed. No payment processor or capture. |
