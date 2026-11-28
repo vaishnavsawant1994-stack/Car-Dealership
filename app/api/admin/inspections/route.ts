@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { adminError, validationError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
+import { getActorShowroomScope } from '@/lib/auth/showroom-scope'
+import { inspectionShowroomWhere } from '@/lib/auth/admin-resource-policy'
 import { prisma } from '@/lib/db/prisma'
 import { startVehicleInspection } from '@/lib/inspection/inspection-service'
 
@@ -16,8 +18,9 @@ export async function GET(request: Request) {
     if (!status.success) {
       return NextResponse.json({ error: { code: 'INVALID_STATUS', message: 'Unknown inspection status.' } }, { status: 400 })
     }
+    const scopeWhere = inspectionShowroomWhere(await getActorShowroomScope(actor))
     const data = await prisma.vehicleInspection.findMany({
-      where: { ...(status.data ? { status: status.data } : {}), ...((actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN) ? {} : { inspectorId: actor.id }) },
+      where: { ...scopeWhere, ...(status.data ? { status: status.data } : {}), ...((actor.role === UserRole.ADMIN || actor.role === UserRole.SUPER_ADMIN) ? {} : { inspectorId: actor.id }) },
       take: 100,
       orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
       select: {
@@ -57,3 +60,4 @@ export async function POST(request: Request) {
     return adminError(error)
   }
 }
+
