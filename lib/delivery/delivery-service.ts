@@ -22,13 +22,29 @@ function deliveryReference() {
 
 class DeliveryTransactionConflict extends Error {}
 
+function dealShowroomWhere(scope: Awaited<ReturnType<typeof getActorShowroomScope>>): Prisma.SalesDealWhereInput {
+  if (scope.global) return {}
+  const showroom = showroomScopeWhere(scope)
+  return { ...showroom, inquiry: { is: showroom }, vehicle: { is: showroom } }
+}
+
+function eligibleDealWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
+  const resourceScope = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
+    ? showroomScopeWhere(scope)
+    : accessibleResourceWhere(actor, scope)
+  return { ...resourceScope, ...dealShowroomWhere(scope) }
+}
+
 function deliveryWhere(actor: AdminActor, scope: Awaited<ReturnType<typeof getActorShowroomScope>>) {
   const resourceScope = actor.role === UserRole.FINANCE || actor.role === UserRole.OPERATIONS
     ? showroomScopeWhere(scope)
     : accessibleResourceWhere(actor, scope)
   return {
     ...resourceScope,
-    ...(!scope.global ? { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } } : {}),
+    ...(!scope.global ? {
+      vehicle: { is: showroomScopeWhere(scope) },
+      deal: { is: dealShowroomWhere(scope) },
+    } : {}),
   }
 }
 
@@ -43,7 +59,7 @@ export async function listDeliveryCases(actor: AdminActor) {
 export async function listEligibleDealsForDelivery(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   return prisma.salesDeal.findMany({
-    where: { status: SalesDealStatus.WON, ...deliveryWhere(actor, scope), deliveryCase: null,
+    where: { status: SalesDealStatus.WON, ...eligibleDealWhere(actor, scope), deliveryCase: null,
       invoiceDraft: { is: { status: 'DRAFT' } } },
     select: { id: true, referenceNumber: true, vehicle: { select: { shortTitle: true, stockNumber: true, status: true } } },
     take: 100, orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
@@ -55,7 +71,7 @@ export async function createDeliveryCase(dealId: string, actor: AdminActor) {
   try {
     return await prisma.$transaction(async (tx) => {
       const deal = await tx.salesDeal.findFirst({
-        where: { id: dealId, status: SalesDealStatus.WON, ...deliveryWhere(actor, scope), deliveryCase: null,
+        where: { id: dealId, status: SalesDealStatus.WON, ...eligibleDealWhere(actor, scope), deliveryCase: null,
           invoiceDraft: { is: { status: 'DRAFT' } } },
         select: { id: true, referenceNumber: true, vehicleId: true, showroomId: true, assignedToId: true,
           vehicle: { select: { status: true, version: true } } },
