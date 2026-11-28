@@ -72,7 +72,10 @@ describe('P7 internal sales deal lifecycle', () => {
       role: UserRole.FINANCE, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
     userIds.push(sales.id, peer.id, finance.id)
-    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })) })
+    await prisma.showroomStaffAssignment.createMany({
+      data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })),
+      skipDuplicates: true,
+    })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -124,6 +127,7 @@ describe('P7 internal sales deal lifecycle', () => {
       acceptanceMethod: SalesDealAcceptanceMethod.CUSTOMER_EMAIL,
     })
     expect(won).toMatchObject({ type: 'updated', data: { status: SalesDealStatus.WON, version: 3 } })
+    await prisma.salesDeal.update({ where: { id: opened.data.id }, data: { assignedToId: finance.id } })
     const invoice = await createSalesInvoiceDraft(opened.data.id, finance)
     expect(invoice.type).toBe('created')
     if (invoice.type !== 'created') return
