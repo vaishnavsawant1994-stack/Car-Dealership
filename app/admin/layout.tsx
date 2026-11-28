@@ -23,6 +23,7 @@ const groups: Array<{ label: string; items: Array<AdminNavItem & { permission: A
     { label: 'Sales Deals', href: '/admin/deals', icon: 'sales', permission: 'enquiry.view' },
     { label: 'Finance Review', href: '/admin/finance', icon: 'audit', permission: 'finance.view' },
     { label: 'Delivery & Transfer', href: '/admin/delivery', icon: 'vehicles', permission: 'delivery.view' },
+    { label: 'After-sales Care', href: '/admin/after-sales', icon: 'customers', permission: 'afterSales.view' },
     { label: 'Workshop', href: '/admin/workshop', icon: 'inspection', permission: 'workshop.view' },
     { label: 'Parts Inventory', href: '/admin/parts', icon: 'vehicles', permission: 'parts.view' },
     { label: 'Customer 360', href: '/admin/customers', icon: 'customers', permission: 'user.view' },
