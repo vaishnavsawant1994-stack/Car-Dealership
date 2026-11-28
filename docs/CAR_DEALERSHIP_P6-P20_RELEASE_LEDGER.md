@@ -1,49 +1,51 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. Every PR below is still a draft and unmerged; CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** All listed PRs remain open drafts and unmerged. Exact-head CI is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; CI #167 passed. P1-05 source HEAD `223220110243bb7415dc22d5bd1634cdead5b7e0` is an ancestor of PR #38 HEAD `253a32b2e295663b8f18f1ed1a41335a99686405`. A broader query and derived-child scope audit remains open; P21 tracks additional inspection and sales-quote fixes. |
-| P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `c0197ac`; exact-head CI #295 passed lint, type-check, isolated PostgreSQL tests, and production build. |
-| P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `a650566`; exact-head CI #296 passed. |
-| P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `3d72660`; exact-head CI #297 passed. No payment processor or capture. |
-| P10 | Delivery checklist, handover and vehicle transfer | [#42](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/42) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `b91703e`; exact-head CI #298 passed. |
-| P11 | Showroom-scoped workshop service and checklists | [#43](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/43) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `93c30e0`; exact-head CI #299 passed. |
-| P12 | Parts catalog, stock ledger and workshop issue flow | [#44](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/44) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `d9b66c5`; exact-head CI #300 passed. |
-| P13 | Internal after-sales tasks | [#45](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/45) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `297b2fc`; exact-head CI #301 passed. |
-| P14 | Read-only verified customer purchase portal | [#46](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/46) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `880db71`; exact-head CI #302 passed. |
-| P15 | Audited notification consent and withdrawal controls | [#47](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/47) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `0d21451`; exact-head CI #303 passed. |
-| P16 | Marketing signup/campaign delivery hard-disabled | [#48](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/48) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `ec040c2`; exact-head CI #304 passed. |
-| P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `ca65885`; exact-head CI #305 passed. |
-| P18 | S3 original and variant object cleanup, retryable deletion after storage failure | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `69084c5`; exact-head CI #306 passed, including isolated retry coverage. No live bucket was used. |
-| P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Integrated head `ed88c3c` failed exact-head CI #307 at browser acceptance (54/55 passed); the failure was a duplicated customer update in the timeline and notification. P19 locator fix head `4132b7c`; exact-head CI #310 passed lint, type-check, isolated PostgreSQL tests, production build, Chromium install, and browser acceptance. |
-| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; P21 inspection and quote showroom fixes are carried into this branch. Application head `93f3dec` passed exact-head CI #308. P20 carries the P19 browser-locator fix. Its latest branch revision and exact-head CI evidence are tracked in PR #52; the prior integrated application head `93f3dec` passed CI #308. Earlier head #239 passed 300 tests across 73 files, production build, and 55 browser tests; those results are historical evidence only. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Draft; exact-head CI #167 passed. P1-05 source head 223220110243bb7415dc22d5bd1634cdead5b7e0 is an ancestor of this PR. Local P1-05/P21 edits in the C: P20 worktree are preserved and uncommitted; the F: checkout cannot currently produce a valid git status, so full checkout reconciliation remains open. |
+| P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Draft; exact-head CI #315 passed. Deal reads and writes also constrain the linked inquiry showroom. |
+| P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Draft; exact-head CI #341 passed. Finance access constrains linked deal, inquiry, and vehicle showroom scope. |
+| P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Draft; exact-head CI #342 passed. No payment processor or capture. |
+| P10 | Delivery checklist, handover and vehicle transfer | [#42](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/42) | Draft; exact-head CI #343 passed. |
+| P11 | Showroom-scoped workshop service and checklists | [#43](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/43) | Draft; exact-head CI #344 passed. |
+| P12 | Parts catalog, stock ledger and workshop issue flow | [#44](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/44) | Draft; exact-head CI #345 passed. |
+| P13 | Internal after-sales tasks | [#45](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/45) | Draft; exact-head CI #346 passed. |
+| P14 | Read-only verified customer purchase portal | [#46](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/46) | Draft; exact-head CI #347 passed. |
+| P15 | Audited notification consent and withdrawal controls | [#47](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/47) | Draft; exact-head CI #348 passed. |
+| P16 | Marketing signup/campaign delivery hard-disabled | [#48](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/48) | Draft; exact-head CI #349 passed. Marketing remains disabled. |
+| P17 | Showroom-scoped activity counts, excluding PII and financial values | [#49](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/49) | Draft; exact-head CI #350 passed. |
+| P18 | S3 original and variant object cleanup, retryable deletion after storage failure | [#50](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/50) | Draft; exact-head CI #351 passed. No live bucket was used. |
+| P19 | Playwright browser suite on the production build and disposable database | [#51](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/51) | Draft; exact-head CI #352 passed, including all 55 browser tests. |
+| P20 | Release evidence and unresolved gate ledger | [#52](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/52) | Draft; corrected exact-head CI #354 passed lint, type-check, isolated PostgreSQL tests, production build, and browser acceptance. CI #353 exposed a misplaced nested test; the test structure was fixed before #354. |
 
-## P21 source and integrated changes
+## Showroom scope audit update
 
-- P21 active-showroom scoping for inspection and sales quote workflows remains tracked in draft [PR #53](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/53), stacked on PR #38. Its source head `98df79a` passed exact-head CI #243. Its inspection and derived quote predicates and PostgreSQL regressions are now merged as a parent into each downstream P7–P20 PR branch; refreshed exact-head CI #295–#306 passed for P7–P18. P19 integrated run #307 exposed one browser locator ambiguity (54/55 browser tests passed); P19 fix head `4132b7c` passed exact-head CI #310. P20 application head `93f3dec` passed CI #308; refreshed P20 head `ed60bbc` is in CI #312. No hosted migration or deployment was performed.
+A derived-record audit found that a deal row and its vehicle could be in an actor's showroom while its linked inquiry belonged to another showroom. Deal projections include inquiry reference and customer details, and finance projections include linked deal data. P7–P20 now constrain deal reads and mutations through the linked inquiry, and finance paths constrain linked inquiry and vehicle showroom scope. An isolated PostgreSQL regression in P20 creates deliberately mismatched synthetic records and verifies sales, quotes, finance, invoices, and payment-sandbox access deny them. Exact-head CI #354 passed. Delivery, workshop, parts, after-sales, quote, and inspection paths also apply their documented linked-resource showroom predicates; broader acceptance across protected staging remains outstanding.
+
+P21 inspection and derived quote scope work remains tracked in draft [PR #53](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/53), stacked on PR #38; exact-head CI #243 passed. PRs #39–#52 are stacked in dependency order after the P21 branch.
 
 ## Data and deployment boundaries
 
-- Migrations are exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
-- No migration was applied to Neon, production, or existing staging. The existing Neon staging project’s default `staging` branch was rechecked on 2026-11-28: it is ready but unprotected, so it is not an isolated preview database and was not used. No production deployment or staging deployment was performed.
-- Vercel SSO is enabled for all deployment types on both existing staging and demo projects. The staging project's latest recorded deployment still points to the older `main` commit `50263ecdaf7809b0d8ddb4406a48128fadd4d40d`; no new preview or deployment was created.
-- No isolated Vercel preview was created: the Vercel GitHub namespaces check returned no connected namespaces, so repository Git integration is unavailable. No preview project or deployment was created; existing protected projects were left unchanged.
+- Migrations were exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
+- No migration was applied to Neon, production, or existing staging. Neon staging's default branch was observed unprotected and was not used.
+- Vercel SSO remains enabled on existing staging and demo deployments. No deployment or alias change was made.
+- No isolated Vercel preview was created because no GitHub namespace was connected to Vercel.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
-- The F: main, P1 Preview, and P1-05 checkouts were read-only inspected in the prior audit; no local/F: checkout was modified during this continuation. The separate local P20 worktree has existing dirty P21/P1-05 inspection changes and was left untouched. P1 Preview is 17 commits ahead of `origin/main` and does not contain P1-05. P1-05 source commit `223220110243bb7415dc22d5bd1634cdead5b7e0` remains included in PR #38; local commit `719a111` changes only the P1-05 progress document.
+- The F: checkout was not modified. Its current git status remains unreadable; no local edits or database files were overwritten. Existing dirty changes in the separate C: P20 worktree were left intact.
+- The repository remains public at the user's direction. Independent security review is not a project completion condition.
 
-## Unresolved release gates
+## Remaining release work
 
-- The repository is public by owner choice for now. Private-source release readiness and historical credential exposure response remain open; no deployment should occur while this gate is unmet.
-- P1-05 source ancestry into PR #38 is verified. The F: state is now verified; follow-up inspection and quote-access fixes are on PR #53, while the broader showroom/assignment audit remains open.
-- P0-06 issue #3 now has a concise non-sensitive acceptance checklist. Staging administrator recovery still requires the owner to enter credentials privately through a masked prompt.
-- The Neon staging branch is unprotected and must not be treated as the isolated preview DB. Confirm a separate isolated database before any hosted migration; none has been run.
-- P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
+- Complete F: checkout/worktree reconciliation without replacing local changes, then finish the broad showroom/assignment and derived-child access audit.
+- Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
+- P0-06 image upload and storage still need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence; code-level S3 cleanup does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
-- Protected browser, responsive visual, and role acceptance must run on protected staging after the above gates and approved isolated preview configuration.
-- Explicit release approval is required before migration, deployment, or a public demo.
+- Protected browser, responsive visual, and role acceptance must run on protected staging after an isolated preview configuration is available.
+- Review and remediate any real credential exposure found in repository history before deployment; repository privacy itself is not a release gate.
+- Explicit release approval is still required before hosted migration, deployment, or a public demo.
 
-These are genuine blockers to production readiness. Do not bypass them to make the ledger appear complete.
+These remaining items prevent a production-readiness claim. Do not bypass them.
