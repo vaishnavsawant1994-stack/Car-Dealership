@@ -1,6 +1,6 @@
 # Car Dealership development integration status
 
-The latest work is organized as dependency-ordered open pull requests #38–#57; PR #56 was superseded. None is merged to main. The integration candidate has not been migrated to existing staging or production or deployed. Migration SQL was validated on a fresh temporary child branch of the isolated Neon preview project; Prisma migration-engine bookkeeping remains unverified.
+P6–P20 work is organized in dependency-ordered open pull requests #38–#52, with open scope follow-ups #53–#55. None is merged to main. The integration candidate has not been migrated to existing staging or production or deployed. Migration SQL was validated on a fresh temporary child branch of the isolated Neon preview project; Prisma migration-engine bookkeeping remains unverified.
 
 The P6–P20 roadmap, exact CI evidence, deployment boundaries, and remaining approval gates are recorded in [CAR_DEALERSHIP_P6-P20_RELEASE_LEDGER.md](CAR_DEALERSHIP_P6-P20_RELEASE_LEDGER.md). Current production readiness is summarized in [PRODUCTION_READINESS.md](PRODUCTION_READINESS.md).
 
