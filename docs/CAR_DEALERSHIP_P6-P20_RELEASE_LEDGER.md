@@ -1,12 +1,12 @@
 # Car Dealership P6–P20 release ledger
 
-**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. PRs #38–#54 are open, mergeable, and out of draft; none is merged. CI success is engineering evidence, not release acceptance.
+**As of 2026-11-28.** This ledger records code and validation evidence for the current development sequence. PRs #38–#55 are open, mergeable, and out of draft; none is merged. CI success is engineering evidence, not release acceptance.
 
 ## Dependency-ordered development slices
 
 | Phase | Work | PR | Evidence / state |
 |---|---|---:|---|
-| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; exact-head CI #398 passed. F: main and separate P1-05 worktrees are clean; broader child-record scope audit continues in #53. |
+| P6 | Phase integration, role matrix and showroom isolation foundations | [#38](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/38) | Open, mergeable, ready for normal review; exact-head CI #398 passed. F: main and separate P1-05 worktrees are clean; broader child-record scope audit continues in #53 and #55. |
 | P7 | Sales deal lifecycle and audited transitions | [#39](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/39) | Open, mergeable, ready for normal review; exact-head CI #315 passed. |
 | P8 | Internal finance worksheet and invoice draft | [#40](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/40) | Open, mergeable, ready for normal review; exact-head CI #341 passed. |
 | P9 | Deterministic payment sandbox simulation | [#41](https://github.com/vaishnavsawant1994-stack/Car-Dealership/pull/41) | Open, mergeable, ready for normal review; exact-head CI #342 passed. No payment processor or capture. |
@@ -35,7 +35,7 @@
 ## Unresolved release gates
 
 - Repository remains public at the owner's direction. Review the historical credential exposure scan and respond to any confirmed credential exposure before deployment.
-- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes.
+- P1-05 local/F: work and the consolidated branch still need reconciliation, followed by the broader query and derived-child showroom/assignment audit. P21 PR #53 covers inspection and linked quote paths; exact-head CI #411 passed on `9bd0f5a2eb0e2e4d855c20d1af3116e442af87c5`, including scope predicates on evidence reads and final writes. P22 PR #55 reapplies showroom and assignment scope to private sell-request attachment reads; exact-head CI #413 passed on `7811721a7fe3d3aa6273e98f88d40766e1b3f4c7`.
 - Secure staging administrator recovery requires the owner to enter credentials privately through masked input.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
