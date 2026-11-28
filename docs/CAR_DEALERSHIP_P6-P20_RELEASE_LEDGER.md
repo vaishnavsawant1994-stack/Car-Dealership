@@ -29,9 +29,9 @@
 ## Data and deployment boundaries
 
 - Migrations are exercised only by CI against a fresh loopback PostgreSQL 16 container named `car_dealership_test`.
-- No migration was applied to Neon, production, or existing staging. No production deployment or staging deployment was performed.
-- Vercel staging SSO/protection remains in place.
-- No isolated Vercel preview was created: GitHub repository linking requires a Vercel GitHub Login Connection that is not configured. No preview project or deployment was created; existing protected projects were left unchanged.
+- No migration was applied to Neon, production, or existing staging. The existing Neon staging project’s default `staging` branch was rechecked on 2026-11-28: it is ready but unprotected, so it is not an isolated preview database and was not used. No production deployment or staging deployment was performed.
+- Vercel SSO is enabled for all deployment types on both existing staging and demo projects. The staging project's latest recorded deployment still points to the older `main` commit `50263ecdaf7809b0d8ddb4406a48128fadd4d40d`; no new preview or deployment was created.
+- No isolated Vercel preview was created: the Vercel GitHub namespaces check returned no connected namespaces, so repository Git integration is unavailable. No preview project or deployment was created; existing protected projects were left unchanged.
 - No live payment processing, customer messaging, or campaign delivery was enabled.
 - The F: main, P1 Preview, and P1-05 checkouts were read-only inspected in the prior audit; no local/F: checkout was modified during this continuation. The separate local P20 worktree has existing dirty P21/P1-05 inspection changes and was left untouched. P1 Preview is 17 commits ahead of `origin/main` and does not contain P1-05. P1-05 source commit `223220110243bb7415dc22d5bd1634cdead5b7e0` remains included in PR #38; local commit `719a111` changes only the P1-05 progress document.
 
@@ -40,6 +40,7 @@
 - The repository is public by owner choice for now. Private-source release readiness and historical credential exposure response remain open; no deployment should occur while this gate is unmet.
 - P1-05 source ancestry into PR #38 is verified. The F: state is now verified; follow-up inspection and quote-access fixes are on PR #53, while the broader showroom/assignment audit remains open.
 - P0-06 issue #3 now has a concise non-sensitive acceptance checklist. Staging administrator recovery still requires the owner to enter credentials privately through a masked prompt.
+- The Neon staging branch is unprotected and must not be treated as the isolated preview DB. Confirm a separate isolated database before any hosted migration; none has been run.
 - P0-06 image upload and storage need an isolated provider test account, IAM/CDN checks, scanning/retention review, and backup evidence. The code-level S3 cleanup fix does not prove provider behavior.
 - P0-07 backup/restore and P0-08 monitoring/rollback need operationally approved preview/staging evidence.
 - Protected browser, responsive visual, and role acceptance must run on protected staging after the above gates and approved isolated preview configuration.
