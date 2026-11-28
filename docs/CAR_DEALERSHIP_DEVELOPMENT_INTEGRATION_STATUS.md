@@ -8,7 +8,7 @@ The local/F: P1-05 work remains preserved and requires explicit reconciliation a
 
 ## Required before deployment
 
-- Repository privacy and historical credential exposure response.
+- Repository remains public at the owner's direction. Complete the historical credential exposure scan and remediate any confirmed exposure before deployment.
 - Secure staging administrator recovery through private masked input.
 - Reconcile P1-05 and complete the broader query and derived-record branch/assignment isolation audit.
 - Validate migrations and image storage only against a confirmed isolated preview database and test storage account.
