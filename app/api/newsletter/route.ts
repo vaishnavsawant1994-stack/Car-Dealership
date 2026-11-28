@@ -4,8 +4,10 @@ import { NewsletterStatus } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { newsletterSchema } from '@/lib/validation/forms'
 import { checkRateLimit, requestFingerprint } from '@/lib/security/rate-limit'
+import { publicNewsletterSignupEnabled } from '@/lib/marketing/campaign-policy'
 
 export async function POST(request: Request) {
+  if (!publicNewsletterSignupEnabled) return NextResponse.json({ error: { code: 'MARKETING_DISABLED', message: 'Newsletter signup is currently paused.' } }, { status: 403 })
   if (isHostedDemoEnvironment()) return NextResponse.json({ error: { code: 'DEMO_READ_ONLY', message: 'Public submissions are disabled in the protected demonstration. Use fictional seeded scenarios instead.' } }, { status: 403 })
   const limit = await checkRateLimit(requestFingerprint(request, 'newsletter'), 5, 15 * 60_000)
   if (!limit.allowed) return NextResponse.json({ message: limit.unavailable ? 'Newsletter signup is temporarily unavailable.' : 'Too many attempts. Please try again later.' }, { status: limit.unavailable ? 503 : 429, headers: { 'Retry-After': String(limit.retryAfterSeconds) } })
