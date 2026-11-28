@@ -8,6 +8,7 @@ const roles = Object.values(UserRole)
 const roleDescriptions: Record<UserRole, string> = {
   CUSTOMER: 'Customer account; no staff application access.',
   SALES: 'Customer enquiries, test drives, and assigned sales follow-up.',
+  FINANCE: 'Finance review and internal invoice draft worksheets only.',
   OPERATIONS: 'Inventory operations, test drives, inspections, valuations, and sell requests.',
   CONTENT_MANAGER: 'Published testimonials, gallery, website content, newsletter, and non-secret settings visibility.',
   ADMIN: 'Dealership administration; protected Super Admin controls remain restricted.',
@@ -22,7 +23,7 @@ export default async function AccessMatrixPage() {
     <AdminPageHeader
       title="Roles & Access Matrix"
       breadcrumb="Overview / Roles & Access"
-      text="Read the server-enforced application permissions for each existing account role. Role changes remain subject to staff lifecycle safeguards."
+      text="Read the server-enforced application permissions for each account role. Role changes remain subject to staff lifecycle safeguards."
       actions={canManageStaffRoles ? <Link className="admin-button admin-button--secondary" href="/admin/users">Manage staff roles</Link> : undefined}
     />
     <section className="admin-panel access-matrix-notice" aria-label="Permission model limits">

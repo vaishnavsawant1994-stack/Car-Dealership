@@ -6,7 +6,7 @@ import {
 
 export const managedRoles = [
   UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATIONS,
-  UserRole.SALES, UserRole.CONTENT_MANAGER, UserRole.CUSTOMER,
+  UserRole.SALES, UserRole.FINANCE, UserRole.CONTENT_MANAGER, UserRole.CUSTOMER,
 ] as const
 
 const descriptions: Record<UserRole, string> = {
@@ -14,6 +14,7 @@ const descriptions: Record<UserRole, string> = {
   [UserRole.ADMIN]: 'Dealership administrator: routine staff and business operations, excluding owner-only actions.',
   [UserRole.OPERATIONS]: 'Vehicle, inspection, procurement and operational coordination.',
   [UserRole.SALES]: 'Sales enquiries, test-drive coordination and customer communications.',
+  [UserRole.FINANCE]: 'Restricted access to internal invoice drafts and finance records.',
   [UserRole.CONTENT_MANAGER]: 'Website content and approved public configuration management.',
   [UserRole.CUSTOMER]: 'Public customer account; no staff/admin permissions.',
 }

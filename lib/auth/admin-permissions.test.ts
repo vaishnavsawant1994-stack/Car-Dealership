@@ -10,6 +10,7 @@ const expectedAllPermissions = [
   'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
   'sellRequest.view', 'sellRequest.assign', 'sellRequest.inspect', 'sellRequest.value', 'sellRequest.offer', 'sellRequest.complete',
   'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close',
+  'finance.view', 'finance.update',
   'testimonial.manage', 'gallery.manage', 'content.manage', 'newsletter.view', 'newsletter.export',
   'showroom.manage', 'user.view', 'user.invite', 'user.update', 'user.disable', 'user.role.manage', 'session.revoke',
   'settings.view', 'settings.update', 'auditLog.view', 'notification.view', 'export.create', 'emailCapture.view',
@@ -22,6 +23,7 @@ const expectedPermissions: Record<UserRole, readonly string[]> = {
     'testDrive.view', 'testDrive.assign', 'testDrive.confirm', 'testDrive.reschedule', 'testDrive.complete', 'testDrive.cancel',
     'sellRequest.view', 'contactInquiry.view', 'contactInquiry.assign', 'contactInquiry.update', 'contactInquiry.close', 'notification.view',
   ],
+  [UserRole.FINANCE]: ['dashboard.view', 'finance.view', 'finance.update', 'auditLog.view', 'notification.view'],
   [UserRole.OPERATIONS]: [
     'dashboard.view', 'vehicle.view', 'vehicle.create', 'vehicle.update', 'vehicle.reserve', 'vehicle.markSold', 'vehicle.archive',
     'brand.manage', 'bodyType.manage', 'feature.manage', 'testDrive.view', 'testDrive.assign', 'testDrive.confirm',
