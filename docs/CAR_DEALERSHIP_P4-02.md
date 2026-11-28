@@ -22,4 +22,4 @@ Allow authorized administrators to create and complete private reminders associa
 - Only administrators can be assignees because the existing Customer 360 is admin-only. P1-05 must establish tenant/branch ownership rules before branch staff access or cross-organization fan-out is considered.
 - No realtime notifications, cron reminders, automatic overdue escalations or task deletions. Those are separate future enhancements.
 - This feature is a staff work queue, not a customer engagement channel or consent to contact.
-- Final release gates for repository privacy, secure staging Super Admin recovery, independent review and protected browser acceptance remain deferred, not bypassed.
+- Final release gates for secure staging Super Admin recovery and protected browser acceptance remain deferred. The repository stays public at the owner's direction.

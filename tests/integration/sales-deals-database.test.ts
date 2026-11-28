@@ -9,6 +9,7 @@ import {
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
+import { getSalesQuoteDrafts } from '@/lib/sales/quote-service'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
 import { createDeliveryCase, listDeliveryCases, listEligibleDealsForDelivery, transitionDeliveryCase, updateDeliveryChecklistItem } from '@/lib/delivery/delivery-service'
 import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updateWorkshopChecklist } from '@/lib/workshop/workshop-service'
@@ -144,10 +145,7 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       role: UserRole.CUSTOMER, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
     userIds.push(sales.id, peer.id, finance.id, operations.id, workshop.id, partsManager.id, customer.id, otherCustomer.id)
-    await prisma.showroomStaffAssignment.createMany({
-      data: [sales, peer, finance, operations, workshop, partsManager].map((user) => ({ userId: user.id, showroomId })),
-      skipDuplicates: true,
-    })
+    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance, operations, workshop, partsManager].map((user) => ({ userId: user.id, showroomId })) })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -199,7 +197,6 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       acceptanceMethod: SalesDealAcceptanceMethod.CUSTOMER_EMAIL,
     })
     expect(won).toMatchObject({ type: 'updated', data: { status: SalesDealStatus.WON, version: 3 } })
-    await prisma.salesDeal.update({ where: { id: opened.data.id }, data: { assignedToId: finance.id } })
     const invoice = await createSalesInvoiceDraft(opened.data.id, finance)
     expect(invoice.type).toBe('created')
     if (invoice.type !== 'created') return
@@ -305,7 +302,7 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
       deliveryCase: { status: DeliveryCaseStatus.HANDED_OVER, afterSalesTasks: [{ status: 'COMPLETED' }] } })
     expect(customerPurchases[0]).not.toHaveProperty('quoteDraft')
     expect(await listCustomerPurchases(otherCustomer.id)).toHaveLength(0)
-    const detail = await getSalesDeal(opened.data.id, finance)
+    const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
     ])
@@ -409,5 +406,143 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     expect(emptyAnalytics.deliveries).toEqual([])
     expect(emptyAnalytics.workshopOrders).toEqual([])
     expect(emptyAnalytics.afterSalesTasks).toEqual([])
+
+  })
+
+  it('hides deals and finance records whose linked inquiry belongs to another showroom', async () => {
+    const database = new URL(process.env.DATABASE_URL ?? 'postgresql://invalid/invalid')
+    if (process.env.APP_ENV !== 'test' || !['localhost', '127.0.0.1', '::1'].includes(database.hostname) ||
+      database.pathname !== '/car_dealership_test') {
+      throw new Error('Showroom isolation tests only run against the isolated loopback CI database.')
+    }
+
+    const testKey = `scope-mismatch-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const previousPaymentMode = process.env.PAYMENT_MODE
+    let mainShowroomId: string | undefined
+    let foreignShowroomId: string | undefined
+    let vehicleId: string | undefined
+    let inquiryId: string | undefined
+    let quoteId: string | undefined
+    let dealId: string | undefined
+    let invoiceId: string | undefined
+    let salesId: string | undefined
+    let financeId: string | undefined
+    let mismatchedDeliveryCaseId: string | undefined
+    let mismatchedAfterSalesTaskId: string | undefined
+
+    try {
+      const referenceVehicle = await prisma.vehicle.findFirstOrThrow({ select: { brandId: true, bodyTypeId: true } })
+      const mainShowroom = await prisma.showroom.create({ data: {
+        name: `Fictional Scope Main ${testKey}`, address: 'Synthetic Test Road, 7', city: 'Test City',
+        state: 'Test State', postalCode: '000007', phone: 'Synthetic only',
+        email: `scope-main-${testKey}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+      } })
+      mainShowroomId = mainShowroom.id
+      const foreignShowroom = await prisma.showroom.create({ data: {
+        name: `Fictional Scope Foreign ${testKey}`, address: 'Synthetic Test Road, 8', city: 'Test City',
+        state: 'Test State', postalCode: '000008', phone: 'Synthetic only',
+        email: `scope-foreign-${testKey}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+      } })
+      foreignShowroomId = foreignShowroom.id
+
+      const sales = await prisma.user.create({ data: {
+        email: `scope-sales-${testKey}@car-dealership.test`, name: 'Fictional Scope Sales',
+        role: UserRole.SALES, status: UserStatus.ACTIVE, emailVerified: new Date(),
+      } })
+      salesId = sales.id
+      const finance = await prisma.user.create({ data: {
+        email: `scope-finance-${testKey}@car-dealership.test`, name: 'Fictional Scope Finance',
+        role: UserRole.FINANCE, status: UserStatus.ACTIVE, emailVerified: new Date(),
+      } })
+      financeId = finance.id
+      await prisma.showroomStaffAssignment.createMany({ data: [
+        { userId: sales.id, showroomId: mainShowroom.id },
+        { userId: finance.id, showroomId: mainShowroom.id },
+      ] })
+
+      const vehicle = await prisma.vehicle.create({ data: {
+        ...referenceVehicle, slug: testKey, stockNumber: testKey.toUpperCase(),
+        model: 'Fictional Sedan', variant: 'Scope mismatch test', shortTitle: 'Synthetic Main Showroom Vehicle',
+        year: 2024, price: 2_000_000, mileage: 10000, fuelType: 'Petrol', transmission: 'Automatic',
+        shortDescription: 'Synthetic vehicle for an isolated scope regression.',
+        description: 'Fictional data used only in the isolated test database.',
+        status: VehicleStatus.AVAILABLE, published: true, showroomId: mainShowroom.id,
+      } })
+      vehicleId = vehicle.id
+      const inquiry = await prisma.inquiry.create({ data: {
+        referenceNumber: `SCOPE-${testKey}`, showroomId: foreignShowroom.id, vehicleId: vehicle.id,
+        userId: null, assignedToId: null, fullName: 'Fictional Foreign Showroom Customer',
+        phone: '0000000000', email: `customer-${testKey}@car-dealership.test`,
+        message: 'Synthetic request; no external contact.', consentAccepted: false, status: InquiryStatus.IN_PROGRESS,
+      } })
+      inquiryId = inquiry.id
+      const quote = await prisma.salesQuoteDraft.create({ data: {
+        inquiryId: inquiry.id, vehicleId: vehicle.id, createdById: sales.id, vehiclePrice: vehicle.price,
+        discountAmount: 0, estimatedOtherFees: 0, estimatedSubtotal: vehicle.price, currency: 'INR',
+      } })
+      quoteId = quote.id
+
+      expect((await createSalesDeal(inquiry.id, sales, quote.id)).type).toBe('not-found')
+      const deal = await prisma.salesDeal.create({ data: {
+        referenceNumber: `DEAL-${testKey}`, inquiryId: inquiry.id, quoteDraftId: quote.id,
+        vehicleId: vehicle.id, showroomId: mainShowroom.id, assignedToId: null, createdById: sales.id,
+        status: SalesDealStatus.WON, acceptanceMethod: SalesDealAcceptanceMethod.CUSTOMER_EMAIL,
+      } })
+      dealId = deal.id
+      const invoice = await prisma.salesInvoiceDraft.create({ data: {
+        referenceNumber: `DRAFT-${testKey}`, dealId: deal.id, createdById: finance.id,
+        vehicleTitle: 'Synthetic main showroom vehicle', stockNumber: testKey.toUpperCase(),
+        vehiclePrice: vehicle.price, discountAmount: 0, estimatedOtherFees: 0,
+        estimatedSubtotal: vehicle.price, currency: 'INR',
+      } })
+      invoiceId = invoice.id
+
+      expect((await listEligibleDealsForDelivery(sales)).some((item) => item.id === deal.id)).toBe(false)
+      expect(await createDeliveryCase(deal.id, sales)).toEqual({ type: 'not-available' })
+
+      const mismatchedDeliveryCase = await prisma.deliveryCase.create({ data: {
+        referenceNumber: `DLV-${testKey}`, dealId: deal.id, vehicleId: vehicle.id,
+        showroomId: mainShowroom.id, assignedToId: sales.id, createdById: sales.id,
+        status: DeliveryCaseStatus.HANDED_OVER,
+      } })
+      mismatchedDeliveryCaseId = mismatchedDeliveryCase.id
+      const mismatchedTask = await prisma.afterSalesTask.create({ data: {
+        deliveryCaseId: mismatchedDeliveryCase.id, showroomId: mainShowroom.id,
+        type: AfterSalesTaskType.FIRST_SERVICE, dueAt: new Date(Date.now() + 86_400_000),
+        assignedToId: sales.id, createdById: sales.id,
+      } })
+      mismatchedAfterSalesTaskId = mismatchedTask.id
+      expect((await listDeliveryCases(sales)).some((item) => item.id === mismatchedDeliveryCase.id)).toBe(false)
+      expect((await listAfterSalesTasks(sales)).some((item) => item.id === mismatchedTask.id)).toBe(false)
+
+      expect(await getSalesQuoteDrafts(inquiry.id, sales)).toBeNull()
+      expect(await getSalesDeal(deal.id, sales)).toBeNull()
+      expect((await listSalesDeals(sales)).some((item) => item.id === deal.id)).toBe(false)
+      expect((await listWonSalesDealsForFinance(finance)).some((item) => item.id === deal.id)).toBe(false)
+      expect((await listSalesInvoiceDrafts(finance)).some((item) => item.id === invoice.id)).toBe(false)
+      expect(await createSalesInvoiceDraft(deal.id, finance)).toEqual({ type: 'not-available' })
+
+      process.env.PAYMENT_MODE = 'sandbox'
+      expect(await runPaymentSandboxSimulation(invoice.id, finance, {
+        idempotencyKey: `sandbox-${testKey}`, outcome: 'APPROVED',
+      })).toEqual({ type: 'not-available' })
+    } finally {
+      if (previousPaymentMode === undefined) delete process.env.PAYMENT_MODE
+      else process.env.PAYMENT_MODE = previousPaymentMode
+      if (mismatchedAfterSalesTaskId) await prisma.afterSalesTask.deleteMany({ where: { id: mismatchedAfterSalesTaskId } })
+      if (mismatchedDeliveryCaseId) await prisma.deliveryCase.deleteMany({ where: { id: mismatchedDeliveryCaseId } })
+      if (invoiceId) await prisma.salesInvoiceDraft.deleteMany({ where: { id: invoiceId } })
+      if (dealId) await prisma.salesDeal.deleteMany({ where: { id: dealId } })
+      if (quoteId) await prisma.salesQuoteDraft.deleteMany({ where: { id: quoteId } })
+      if (inquiryId) await prisma.inquiry.deleteMany({ where: { id: inquiryId } })
+      if (vehicleId) await prisma.vehicle.deleteMany({ where: { id: vehicleId } })
+      if (salesId || financeId) {
+        const userIds = [salesId, financeId].filter((id): id is string => Boolean(id))
+        await prisma.showroomStaffAssignment.deleteMany({ where: { userId: { in: userIds } } })
+        await prisma.user.deleteMany({ where: { id: { in: userIds } } })
+      }
+      if (foreignShowroomId) await prisma.showroom.deleteMany({ where: { id: foreignShowroomId } })
+      if (mainShowroomId) await prisma.showroom.deleteMany({ where: { id: mainShowroomId } })
+    }
   })
 })

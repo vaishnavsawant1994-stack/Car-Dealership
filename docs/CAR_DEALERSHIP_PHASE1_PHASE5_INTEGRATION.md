@@ -15,11 +15,11 @@ This is an integration and QA candidate, not a live product release. The origina
 
 ## Not complete or accepted
 
-- An independently validated P1-05 organization/showroom tenant isolation policy across *all* staff APIs and database queries; the owner's separate local Codex work must be reconciled.
+- Complete P1-05 organization/showroom isolation validation across all staff APIs and database queries, reconciling the owner's separate local work.
 - Full sales deal lifecycle, contract/quote approval, GST/RTO accounting, payments/settlements, buyer delivery, workshop, parts inventory, after-sales, omnichannel communications and marketing analytics.
 - Customer verified self-service opt-in, secure data export or lawful erasure approvals, retention and private file antivirus scanning.
 - Client-grade responsive browser/pixel QA on all required routes, live authenticated tests, reliable backup/restore and staged rollback.
-- Final security gates: repository privacy, independent review and staging Super Admin password recovery requiring the owner to enter a new password securely.
+- Final release gates: historical credential exposure scan/remediation and staging Super Admin password recovery through private masked input. Repository remains public at the owner's direction.
 - No real customer messaging, real payment processing, unprotected public demo or staging schema deployment is authorized by this branch.
 
 ## Integration order

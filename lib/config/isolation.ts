@@ -37,7 +37,7 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
     throw new Error(`Car-Dealership refused a legacy source-looking database target for ${purpose}.`)
   }
   if (env === 'commercial') {
-    throw new Error('Commercial database connections are disabled until an independently reviewed production launch.')
+    throw new Error('Commercial database connections remain disabled until production launch is explicitly approved.')
   }
   if (env === 'local' || env === 'test') {
     if (!local || !['car_dealership_dev', 'car_dealership_test'].includes(database)) {
