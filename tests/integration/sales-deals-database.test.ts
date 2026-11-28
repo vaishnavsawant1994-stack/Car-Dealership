@@ -15,6 +15,7 @@ import { createWorkshopOrder, listWorkshopOrders, transitionWorkshopOrder, updat
 import { createPartAndReceive, createWorkshopPartRequest, issueWorkshopPartRequest, listParts, listWorkshopPartRequests } from '@/lib/parts/parts-service'
 import { completeAfterSalesTask, createAfterSalesTask, listAfterSalesTasks } from '@/lib/after-sales/after-sales-service'
 import { listCustomerPurchases } from '@/lib/portal/customer-purchase-service'
+import { getShowroomAnalytics } from '@/lib/analytics/analytics-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -371,5 +372,38 @@ describe('P7-P14 sales, finance, delivery, workshop, parts, after-sales, and cus
     const beforeComplete = await prisma.workshopOrder.findUniqueOrThrow({ where: { id: openedWorkshop.data.id }, select: { version: true } })
     expect(await transitionWorkshopOrder(openedWorkshop.data.id, workshop, { version: beforeComplete.version, status: WorkshopOrderStatus.COMPLETED })).toMatchObject({ type: 'updated' })
     expect((await prisma.vehicle.findUniqueOrThrow({ where: { id: vehicleId }, select: { status: true } })).status).toBe(VehicleStatus.SOLD)
+    const analytics = await getShowroomAnalytics(operations)
+    expect(analytics.periodDays).toBe(30)
+    expect(analytics.salesDeals.find((entry) => entry.status === SalesDealStatus.WON)?.count).toBe(1)
+    expect(analytics.deliveries.find((entry) => entry.status === DeliveryCaseStatus.HANDED_OVER)?.count).toBe(1)
+    expect(analytics.workshopOrders.find((entry) => entry.status === WorkshopOrderStatus.COMPLETED)?.count).toBe(1)
+    expect(analytics.afterSalesTasks.find((entry) => entry.status === 'COMPLETED')?.count).toBe(1)
+    expect(JSON.stringify(analytics)).not.toContain(customer.email)
+    const foreignP17Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P17 ${suffix}`, address: 'Synthetic Test Road, 6', city: 'Test City',
+      state: 'Test State', postalCode: '000006', phone: 'Synthetic only',
+      email: `p17-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP17Showroom.id } })
+      const mismatchedAnalytics = await getShowroomAnalytics(operations)
+      expect(mismatchedAnalytics.salesDeals).toEqual([])
+      expect(mismatchedAnalytics.deliveries).toEqual([])
+      expect(mismatchedAnalytics.workshopOrders).toEqual([])
+      expect(mismatchedAnalytics.afterSalesTasks).toEqual([])
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP17Showroom.id } })
+    }
+    const unassignedOperations = await prisma.user.create({ data: {
+      email: `p17-no-showroom-${suffix}@car-dealership.test`, name: 'Fictional Unassigned Operations',
+      role: UserRole.OPERATIONS, status: UserStatus.ACTIVE, emailVerified: new Date(),
+    } })
+    userIds.push(unassignedOperations.id)
+    const emptyAnalytics = await getShowroomAnalytics(unassignedOperations)
+    expect(emptyAnalytics.salesDeals).toEqual([])
+    expect(emptyAnalytics.deliveries).toEqual([])
+    expect(emptyAnalytics.workshopOrders).toEqual([])
+    expect(emptyAnalytics.afterSalesTasks).toEqual([])
   })
 })
