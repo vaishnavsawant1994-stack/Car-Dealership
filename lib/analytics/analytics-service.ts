@@ -9,12 +9,19 @@ import { prisma } from '@/lib/db/prisma'
 export async function getShowroomAnalytics(actor: AdminActor) {
   const scope = await getActorShowroomScope(actor)
   const showroom = showroomScopeWhere(scope)
+  const vehicleShowroom = scope.global ? {} : { vehicle: { is: { showroomId: { in: [...scope.showroomIds] } } } }
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const [salesDeals, deliveries, workshopOrders, afterSalesTasks] = await Promise.all([
-    prisma.salesDeal.groupBy({ by: ['status'], where: { ...showroom, createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }, _count: { _all: true } }),
-    prisma.deliveryCase.groupBy({ by: ['status'], where: showroom, _count: { _all: true } }),
-    prisma.workshopOrder.groupBy({ by: ['status'], where: showroom, _count: { _all: true } }),
-    prisma.afterSalesTask.groupBy({ by: ['status'], where: showroom, _count: { _all: true } }),
+    prisma.salesDeal.findMany({ where: { ...showroom, ...vehicleShowroom, createdAt: { gte: since } }, select: { status: true } }),
+    prisma.deliveryCase.findMany({ where: { ...showroom, ...vehicleShowroom }, select: { status: true } }),
+    prisma.workshopOrder.findMany({ where: { ...showroom, ...vehicleShowroom }, select: { status: true } }),
+    prisma.afterSalesTask.findMany({ where: { ...showroom,
+      ...(!scope.global ? { deliveryCase: { is: vehicleShowroom } } : {}) }, select: { status: true } }),
   ])
-  const counts = <T extends { status: string; _count: { _all: number } }>(rows: T[]) => rows.map(({ status, _count }) => ({ status, count: _count._all }))
+  const counts = (rows: Array<{ status: string }>) => {
+    const grouped = new Map<string, number>()
+    for (const { status } of rows) grouped.set(status, (grouped.get(status) ?? 0) + 1)
+    return [...grouped].map(([status, count]) => ({ status, count }))
+  }
   return { periodDays: 30, salesDeals: counts(salesDeals), deliveries: counts(deliveries), workshopOrders: counts(workshopOrders), afterSalesTasks: counts(afterSalesTasks) }
 }
