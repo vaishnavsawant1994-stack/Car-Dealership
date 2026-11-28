@@ -19,7 +19,7 @@ This is an integration and QA candidate, not a live product release. The origina
 - Full sales deal lifecycle, contract/quote approval, GST/RTO accounting, payments/settlements, buyer delivery, workshop, parts inventory, after-sales, omnichannel communications and marketing analytics.
 - Customer verified self-service opt-in, secure data export or lawful erasure approvals, retention and private file antivirus scanning.
 - Client-grade responsive browser/pixel QA on all required routes, live authenticated tests, reliable backup/restore and staged rollback.
-- Final security gates: repository privacy and staging Super Admin password recovery requiring the owner to enter a new password securely.
+- Final release gates: historical credential exposure scan/remediation and staging Super Admin password recovery through private masked input. Repository remains public at the owner's direction.
 - No real customer messaging, real payment processing, unprotected public demo or staging schema deployment is authorized by this branch.
 
 ## Integration order
