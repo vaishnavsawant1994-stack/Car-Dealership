@@ -3,7 +3,7 @@ import { z } from 'zod'
 
 /** This is not a general customer-account editor: staff roles only. */
 export const staffLifecycleSchema = z.object({
-  role: z.enum([UserRole.SALES, UserRole.FINANCE, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN, UserRole.SUPER_ADMIN]).optional(),
+  role: z.enum([UserRole.SALES, UserRole.FINANCE, UserRole.WORKSHOP, UserRole.OPERATIONS, UserRole.CONTENT_MANAGER, UserRole.ADMIN, UserRole.SUPER_ADMIN]).optional(),
   status: z.enum([UserStatus.ACTIVE, UserStatus.SUSPENDED, UserStatus.DISABLED]).optional(),
   version: z.number().int().positive(),
 }).strict().refine((value) => value.role !== undefined || value.status !== undefined, {
