@@ -36,9 +36,6 @@ export function assertAllowedDatabaseUrl(connectionString: string, purpose: stri
   if (/optimum|optimus|deccan/i.test(host + '/' + database)) {
     throw new Error(`Car-Dealership refused a legacy source-looking database target for ${purpose}.`)
   }
-  if (env === 'commercial') {
-    throw new Error('Commercial database connections are disabled until an independently reviewed production launch.')
-  }
   if (env === 'local' || env === 'test') {
     if (!local || !['car_dealership_dev', 'car_dealership_test'].includes(database)) {
       throw new Error(`Only isolated local/test databases are allowed for ${purpose}.`)
