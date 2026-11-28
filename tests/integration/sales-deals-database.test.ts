@@ -8,7 +8,7 @@ import {
 } from '@prisma/client'
 import { prisma } from '@/lib/db/prisma'
 import { createSalesDeal, getSalesDeal, listSalesDeals, transitionSalesDeal } from '@/lib/sales/deal-service'
-import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance } from '@/lib/finance/invoice-draft-service'
+import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance, runPaymentSandboxSimulation } from '@/lib/finance/invoice-draft-service'
 
 const suffix = `p7-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 let showroomId = ''
@@ -16,10 +16,16 @@ let vehicleId = ''
 let inquiryId = ''
 let quoteId = ''
 let invoiceDraftId = ''
+const sandboxAttemptIds: string[] = []
+const originalPaymentMode = process.env.PAYMENT_MODE
 const userIds: string[] = []
 const dealIds: string[] = []
 
 afterAll(async () => {
+  if (sandboxAttemptIds.length) {
+    await prisma.auditLog.deleteMany({ where: { entity: 'PaymentSandboxAttempt', entityId: { in: sandboxAttemptIds } } })
+    await prisma.paymentSandboxAttempt.deleteMany({ where: { id: { in: sandboxAttemptIds } } })
+  }
   if (invoiceDraftId) {
     await prisma.auditLog.deleteMany({ where: { entity: 'SalesInvoiceDraft', entityId: invoiceDraftId } })
     await prisma.salesInvoiceDraft.delete({ where: { id: invoiceDraftId } })
@@ -38,6 +44,8 @@ afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: userIds } } })
   }
   if (showroomId) await prisma.showroom.delete({ where: { id: showroomId } })
+  if (originalPaymentMode === undefined) delete process.env.PAYMENT_MODE
+  else process.env.PAYMENT_MODE = originalPaymentMode
   await prisma.$disconnect()
 })
 
@@ -133,6 +141,33 @@ describe('P7 internal sales deal lifecycle', () => {
     const worksheets = await listSalesInvoiceDrafts(finance)
     expect(worksheets.map((draft) => draft.id)).toContain(invoice.data.id)
     expect((await createSalesInvoiceDraft(opened.data.id, finance)).type).toBe('already-created')
+    process.env.PAYMENT_MODE = 'sandbox'
+    const foreignP9Showroom = await prisma.showroom.create({ data: {
+      name: `Fictional Foreign P9 ${suffix}`, address: 'Synthetic Test Road, 2', city: 'Test City',
+      state: 'Test State', postalCode: '000002', phone: 'Synthetic only',
+      email: `p9-foreign-${suffix}@car-dealership.test`, hours: '10:00 - 18:00', active: true, isPrimary: false,
+    } })
+    try {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId: foreignP9Showroom.id } })
+      expect((await listSalesInvoiceDrafts(finance)).some((draft) => draft.id === invoice.data.id)).toBe(false)
+      expect((await runPaymentSandboxSimulation(invoice.data.id, finance, {
+        idempotencyKey: `p9-sandbox-${suffix}-foreign`, outcome: 'APPROVED',
+      })).type).toBe('not-available')
+    } finally {
+      await prisma.vehicle.update({ where: { id: vehicleId }, data: { showroomId } })
+      await prisma.showroom.delete({ where: { id: foreignP9Showroom.id } })
+    }
+    const simulationKey = `p9-sandbox-${suffix}-idempotency`
+    const simulation = await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'APPROVED' })
+    expect(simulation.type).toBe('simulated')
+    if (simulation.type !== 'simulated') return
+    sandboxAttemptIds.push(simulation.data.id)
+    expect(simulation.data).toMatchObject({ amount: invoice.data.estimatedSubtotal, currency: 'INR', outcome: 'APPROVED' })
+    expect(simulation.data.simulatorReference).toMatch(/^SIM-[A-F0-9]{24}$/)
+    expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'APPROVED' })).type).toBe('already-simulated')
+    expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
+    const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
+    expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
     const detail = await getSalesDeal(opened.data.id, sales)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,

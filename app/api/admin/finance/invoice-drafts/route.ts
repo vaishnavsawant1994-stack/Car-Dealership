@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { adminError } from '@/lib/admin/api'
 import { authorizeAdminRequest } from '@/lib/auth/require-permission'
 import { createSalesInvoiceDraft, listSalesInvoiceDrafts, listWonSalesDealsForFinance } from '@/lib/finance/invoice-draft-service'
+import { paymentMode } from '@/lib/payments/sandbox'
 
 const createSchema = z.object({ dealId: z.string().cuid() }).strict()
 
@@ -10,7 +11,7 @@ export async function GET() {
   try {
     const actor = await authorizeAdminRequest('finance.view')
     const [data, eligibleDeals] = await Promise.all([listSalesInvoiceDrafts(actor), listWonSalesDealsForFinance(actor)])
-    return NextResponse.json({ data, eligibleDeals }, { headers: { 'Cache-Control': 'private, no-store' } })
+    return NextResponse.json({ data, eligibleDeals, sandboxEnabled: paymentMode() === 'sandbox' }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) { return adminError(error) }
 }
 
