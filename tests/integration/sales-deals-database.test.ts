@@ -80,7 +80,10 @@ describe('P7 internal sales deal lifecycle', () => {
       role: UserRole.FINANCE, status: UserStatus.ACTIVE, emailVerified: new Date(),
     } })
     userIds.push(sales.id, peer.id, finance.id)
-    await prisma.showroomStaffAssignment.createMany({ data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })) })
+    await prisma.showroomStaffAssignment.createMany({
+      data: [sales, peer, finance].map((user) => ({ userId: user.id, showroomId })),
+      skipDuplicates: true,
+    })
 
     const vehicle = await prisma.vehicle.create({ data: {
       ...referenceVehicle, slug: suffix, stockNumber: suffix.toUpperCase(),
@@ -132,6 +135,7 @@ describe('P7 internal sales deal lifecycle', () => {
       acceptanceMethod: SalesDealAcceptanceMethod.CUSTOMER_EMAIL,
     })
     expect(won).toMatchObject({ type: 'updated', data: { status: SalesDealStatus.WON, version: 3 } })
+    await prisma.salesDeal.update({ where: { id: opened.data.id }, data: { assignedToId: finance.id } })
     const invoice = await createSalesInvoiceDraft(opened.data.id, finance)
     expect(invoice.type).toBe('created')
     if (invoice.type !== 'created') return
@@ -168,7 +172,7 @@ describe('P7 internal sales deal lifecycle', () => {
     expect((await runPaymentSandboxSimulation(invoice.data.id, finance, { idempotencyKey: simulationKey, outcome: 'DECLINED' })).type).toBe('idempotency-conflict')
     const unchangedDraft = await prisma.salesInvoiceDraft.findUniqueOrThrow({ where: { id: invoice.data.id }, select: { status: true, estimatedSubtotal: true } })
     expect(unchangedDraft).toEqual({ status: 'DRAFT', estimatedSubtotal: invoice.data.estimatedSubtotal })
-    const detail = await getSalesDeal(opened.data.id, sales)
+    const detail = await getSalesDeal(opened.data.id, finance)
     expect(detail?.events.map((event) => event.toStatus)).toEqual([
       SalesDealStatus.OPEN, SalesDealStatus.NEGOTIATION, SalesDealStatus.WON,
     ])
